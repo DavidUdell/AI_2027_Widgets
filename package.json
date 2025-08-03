@@ -11,9 +11,9 @@
     "url": "git+https://github.com/DavidUdell/AI_2027_Widgets.git"
   },
   "license": "UNLICENSED",
-  "author": "DavidUdell",
-  "type": "commonjs",
-  "main": "index.js",
+  "author": "David Udell",
+  "type": "module",
+  "main": "dist/index.js",
   "scripts": {
     "test": "vitest"
   }
