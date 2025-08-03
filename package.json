@@ -1,0 +1,20 @@
+{
+  "name": "ai_2027_widgets",
+  "version": "0.0.1",
+  "description": "In-line Bayesian probability widgets",
+  "homepage": "https://github.com/DavidUdell/AI_2027_Widgets#readme",
+  "bugs": {
+    "url": "https://github.com/DavidUdell/AI_2027_Widgets/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DavidUdell/AI_2027_Widgets.git"
+  },
+  "license": "UNLICENSED",
+  "author": "DavidUdell",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest"
+  }
+}
