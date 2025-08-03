@@ -16,5 +16,8 @@
   "main": "dist/index.js",
   "scripts": {
     "test": "vitest"
-  }
+  },
+  "files": [
+    "dist"
+  ]
 }
