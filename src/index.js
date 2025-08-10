@@ -31,7 +31,8 @@ export function createDistributionWidget(containerId, options) {
     
     // Calculate number of time periods
     const numYears = options.endYear - options.startYear + 1;
-    const numPeriods = options.monthlyGranularity ? numYears * 12 : numYears;
+    // For monthly granularity, use (numYears - 1) * 12 + 1 to have only one notch for the final year
+    const numPeriods = options.monthlyGranularity ? (numYears - 1) * 12 + 1 : numYears;
     
     // Initialize distribution data
     let distribution = options.initialDistribution || 
@@ -128,7 +129,18 @@ export function createDistributionWidget(containerId, options) {
         
         // X-axis labels (years)
         for (let i = 0; i < numYears; i++) {
-            const x = padding + i * (numPeriods / numYears) * periodStep;
+            let x;
+            if (options.monthlyGranularity) {
+                if (i === numYears - 1) {
+                    // Final year label goes at the very end
+                    x = padding + (numPeriods - 1) * periodStep;
+                } else {
+                    // Other years go at the start of each year (every 12 months)
+                    x = padding + i * 12 * periodStep;
+                }
+            } else {
+                x = padding + i * periodStep;
+            }
             const year = options.startYear + i;
             ctx.fillText(year.toString(), x, options.height - padding / 2);
         }
@@ -172,7 +184,18 @@ export function createDistributionWidget(containerId, options) {
         
         // Only draw data points for years (not every month) to avoid clutter
         for (let i = 0; i < numYears; i++) {
-            const periodIndex = i * (numPeriods / numYears);
+            let periodIndex;
+            if (options.monthlyGranularity) {
+                if (i === numYears - 1) {
+                    // Final year data point goes at the very end
+                    periodIndex = numPeriods - 1;
+                } else {
+                    // Other years go at the start of each year (every 12 months)
+                    periodIndex = i * 12;
+                }
+            } else {
+                periodIndex = i;
+            }
             const coords = dataToCanvas(periodIndex, distribution[periodIndex]);
             const radius = 4;
             
