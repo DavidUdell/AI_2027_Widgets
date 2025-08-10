@@ -159,6 +159,30 @@ export function createDistributionWidget(containerId, options) {
      * Draw the distribution curve
      */
     function drawDistributionCurve() {
+        // Create gradient for the fill
+        const gradient = ctx.createLinearGradient(padding, padding, padding, options.height - padding);
+        gradient.addColorStop(0, 'rgba(0, 123, 255, 0.3)');
+        gradient.addColorStop(1, 'rgba(0, 123, 255, 0.1)');
+        
+        // Draw the filled area under the curve
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        
+        // Start at the bottom-left corner
+        ctx.moveTo(padding, options.height - padding);
+        
+        // Draw the curve
+        for (let i = 0; i < numPeriods; i++) {
+            const coords = dataToCanvas(i, distribution[i]);
+            ctx.lineTo(coords.x, coords.y);
+        }
+        
+        // Close the path by going to bottom-right corner and back to start
+        ctx.lineTo(options.width - padding, options.height - padding);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Draw the curve line on top
         ctx.strokeStyle = '#007bff';
         ctx.lineWidth = 3;
         ctx.beginPath();
