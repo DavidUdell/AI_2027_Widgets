@@ -74,7 +74,15 @@
         distribution for this event over the next decade is shown below:
     </p>
     
-    <div class="widget-container" id="distribution-widget"></div>
+    <div class="widget-container">
+        <div style="margin-bottom: 15px; text-align: center;">
+            <label for="total-mass" style="font-weight: bold; margin-right: 10px;">Total Distribution Mass:</label>
+            <input type="number" id="total-mass" value="50" min="0" max="1000" step="1" 
+                   style="padding: 5px; border: 1px solid #ccc; border-radius: 4px; width: 80px;">
+            <span style="margin-left: 5px;">%</span>
+        </div>
+        <div id="distribution-widget"></div>
+    </div>
     
     <p>
         This interactive widget allows you to draw your own probability distribution 
@@ -111,17 +119,41 @@
         
         // Initialize widget when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
-                    // Create initial distribution that covers the whole year range
-        // from 0% at start to 100% at end
-        const numPeriods = (2040 - 2026) * 4 + 1; // 14 years * 4 quarters + 1 = 57 quarters
-        const initialDistribution = Array(numPeriods).fill(0).map((_, i) => i / (numPeriods - 1));
+            // Create initial distribution that covers the whole year range
+            // from 0% at start to 100% at end
+            const numPeriods = (2040 - 2026) * 4 + 1; // 14 years * 4 quarters + 1 = 57 quarters
+            const initialDistribution = Array(numPeriods).fill(0).map((_, i) => i / (numPeriods - 1));
             
-            createDistributionWidget('distribution-widget', {
+            const widget = createDistributionWidget('distribution-widget', {
                 height: 300,
                 startYear: 2026,
                 endYear: 2040,
                 quarterlyGranularity: true,
-                initialDistribution: initialDistribution
+                initialDistribution: initialDistribution,
+                totalMass: 50
+            });
+            
+            // Handle total mass input changes
+            const totalMassInput = document.getElementById('total-mass');
+            totalMassInput.addEventListener('input', () => {
+                let targetMass = parseFloat(totalMassInput.value);
+                
+                // Handle invalid input (NaN, undefined, etc.)
+                if (isNaN(targetMass)) {
+                    targetMass = 0;
+                    totalMassInput.value = '0';
+                } else {
+                    // Clamp to valid range (0-100)
+                    targetMass = Math.max(0, Math.min(100, targetMass));
+                    
+                    // Update input field if value was clamped
+                    const originalValue = parseFloat(totalMassInput.value);
+                    if (originalValue !== targetMass) {
+                        totalMassInput.value = targetMass.toString();
+                    }
+                }
+                
+                widget.setTotalMass(targetMass);
             });
         });
     </script>

@@ -14,6 +14,7 @@
  * @param {boolean} [options.quarterlyGranularity] - If true, use quarterly ticks instead of yearly
  * @param {Array<number>} [options.initialDistribution] - Initial probability values (0-1) for each time period
  * @param {Function} [options.onChange] - Callback function called when distribution changes
+ * @param {number} [options.totalMass] - Total mass to display (as percentage, default calculated from distribution)
  */
 export function createDistributionWidget(containerId, options) {
     const container = document.getElementById(containerId);
@@ -94,35 +95,19 @@ export function createDistributionWidget(containerId, options) {
         
         // Draw distribution curve
         drawDistributionCurve();
-        
-        // Draw data points
-        drawDataPoints();
     }
     
     /**
      * Draw the background grid
      */
     function drawGrid() {
-        ctx.strokeStyle = '#e9ecef';
+        ctx.strokeStyle = '#dee2e6';
         ctx.lineWidth = 1;
         
-        // Vertical lines (periods)
-        for (let i = 0; i < numPeriods; i++) {
-            const x = padding + i * periodStep;
-            ctx.beginPath();
-            ctx.moveTo(x, padding);
-            ctx.lineTo(x, options.height - padding);
-            ctx.stroke();
-        }
-        
-        // Horizontal lines (probability levels)
-        for (let i = 0; i <= 10; i++) {
-            const y = padding + (i / 10) * plotHeight;
-            ctx.beginPath();
-            ctx.moveTo(padding, y);
-            ctx.lineTo(widgetWidth - padding, y);
-            ctx.stroke();
-        }
+        // Draw border around the interactable region
+        ctx.beginPath();
+        ctx.rect(padding, padding, plotWidth, plotHeight);
+        ctx.stroke();
     }
     
     /**
@@ -150,15 +135,6 @@ export function createDistributionWidget(containerId, options) {
             }
             const year = options.startYear + i;
             ctx.fillText(year.toString(), x, options.height - padding / 2);
-        }
-        
-        // Y-axis labels (probabilities)
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'middle';
-        for (let i = 0; i <= 10; i++) {
-            const y = padding + (i / 10) * plotHeight;
-            const probability = (10 - i) / 10;
-            ctx.fillText(`${(probability * 100).toFixed(0)}%`, padding - 5, y);
         }
     }
     
@@ -189,9 +165,10 @@ export function createDistributionWidget(containerId, options) {
         ctx.closePath();
         ctx.fill();
         
-        // Calculate sum of all month probabilities
-        const totalProbability = distribution.reduce((sum, prob) => sum + prob, 0);
-        const totalPercentage = Math.round(totalProbability * 100);
+        // Use provided total mass or calculate from distribution
+        const totalPercentage = options.totalMass !== undefined ? 
+            Math.round(options.totalMass) : 
+            Math.round(distribution.reduce((sum, prob) => sum + prob, 0) * 100);
         
         // Determine if the center point is under the shaded region
         const centerX = widgetWidth / 2;
@@ -220,7 +197,7 @@ export function createDistributionWidget(containerId, options) {
         
         // Draw the curve line on top
         ctx.strokeStyle = '#007bff';
-        ctx.lineWidth = 3;
+        ctx.lineWidth = 2;
         ctx.beginPath();
         
         for (let i = 0; i < numPeriods; i++) {
@@ -234,37 +211,7 @@ export function createDistributionWidget(containerId, options) {
         ctx.stroke();
     }
     
-    /**
-     * Draw data points
-     */
-    function drawDataPoints() {
-        ctx.fillStyle = '#007bff';
-        ctx.strokeStyle = '#ffffff';
-        ctx.lineWidth = 2;
-        
-        // Only draw data points for years (not every quarter) to avoid clutter
-        for (let i = 0; i < numYears; i++) {
-            let periodIndex;
-            if (options.quarterlyGranularity) {
-                if (i === numYears - 1) {
-                    // Final year data point goes at the very end
-                    periodIndex = numPeriods - 1;
-                } else {
-                    // Other years go at the start of each year (every 4 quarters)
-                    periodIndex = i * 4;
-                }
-            } else {
-                periodIndex = i;
-            }
-            const coords = dataToCanvas(periodIndex, distribution[periodIndex]);
-            const radius = 4;
-            
-            ctx.beginPath();
-            ctx.arc(coords.x, coords.y, radius, 0, 2 * Math.PI);
-            ctx.fill();
-            ctx.stroke();
-        }
-    }
+
     
     /**
      * Handle mouse/touch events for drawing
@@ -343,6 +290,10 @@ export function createDistributionWidget(containerId, options) {
         getDistribution: () => [...distribution],
         setDistribution: (newDistribution) => {
             distribution = [...newDistribution];
+            drawWidget();
+        },
+        setTotalMass: (totalMass) => {
+            options.totalMass = totalMass;
             drawWidget();
         },
         reset: () => {
