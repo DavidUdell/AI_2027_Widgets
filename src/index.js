@@ -182,6 +182,35 @@ export function createDistributionWidget(containerId, options) {
         ctx.closePath();
         ctx.fill();
         
+        // Calculate sum of all month probabilities
+        const totalProbability = distribution.reduce((sum, prob) => sum + prob, 0);
+        const totalPercentage = Math.round(totalProbability * 100);
+        
+        // Determine if the center point is under the shaded region
+        const centerX = options.width / 2;
+        const centerY = options.height / 2;
+        const centerPeriodIndex = (centerX - padding) / periodStep;
+        const clampedPeriodIndex = Math.max(0, Math.min(numPeriods - 1, Math.round(centerPeriodIndex)));
+        const centerProbability = distribution[clampedPeriodIndex];
+        const centerYInData = (1 - (centerY - padding) / plotHeight);
+        
+        // Choose color based on whether text is over shaded region
+        let textColor;
+        if (centerYInData < centerProbability) {
+            // Text is over the shaded region - use faint white
+            textColor = 'rgba(255, 255, 255, 0.3)';
+        } else {
+            // Text is over white background or exactly at boundary - use faint dark
+            textColor = 'rgba(0, 0, 0, 0.2)';
+        }
+        
+        // Draw total probability text with appropriate color
+        ctx.fillStyle = textColor;
+        ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(totalPercentage.toString() + '%', centerX, centerY);
+        
         // Draw the curve line on top
         ctx.strokeStyle = '#007bff';
         ctx.lineWidth = 3;
