@@ -11,7 +11,8 @@
  * @param {number} options.height - Widget height in pixels
  * @param {number} options.startYear - Starting year for the distribution
  * @param {number} options.endYear - Ending year for the distribution
- * @param {Array<number>} [options.initialDistribution] - Initial probability values (0-1) for each year
+ * @param {boolean} [options.monthlyGranularity] - If true, use monthly ticks instead of yearly
+ * @param {Array<number>} [options.initialDistribution] - Initial probability values (0-1) for each time period
  * @param {Function} [options.onChange] - Callback function called when distribution changes
  */
 export function createDistributionWidget(containerId, options) {
@@ -28,12 +29,13 @@ export function createDistributionWidget(containerId, options) {
     
     const ctx = canvas.getContext('2d');
     
-    // Calculate number of years
+    // Calculate number of time periods
     const numYears = options.endYear - options.startYear + 1;
+    const numPeriods = options.monthlyGranularity ? numYears * 12 : numYears;
     
     // Initialize distribution data
     let distribution = options.initialDistribution || 
-        Array(numYears).fill(0.5); // Default to 50% for all years
+        Array(numPeriods).fill(0.5); // Default to 50% for all periods
     
     // Drawing state
     let isDrawing = false;
@@ -44,26 +46,26 @@ export function createDistributionWidget(containerId, options) {
     const padding = 40;
     const plotWidth = options.width - 2 * padding;
     const plotHeight = options.height - 2 * padding;
-    const yearStep = plotWidth / (numYears - 1);
+    const periodStep = plotWidth / (numPeriods - 1);
     
     /**
-     * Convert canvas coordinates to year and probability
+     * Convert canvas coordinates to period index and probability
      */
     function canvasToData(x, y) {
-        const yearIndex = Math.round((x - padding) / yearStep);
-        const clampedYearIndex = Math.max(0, Math.min(numYears - 1, yearIndex));
+        const periodIndex = Math.round((x - padding) / periodStep);
+        const clampedPeriodIndex = Math.max(0, Math.min(numPeriods - 1, periodIndex));
         
         const probability = 1 - ((y - padding) / plotHeight);
         const clampedProbability = Math.max(0, Math.min(1, probability));
         
-        return { yearIndex: clampedYearIndex, probability: clampedProbability };
+        return { periodIndex: clampedPeriodIndex, probability: clampedProbability };
     }
     
     /**
-     * Convert year index and probability to canvas coordinates
+     * Convert period index and probability to canvas coordinates
      */
-    function dataToCanvas(yearIndex, probability) {
-        const x = padding + yearIndex * yearStep;
+    function dataToCanvas(periodIndex, probability) {
+        const x = padding + periodIndex * periodStep;
         const y = padding + (1 - probability) * plotHeight;
         return { x, y };
     }
@@ -96,9 +98,9 @@ export function createDistributionWidget(containerId, options) {
         ctx.strokeStyle = '#e9ecef';
         ctx.lineWidth = 1;
         
-        // Vertical lines (years)
-        for (let i = 0; i < numYears; i++) {
-            const x = padding + i * yearStep;
+        // Vertical lines (periods)
+        for (let i = 0; i < numPeriods; i++) {
+            const x = padding + i * periodStep;
             ctx.beginPath();
             ctx.moveTo(x, padding);
             ctx.lineTo(x, options.height - padding);
@@ -126,7 +128,7 @@ export function createDistributionWidget(containerId, options) {
         
         // X-axis labels (years)
         for (let i = 0; i < numYears; i++) {
-            const x = padding + i * yearStep;
+            const x = padding + i * (numPeriods / numYears) * periodStep;
             const year = options.startYear + i;
             ctx.fillText(year.toString(), x, options.height - padding / 2);
         }
@@ -149,7 +151,7 @@ export function createDistributionWidget(containerId, options) {
         ctx.lineWidth = 3;
         ctx.beginPath();
         
-        for (let i = 0; i < numYears; i++) {
+        for (let i = 0; i < numPeriods; i++) {
             const coords = dataToCanvas(i, distribution[i]);
             if (i === 0) {
                 ctx.moveTo(coords.x, coords.y);
@@ -168,8 +170,10 @@ export function createDistributionWidget(containerId, options) {
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 2;
         
+        // Only draw data points for years (not every month) to avoid clutter
         for (let i = 0; i < numYears; i++) {
-            const coords = dataToCanvas(i, distribution[i]);
+            const periodIndex = i * (numPeriods / numYears);
+            const coords = dataToCanvas(periodIndex, distribution[periodIndex]);
             const radius = 4;
             
             ctx.beginPath();
@@ -190,8 +194,8 @@ export function createDistributionWidget(containerId, options) {
         lastX = x;
         lastY = y;
         
-        const { yearIndex, probability } = canvasToData(x, y);
-        distribution[yearIndex] = probability;
+        const { periodIndex, probability } = canvasToData(x, y);
+        distribution[periodIndex] = probability;
         drawWidget();
         
         if (options.onChange) {
@@ -218,8 +222,8 @@ export function createDistributionWidget(containerId, options) {
                 const interpX = lastX + dx * t;
                 const interpY = lastY + dy * t;
                 
-                const { yearIndex, probability } = canvasToData(interpX, interpY);
-                distribution[yearIndex] = probability;
+                const { periodIndex, probability } = canvasToData(interpX, interpY);
+                distribution[periodIndex] = probability;
             }
             
             lastX = x;
@@ -259,7 +263,7 @@ export function createDistributionWidget(containerId, options) {
             drawWidget();
         },
         reset: () => {
-            distribution = Array(numYears).fill(0.5);
+            distribution = Array(numPeriods).fill(0.5);
             drawWidget();
         }
     };
