@@ -23,7 +23,14 @@ export function createDistributionWidget(containerId, options) {
     }
 
     const canvas = document.createElement('canvas');
-    canvas.width = options.width;
+    // Calculate responsive width if not provided
+    let widgetWidth = options.width;
+    if (!widgetWidth) {
+        const containerRect = container.getBoundingClientRect();
+        widgetWidth = containerRect.width - 40; // Account for padding
+    }
+    
+    canvas.width = widgetWidth;
     canvas.height = options.height;
     canvas.className = 'widget-canvas';
     
@@ -45,7 +52,7 @@ export function createDistributionWidget(containerId, options) {
     
     // Grid and styling constants
     const padding = 40;
-    const plotWidth = options.width - 2 * padding;
+    const plotWidth = widgetWidth - 2 * padding;
     const plotHeight = options.height - 2 * padding;
     const periodStep = plotWidth / (numPeriods - 1);
     
@@ -77,7 +84,7 @@ export function createDistributionWidget(containerId, options) {
     function drawWidget() {
         // Clear canvas
         ctx.fillStyle = '#f8f9fa';
-        ctx.fillRect(0, 0, options.width, options.height);
+        ctx.fillRect(0, 0, widgetWidth, options.height);
         
         // Draw grid
         drawGrid();
@@ -113,7 +120,7 @@ export function createDistributionWidget(containerId, options) {
             const y = padding + (i / 10) * plotHeight;
             ctx.beginPath();
             ctx.moveTo(padding, y);
-            ctx.lineTo(options.width - padding, y);
+            ctx.lineTo(widgetWidth - padding, y);
             ctx.stroke();
         }
     }
@@ -178,7 +185,7 @@ export function createDistributionWidget(containerId, options) {
         }
         
         // Close the path by going to bottom-right corner and back to start
-        ctx.lineTo(options.width - padding, options.height - padding);
+        ctx.lineTo(widgetWidth - padding, options.height - padding);
         ctx.closePath();
         ctx.fill();
         
@@ -187,7 +194,7 @@ export function createDistributionWidget(containerId, options) {
         const totalPercentage = Math.round(totalProbability * 100);
         
         // Determine if the center point is under the shaded region
-        const centerX = options.width / 2;
+        const centerX = widgetWidth / 2;
         const centerY = options.height / 2;
         const centerPeriodIndex = (centerX - padding) / periodStep;
         const clampedPeriodIndex = Math.max(0, Math.min(numPeriods - 1, Math.round(centerPeriodIndex)));

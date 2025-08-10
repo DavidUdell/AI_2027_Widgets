@@ -25,6 +25,7 @@
             text-align: center;
             margin: 20px auto;
             padding: 20px;
+            width: 100%;
         }
         
         .widget-canvas {
@@ -32,6 +33,9 @@
             border-radius: 4px;
             background: #f8f9fa;
             cursor: crosshair;
+            max-width: 100%;
+            display: block;
+            margin: 0 auto;
         }
         
         .highlight {
@@ -113,7 +117,6 @@
             const initialDistribution = Array(numPeriods).fill(0).map((_, i) => i / (numPeriods - 1));
             
             createDistributionWidget('distribution-widget', {
-                width: 600,
                 height: 300,
                 startYear: 2026,
                 endYear: 2040,
