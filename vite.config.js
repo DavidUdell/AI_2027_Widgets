@@ -8,4 +8,7 @@ export default defineConfig({
       fileName: (format) => `ai-2027-widgets.${format}.js`,
     },
   },
+  // Serve demo.html as the main page during development
+  root: ".",
+  publicDir: "public",
 });
