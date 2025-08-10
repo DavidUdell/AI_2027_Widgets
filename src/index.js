@@ -11,7 +11,7 @@
  * @param {number} options.height - Widget height in pixels
  * @param {number} options.startYear - Starting year for the distribution
  * @param {number} options.endYear - Ending year for the distribution
- * @param {boolean} [options.monthlyGranularity] - If true, use monthly ticks instead of yearly
+ * @param {boolean} [options.quarterlyGranularity] - If true, use quarterly ticks instead of yearly
  * @param {Array<number>} [options.initialDistribution] - Initial probability values (0-1) for each time period
  * @param {Function} [options.onChange] - Callback function called when distribution changes
  */
@@ -38,8 +38,8 @@ export function createDistributionWidget(containerId, options) {
     
     // Calculate number of time periods
     const numYears = options.endYear - options.startYear + 1;
-    // For monthly granularity, use (numYears - 1) * 12 + 1 to have only one notch for the final year
-    const numPeriods = options.monthlyGranularity ? (numYears - 1) * 12 + 1 : numYears;
+    // For quarterly granularity, use (numYears - 1) * 4 + 1 to have only one notch for the final year
+    const numPeriods = options.quarterlyGranularity ? (numYears - 1) * 4 + 1 : numYears;
     
     // Initialize distribution data
     let distribution = options.initialDistribution || 
@@ -137,13 +137,13 @@ export function createDistributionWidget(containerId, options) {
         // X-axis labels (years)
         for (let i = 0; i < numYears; i++) {
             let x;
-            if (options.monthlyGranularity) {
+            if (options.quarterlyGranularity) {
                 if (i === numYears - 1) {
                     // Final year label goes at the very end
                     x = padding + (numPeriods - 1) * periodStep;
                 } else {
-                    // Other years go at the start of each year (every 12 months)
-                    x = padding + i * 12 * periodStep;
+                    // Other years go at the start of each year (every 4 quarters)
+                    x = padding + i * 4 * periodStep;
                 }
             } else {
                 x = padding + i * periodStep;
@@ -242,16 +242,16 @@ export function createDistributionWidget(containerId, options) {
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 2;
         
-        // Only draw data points for years (not every month) to avoid clutter
+        // Only draw data points for years (not every quarter) to avoid clutter
         for (let i = 0; i < numYears; i++) {
             let periodIndex;
-            if (options.monthlyGranularity) {
+            if (options.quarterlyGranularity) {
                 if (i === numYears - 1) {
                     // Final year data point goes at the very end
                     periodIndex = numPeriods - 1;
                 } else {
-                    // Other years go at the start of each year (every 12 months)
-                    periodIndex = i * 12;
+                    // Other years go at the start of each year (every 4 quarters)
+                    periodIndex = i * 4;
                 }
             } else {
                 periodIndex = i;

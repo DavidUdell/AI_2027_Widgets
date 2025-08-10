@@ -111,16 +111,16 @@
         
         // Initialize widget when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
-            // Create initial distribution that covers the whole year range
-            // from 0% at start to 100% at end
-            const numPeriods = (2040 - 2026) * 12 + 1; // 14 years * 12 months + 1 = 169 months
-            const initialDistribution = Array(numPeriods).fill(0).map((_, i) => i / (numPeriods - 1));
+                    // Create initial distribution that covers the whole year range
+        // from 0% at start to 100% at end
+        const numPeriods = (2040 - 2026) * 4 + 1; // 14 years * 4 quarters + 1 = 57 quarters
+        const initialDistribution = Array(numPeriods).fill(0).map((_, i) => i / (numPeriods - 1));
             
             createDistributionWidget('distribution-widget', {
                 height: 300,
                 startYear: 2026,
                 endYear: 2040,
-                monthlyGranularity: true,
+                quarterlyGranularity: true,
                 initialDistribution: initialDistribution
             });
         });
