@@ -108,6 +108,52 @@ export function createDistributionWidget(containerId, options) {
         ctx.beginPath();
         ctx.rect(padding, padding, plotWidth, plotHeight);
         ctx.stroke();
+        
+        // Draw horizontal gridline at the maximum distribution value
+        const maxDistributionValue = Math.max(...distribution);
+        if (maxDistributionValue > 0) {
+            const maxY = dataToCanvas(0, maxDistributionValue).y;
+            
+            // Draw the gridline
+            ctx.strokeStyle = '#6c757d';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]); // Dashed line
+            ctx.beginPath();
+            ctx.moveTo(padding, maxY);
+            ctx.lineTo(widgetWidth - padding, maxY);
+            ctx.stroke();
+            ctx.setLineDash([]); // Reset to solid lines
+            
+            // Calculate and display the normalized value at this height
+            const totalMass = options.totalMass !== undefined ? options.totalMass : 
+                distribution.reduce((sum, prob) => sum + prob, 0) * 100;
+            const distributionSum = distribution.reduce((sum, prob) => sum + prob, 0);
+            const normalizationFactor = distributionSum > 0 ? totalMass / (distributionSum * 100) : 0;
+            const maxNormalizedValue = maxDistributionValue * normalizationFactor * 100;
+            
+            // Format the percentage value
+            const formatPercentage = (value) => {
+                if (value < 1) {
+                    return value.toFixed(2) + '%';
+                } else {
+                    return Math.round(value) + '%';
+                }
+            };
+            
+            // Draw the percentage label on the y-axis (left side)
+            ctx.fillStyle = '#6c757d';
+            ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(formatPercentage(maxNormalizedValue), padding - 5, maxY);
+        }
+        
+        // Draw the hardcoded 0% label at the bottom left
+        ctx.fillStyle = '#6c757d';
+        ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('0%', padding - 5, options.height - padding);
     }
 
     /**
