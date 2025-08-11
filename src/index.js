@@ -427,14 +427,26 @@ export function createDistributionWidget(containerId, options) {
         setDistribution: (newDistribution) => {
             distribution = [...newDistribution];
             drawWidget();
+            if (options.onChange) {
+                options.onChange(distribution);
+            }
         },
         setTotalMass: (totalMass) => {
             options.totalMass = totalMass;
             drawWidget();
+            if (options.onChange) {
+                options.onChange(distribution);
+            }
         },
         reset: () => {
             distribution = Array(numPeriods).fill(0.5);
             drawWidget();
+            if (options.onChange) {
+                options.onChange(distribution);
+            }
+        },
+        setOnChange: (callback) => {
+            options.onChange = callback;
         }
     };
 }
@@ -444,3 +456,6 @@ export function createWidget(containerId, options) {
     console.warn('createWidget is deprecated. Use createDistributionWidget instead.');
     return createDistributionWidget(containerId, options);
 }
+
+// Export Bayesian analysis functions
+export * from './bayesian.js';
