@@ -26,6 +26,7 @@
             margin: 20px auto;
             padding: 20px;
             width: 100%;
+            min-height: 550px;
         }
 
         .widget-canvas {
@@ -139,7 +140,7 @@
     <div class="widget-container">
         <div style="margin-bottom: 15px; text-align: center;">
             <label for="total-mass" style="font-weight: bold; margin-right:
-            10px;">Probability of AGI by 2040:</label>
+            10px;">Probability AGI by 2040:</label>
             <div class="number-input-container">
                 <input type="text" id="total-mass" value="50" 
                        class="number-input"
@@ -192,7 +193,7 @@
             const initialDistribution = Array(numPeriods).fill(0).map((_, i) => i / (numPeriods - 1));
 
             const widget = createDistributionWidget('distribution-widget', {
-                height: 300,
+                height: 500,
                 startYear: 2026,
                 endYear: 2040,
                 quarterlyGranularity: true,

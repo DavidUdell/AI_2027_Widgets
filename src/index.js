@@ -52,7 +52,7 @@ export function createDistributionWidget(containerId, options) {
     let lastY = 0;
 
     // Grid and styling constants
-    const padding = 40;
+    const padding = 80; // Increased padding further to accommodate 4-character y-axis values
     const plotWidth = widgetWidth - 2 * padding;
     const plotHeight = options.height - 2 * padding;
     const periodStep = plotWidth / (numPeriods - 1);
@@ -145,7 +145,7 @@ export function createDistributionWidget(containerId, options) {
             ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
             ctx.textAlign = 'right';
             ctx.textBaseline = 'middle';
-            ctx.fillText(formatPercentage(maxNormalizedValue), padding - 5, maxY);
+            ctx.fillText(formatPercentage(maxNormalizedValue), padding - 10, maxY);
             
             // Find the quarter with maximum probability and draw vertical guideline
             const maxIndex = distribution.indexOf(maxDistributionValue);
@@ -187,7 +187,7 @@ export function createDistributionWidget(containerId, options) {
         ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
-        ctx.fillText('0%', padding - 5, options.height - padding);
+        ctx.fillText('0%', padding - 10, options.height - padding);
     }
 
     /**
@@ -214,8 +214,26 @@ export function createDistributionWidget(containerId, options) {
                 x = padding + i * periodStep;
             }
             const year = options.startYear + i;
-            ctx.fillText(year.toString(), x, options.height - padding / 2);
+            ctx.fillText(year.toString(), x, options.height - padding / 2 - 10);
         }
+
+        // X-axis title
+        ctx.fillStyle = '#495057';
+        ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText('Quarters Until 2040', widgetWidth / 2, options.height - padding / 2 + 7);
+
+        // Y-axis title
+        ctx.save();
+        ctx.translate(padding / 2 - 14, options.height / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillStyle = '#495057';
+        ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('Probability AGI First Built In', 0, 0);
+        ctx.restore();
     }
 
     /**
