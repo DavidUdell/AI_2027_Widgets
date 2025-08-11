@@ -15,6 +15,8 @@
  * @param {Array<number>} [options.initialDistribution] - Initial probability values (0-1) for each time period
  * @param {Function} [options.onChange] - Callback function called when distribution changes
  * @param {number} [options.totalMass] - Total mass to display (as percentage, default calculated from distribution)
+ * @param {string} [options.color] - Color theme for the widget ('blue' or 'green')
+ * @param {boolean} [options.interactive] - Whether the widget is interactive (default: true)
  */
 export function createDistributionWidget(containerId, options) {
     const container = document.getElementById(containerId);
@@ -33,7 +35,13 @@ export function createDistributionWidget(containerId, options) {
 
     canvas.width = widgetWidth;
     canvas.height = options.height;
-    canvas.className = 'widget-canvas';
+    
+    // Set canvas class based on interactivity
+    if (options.interactive !== false) {
+        canvas.className = 'widget-canvas';
+    } else {
+        canvas.className = 'reference-widget-canvas';
+    }
 
     const ctx = canvas.getContext('2d');
 
@@ -56,6 +64,19 @@ export function createDistributionWidget(containerId, options) {
     const plotWidth = widgetWidth - 2 * padding;
     const plotHeight = options.height - 2 * padding;
     const periodStep = plotWidth / (numPeriods - 1);
+
+    // Color scheme based on options
+    const colorScheme = options.color === 'green' ? {
+        primary: '#28a745',
+        gradientStart: 'rgba(40, 167, 69, 0.3)',
+        gradientEnd: 'rgba(40, 167, 69, 0.1)',
+        stroke: '#28a745'
+    } : {
+        primary: '#007bff',
+        gradientStart: 'rgba(0, 123, 255, 0.3)',
+        gradientEnd: 'rgba(0, 123, 255, 0.1)',
+        stroke: '#007bff'
+    };
 
     /**
      * Convert canvas coordinates to period index and probability
@@ -240,10 +261,10 @@ export function createDistributionWidget(containerId, options) {
      * Draw the distribution curve
      */
     function drawDistributionCurve() {
-        // Create gradient for the fill
+        // Create gradient for the fill using the color scheme
         const gradient = ctx.createLinearGradient(padding, padding, padding, options.height - padding);
-        gradient.addColorStop(0, 'rgba(0, 123, 255, 0.3)');
-        gradient.addColorStop(1, 'rgba(0, 123, 255, 0.1)');
+        gradient.addColorStop(0, colorScheme.gradientStart);
+        gradient.addColorStop(1, colorScheme.gradientEnd);
 
         // Draw the filled area under the curve
         ctx.fillStyle = gradient;
@@ -293,8 +314,8 @@ export function createDistributionWidget(containerId, options) {
         ctx.textBaseline = 'middle';
         ctx.fillText(totalPercentage.toString() + '%', centerX, centerY);
 
-        // Draw the curve line on top
-        ctx.strokeStyle = '#007bff';
+        // Draw the curve line on top using the color scheme
+        ctx.strokeStyle = colorScheme.stroke;
         ctx.lineWidth = 2;
         ctx.beginPath();
 
@@ -315,6 +336,8 @@ export function createDistributionWidget(containerId, options) {
      * Handle mouse/touch events for drawing
      */
     function handlePointerDown(e) {
+        if (options.interactive === false) return; // Skip if not interactive
+        
         isDrawing = true;
         const rect = canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
@@ -332,7 +355,7 @@ export function createDistributionWidget(containerId, options) {
     }
 
     function handlePointerMove(e) {
-        if (!isDrawing) return;
+        if (!isDrawing || options.interactive === false) return;
 
         const rect = canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
@@ -368,14 +391,16 @@ export function createDistributionWidget(containerId, options) {
         isDrawing = false;
     }
 
-    // Add event listeners
-    canvas.addEventListener('pointerdown', handlePointerDown);
-    canvas.addEventListener('pointermove', handlePointerMove);
-    canvas.addEventListener('pointerup', handlePointerUp);
-    canvas.addEventListener('pointerleave', handlePointerUp);
+    // Add event listeners only if interactive
+    if (options.interactive !== false) {
+        canvas.addEventListener('pointerdown', handlePointerDown);
+        canvas.addEventListener('pointermove', handlePointerMove);
+        canvas.addEventListener('pointerup', handlePointerUp);
+        canvas.addEventListener('pointerleave', handlePointerUp);
 
-    // Prevent context menu
-    canvas.addEventListener('contextmenu', e => e.preventDefault());
+        // Prevent context menu
+        canvas.addEventListener('contextmenu', e => e.preventDefault());
+    }
 
     // Append canvas to container
     container.appendChild(canvas);

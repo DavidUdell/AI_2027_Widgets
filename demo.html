@@ -8,7 +8,7 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             line-height: 1.6;
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
             padding: 20px;
             color: #333;
@@ -20,13 +20,30 @@
             padding-bottom: 10px;
         }
 
+        h2 {
+            color: #2c3e50;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
         .widget-container {
             display: block;
             text-align: center;
             margin: 20px auto;
-            padding: 20px;
+            padding: 30px;
             width: 100%;
-            min-height: 550px;
+            min-height: 600px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            background: #fafafa;
+        }
+
+        .widget-container h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #2c3e50;
+            font-size: 20px;
         }
 
         .widget-canvas {
@@ -34,6 +51,15 @@
             border-radius: 4px;
             background: #f8f9fa;
             cursor: crosshair;
+            max-width: 100%;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .reference-widget-canvas {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f8f9fa;
             max-width: 100%;
             display: block;
             margin: 0 auto;
@@ -51,6 +77,21 @@
             padding: 12px;
             margin: 20px 0;
             border-radius: 4px;
+        }
+
+        .reference-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 30px;
+            margin: 40px 0;
+        }
+
+        .reference-section h2 {
+            margin-top: 0;
+            color: #28a745;
+            border-bottom: 2px solid #28a745;
+            padding-bottom: 10px;
         }
 
         /* Remove spinner arrows from number input */
@@ -118,7 +159,7 @@
     <h1>AI 2027 Widgets Demo</h1>
 
     <div class="instructions">
-        <strong>Instructions:</strong> Click and drag on the widget below to
+        <strong>Instructions:</strong> Click and drag on the interactive widget below to
         draw your probability distribution over years. The widget shows the
         probability of an event occurring in different years.
     </div>
@@ -138,6 +179,13 @@
     </p>
 
     <div class="widget-container">
+        <h2>Your Timelines</h2>
+        <p>
+            This interactive widget allows you to draw your own probability
+            distribution by clicking and dragging on the canvas above. The
+            distribution shows the probability of the event occurring in each year
+            from 2026 to 2040.
+        </p>
         <div style="margin-bottom: 15px; text-align: center;">
             <label for="total-mass" style="font-weight: bold; margin-right:
             10px;">Probability AGI by 2040:</label>
@@ -152,12 +200,16 @@
         <div id="distribution-widget"></div>
     </div>
 
-    <p>
-        This interactive widget allows you to draw your own probability
-        distribution by clicking and dragging on the canvas above. The
-        distribution shows the probability of the event occurring in each year
-        from 2026 to 2040.
-    </p>
+    <div class="reference-section">
+        <h2>Our Timelines</h2>
+        <p>
+            Below is an example reference distribution showing a typical bell curve
+            pattern. This demonstrates how probability distributions might look for
+            AGI development timelines, with higher probabilities concentrated around a
+            central timeframe.
+        </p>
+        <div id="reference-widget"></div>
+    </div>
 
     <p>
         Sed ut perspiciatis unde omnis iste natus error sit voluptatem
@@ -192,6 +244,14 @@
             const numPeriods = (2040 - 2026) * 4 + 1; // 14 years * 4 quarters + 1 = 57 quarters
             const initialDistribution = Array(numPeriods).fill(0).map((_, i) => i / (numPeriods - 1));
 
+            // Create reference distribution (bell curve shape)
+            const referenceDistribution = Array(numPeriods).fill(0).map((_, i) => {
+                const center = numPeriods / 2;
+                const sigma = numPeriods / 6;
+                const x = (i - center) / sigma;
+                return Math.exp(-(x * x) / 2);
+            });
+
             const widget = createDistributionWidget('distribution-widget', {
                 height: 500,
                 startYear: 2026,
@@ -199,6 +259,18 @@
                 quarterlyGranularity: true,
                 initialDistribution: initialDistribution,
                 totalMass: 50
+            });
+
+            // Create reference widget with green gradient
+            const referenceWidget = createDistributionWidget('reference-widget', {
+                height: 500,
+                startYear: 2026,
+                endYear: 2040,
+                quarterlyGranularity: true,
+                initialDistribution: referenceDistribution,
+                totalMass: 75,
+                color: 'green',
+                interactive: false
             });
 
             // Handle total mass input changes with intelligent validation
