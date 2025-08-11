@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 2027 Widgets Demo</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .widget-container {
+            display: block;
+            text-align: center;
+            margin: 20px auto;
+            padding: 20px;
+            width: 100%;
+            min-height: 550px;
+        }
+
+        .widget-canvas {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f8f9fa;
+            cursor: crosshair;
+            max-width: 100%;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .highlight {
+            background: #fff3cd;
+            padding: 2px 4px;
+            border-radius: 3px;
+        }
+
+        .instructions {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 12px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+
+        /* Remove spinner arrows from number input */
+        #total-mass::-webkit-outer-spin-button,
+        #total-mass::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        
+        #total-mass[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        /* Enhanced number input styling */
+        .number-input-container {
+            display: inline-flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .number-input {
+            padding: 4px 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 30px;
+            text-align: center;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+
+        .number-input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+
+        .number-input.invalid {
+            border-color: #dc3545;
+            background-color: #fff5f5;
+        }
+
+        .input-feedback {
+            position: absolute;
+            top: 100%;
+            left: 40%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: #6c757d;
+            white-space: nowrap;
+            margin-top: 0px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .input-feedback.error {
+            color: #dc3545;
+        }
+
+        .input-feedback.success {
+            color: #28a745;
+        }
+    </style>
+</head>
+<body>
+    <h1>AI 2027 Widgets Demo</h1>
+
+    <div class="instructions">
+        <strong>Instructions:</strong> Click and drag on the widget below to
+        draw your probability distribution over years. The widget shows the
+        probability of an event occurring in different years.
+    </div>
+
+    <p>
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod
+        tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
+        veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
+        commodo consequat.
+    </p>
+
+    <p>
+        Duis aute irure dolor in reprehenderit in voluptate velit esse cillum
+        dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
+        proident, sunt in culpa qui officia deserunt mollit anim id est
+        laborum:
+    </p>
+
+    <div class="widget-container">
+        <div style="margin-bottom: 15px; text-align: center;">
+            <label for="total-mass" style="font-weight: bold; margin-right:
+            10px;">Probability AGI by 2040:</label>
+            <div class="number-input-container">
+                <input type="text" id="total-mass" value="50" 
+                       class="number-input"
+                       inputmode="numeric" pattern="[0-9]*">
+                <span style="margin-left: 5px;">%</span>
+                <div id="input-feedback" class="input-feedback"></div>
+            </div>
+        </div>
+        <div id="distribution-widget"></div>
+    </div>
+
+    <p>
+        This interactive widget allows you to draw your own probability
+        distribution by clicking and dragging on the canvas above. The
+        distribution shows the probability of the event occurring in each year
+        from 2026 to 2040.
+    </p>
+
+    <p>
+        Sed ut perspiciatis unde omnis iste natus error sit voluptatem
+        accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae
+        ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt
+        explicabo.
+    </p>
+
+    <p>
+        Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut
+        fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem
+        sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor
+        sit amet, consectetur, adipisci velit, sed quia non numquam eius modi
+        tempora incidunt ut labore et dolore magnam aliquam quaerat voluptatem.
+    </p>
+
+    <p>
+        Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis
+        suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis
+        autem vel eum iure reprehenderit qui in ea voluptate velit esse quam
+        nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo
+        voluptas nulla pariatur?
+    </p>
+
+    <script type="module">
+        import { createDistributionWidget } from './src/index.js';
+
+        // Initialize widget when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            // Create initial distribution that covers the whole year range
+            // from 0% at start to 100% at end
+            const numPeriods = (2040 - 2026) * 4 + 1; // 14 years * 4 quarters + 1 = 57 quarters
+            const initialDistribution = Array(numPeriods).fill(0).map((_, i) => i / (numPeriods - 1));
+
+            const widget = createDistributionWidget('distribution-widget', {
+                height: 500,
+                startYear: 2026,
+                endYear: 2040,
+                quarterlyGranularity: true,
+                initialDistribution: initialDistribution,
+                totalMass: 50
+            });
+
+            // Handle total mass input changes with intelligent validation
+            const totalMassInput = document.getElementById('total-mass');
+            const inputFeedback = document.getElementById('input-feedback');
+            
+            // Debounce function to avoid excessive updates
+            let debounceTimer;
+            
+            function updateWidget(value) {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    widget.setTotalMass(value);
+                }, 100);
+            }
+            
+            function validateAndUpdateInput() {
+                const inputValue = totalMassInput.value.trim();
+                const feedback = inputFeedback;
+                
+                // Clear previous styling
+                totalMassInput.classList.remove('valid', 'invalid');
+                feedback.className = 'input-feedback';
+                feedback.textContent = '';
+                
+                // Handle empty input
+                if (inputValue === '') {
+                    totalMassInput.classList.add('invalid');
+                    feedback.classList.add('error');
+                    feedback.textContent = '0-100 only';
+                    return;
+                }
+                
+                // Check if input contains only digits
+                if (!/^\d+$/.test(inputValue)) {
+                    totalMassInput.classList.add('invalid');
+                    feedback.classList.add('error');
+                    feedback.textContent = 'Numbers only';
+                    return;
+                }
+                
+                const numValue = parseInt(inputValue, 10);
+                
+                // Check range
+                if (numValue < 0 || numValue > 100) {
+                    totalMassInput.classList.add('invalid');
+                    feedback.classList.add('error');
+                    feedback.textContent = '0-100 only';
+                    return;
+                }
+                
+                // Valid input
+                totalMassInput.classList.add('valid');
+                feedback.classList.add('success');
+                
+                // Update widget with valid value
+                updateWidget(numValue);
+            }
+            
+            // Handle input events
+            totalMassInput.addEventListener('input', validateAndUpdateInput);
+            totalMassInput.addEventListener('blur', () => {
+                // On blur, ensure we have a valid number
+                const inputValue = totalMassInput.value.trim();
+                if (inputValue === '') {
+                    totalMassInput.value = '50';
+                    validateAndUpdateInput();
+                } else if (/^\d+$/.test(inputValue)) {
+                    const numValue = parseInt(inputValue, 10);
+                    if (numValue >= 0 && numValue <= 100) {
+                        // Ensure clean formatting (remove leading zeros)
+                        totalMassInput.value = numValue.toString();
+                        validateAndUpdateInput();
+                    }
+                }
+            });
+            
+            // Handle keydown for better UX
+            totalMassInput.addEventListener('keydown', (e) => {
+                // Allow: backspace, delete, tab, escape, enter, and navigation keys
+                if ([8, 9, 27, 13, 46, 37, 38, 39, 40].includes(e.keyCode)) {
+                    return;
+                }
+                
+                // Allow digits only
+                if (e.keyCode >= 48 && e.keyCode <= 57) {
+                    return;
+                }
+                
+                // Allow numpad digits
+                if (e.keyCode >= 96 && e.keyCode <= 105) {
+                    return;
+                }
+                
+                // Prevent other keys
+                e.preventDefault();
+            });
+            
+            // Initialize with current value
+            validateAndUpdateInput();
+        });
+    </script>
+</body>
+</html>
