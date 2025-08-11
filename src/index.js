@@ -141,16 +141,50 @@ export function createDistributionWidget(containerId, options) {
             };
             
             // Draw the percentage label on the y-axis (left side)
-            ctx.fillStyle = '#6c757d';
-            ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
+            ctx.fillStyle = '#495057';
+            ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
             ctx.textAlign = 'right';
             ctx.textBaseline = 'middle';
             ctx.fillText(formatPercentage(maxNormalizedValue), padding - 5, maxY);
+            
+            // Find the quarter with maximum probability and draw vertical guideline
+            const maxIndex = distribution.indexOf(maxDistributionValue);
+            if (maxIndex !== -1) {
+                const maxX = dataToCanvas(maxIndex, 0).x;
+                
+                // Draw vertical guideline
+                ctx.strokeStyle = '#6c757d';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([5, 5]); // Dashed line - same as horizontal
+                ctx.beginPath();
+                ctx.moveTo(maxX, padding);
+                ctx.lineTo(maxX, options.height - padding);
+                ctx.stroke();
+                ctx.setLineDash([]); // Reset to solid lines
+                
+                // Get quarter name
+                let quarterName;
+                if (options.quarterlyGranularity) {
+                    const year = options.startYear + Math.floor(maxIndex / 4);
+                    const quarter = (maxIndex % 4) + 1;
+                    quarterName = `Q${quarter} ${year}`;
+                } else {
+                    const year = options.startYear + maxIndex;
+                    quarterName = year.toString();
+                }
+                
+                // Draw quarter name on top
+                ctx.fillStyle = '#495057';
+                ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(quarterName, maxX, padding - 5);
+            }
         }
         
         // Draw the hardcoded 0% label at the bottom left
-        ctx.fillStyle = '#6c757d';
-        ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
+        ctx.fillStyle = '#495057';
+        ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
         ctx.fillText('0%', padding - 5, options.height - padding);
