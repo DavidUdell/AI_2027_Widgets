@@ -1,23 +1,23 @@
 /**
- * AI 2027 Widgets - Interactive Distribution Drawing Widget
- * Allows users to draw arbitrary probability distributions over years
- */
+ * AI 2027 - Interactive Distribution Drawing Widget
+ * Allows users to draw sub-probability distributions over years/quarters
+ */ 
 
 /**
- * Creates an interactive canvas widget for drawing probability distributions over years
+ * Creates an interactive canvas widget for drawing sub-probability distributions over years/quarters
  * @param {string} containerId - The ID of the HTML element to insert the widget into
  * @param {Object} options - Widget configuration options
  * @param {number} options.width - Widget width in pixels
  * @param {number} options.height - Widget height in pixels
  * @param {number} options.startYear - Starting year for the distribution
  * @param {number} options.endYear - Ending year for the distribution
- * @param {boolean} [options.quarterlyGranularity] - If true, use quarterly ticks instead of yearly
- * @param {Array<number>} [options.initialDistribution] - Initial probability values (0-1) for each time period
+ * @param {Array<number>} [options.initialDistribution] - Initial probability values [0,1] for each time period
  * @param {Function} [options.onChange] - Callback function called when distribution changes
  * @param {number} [options.totalMass] - Total mass to display (as percentage, default calculated from distribution)
- * @param {string} [options.color] - Color theme for the widget ('blue' or 'green')
+ * @param {string} [options.color] - Color theme for the widget ('blue', 'green', or 'red')
  * @param {boolean} [options.interactive] - Whether the widget is interactive (default: true)
  */
+
 export function createDistributionWidget(containerId, options) {
     const container = document.getElementById(containerId);
     if (!container) {
@@ -35,7 +35,7 @@ export function createDistributionWidget(containerId, options) {
 
     canvas.width = widgetWidth;
     canvas.height = options.height;
-    
+
     // Set canvas class based on interactivity
     if (options.interactive !== false) {
         canvas.className = 'widget-canvas';
@@ -45,10 +45,9 @@ export function createDistributionWidget(containerId, options) {
 
     const ctx = canvas.getContext('2d');
 
-    // Calculate number of time periods
     const numYears = options.endYear - options.startYear + 1;
-    // For quarterly granularity, use (numYears - 1) * 4 + 1 to have only one notch for the final year
-    const numPeriods = options.quarterlyGranularity ? (numYears - 1) * 4 + 1 : numYears;
+    // Use (numYears - 1) * 4 + 1 to have only one quarter for the final year
+    const numPeriods = (numYears - 1) * 4 + 1
 
     // Initialize distribution data
     let distribution = options.initialDistribution || 
@@ -60,12 +59,11 @@ export function createDistributionWidget(containerId, options) {
     let lastY = 0;
 
     // Grid and styling constants
-    const padding = 80; // Increased padding further to accommodate 4-character y-axis values
+    const padding = 80;
     const plotWidth = widgetWidth - 2 * padding;
     const plotHeight = options.height - 2 * padding;
     const periodStep = plotWidth / (numPeriods - 1);
 
-    // Color scheme based on options
     let colorScheme;
     if (options.color === 'green') {
         colorScheme = {
@@ -121,33 +119,27 @@ export function createDistributionWidget(containerId, options) {
         ctx.fillStyle = '#f8f9fa';
         ctx.fillRect(0, 0, widgetWidth, options.height);
 
-        // Draw grid
         drawGrid();
-
-        // Draw axis labels
         drawAxisLabels();
-
-        // Draw distribution curve
         drawDistributionCurve();
     }
 
     /**
-     * Draw the background grid
+     * Draw static and dynamic gridlines
      */
     function drawGrid() {
         ctx.strokeStyle = '#dee2e6';
         ctx.lineWidth = 1;
 
-        // Draw border around the interactable region
         ctx.beginPath();
         ctx.rect(padding, padding, plotWidth, plotHeight);
         ctx.stroke();
-        
+
         // Draw horizontal gridline at the maximum distribution value
         const maxDistributionValue = Math.max(...distribution);
         if (maxDistributionValue > 0) {
             const maxY = dataToCanvas(0, maxDistributionValue).y;
-            
+
             // Draw the gridline
             ctx.strokeStyle = '#6c757d';
             ctx.lineWidth = 1;
@@ -157,14 +149,14 @@ export function createDistributionWidget(containerId, options) {
             ctx.lineTo(widgetWidth - padding, maxY);
             ctx.stroke();
             ctx.setLineDash([]); // Reset to solid lines
-            
+
             // Calculate and display the normalized value at this height
             const totalMass = options.totalMass !== undefined ? options.totalMass : 
                 distribution.reduce((sum, prob) => sum + prob, 0) * 100;
             const distributionSum = distribution.reduce((sum, prob) => sum + prob, 0);
             const normalizationFactor = distributionSum > 0 ? totalMass / (distributionSum * 100) : 0;
             const maxNormalizedValue = maxDistributionValue * normalizationFactor * 100;
-            
+
             // Format the percentage value
             const formatPercentage = (value) => {
                 if (value < 1) {
@@ -173,19 +165,19 @@ export function createDistributionWidget(containerId, options) {
                     return Math.round(value) + '%';
                 }
             };
-            
+
             // Draw the percentage label on the y-axis (left side)
             ctx.fillStyle = '#495057';
             ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
             ctx.textAlign = 'right';
             ctx.textBaseline = 'middle';
             ctx.fillText(formatPercentage(maxNormalizedValue), padding - 10, maxY);
-            
+
             // Find the quarter with maximum probability and draw vertical guideline
             const maxIndex = distribution.indexOf(maxDistributionValue);
             if (maxIndex !== -1) {
                 const maxX = dataToCanvas(maxIndex, 0).x;
-                
+
                 // Draw vertical guideline
                 ctx.strokeStyle = '#6c757d';
                 ctx.lineWidth = 1;
@@ -195,19 +187,14 @@ export function createDistributionWidget(containerId, options) {
                 ctx.lineTo(maxX, options.height - padding);
                 ctx.stroke();
                 ctx.setLineDash([]); // Reset to solid lines
-                
+
                 // Get quarter name
                 let quarterName;
-                if (options.quarterlyGranularity) {
-                    const year = options.startYear + Math.floor(maxIndex / 4);
-                    const quarter = (maxIndex % 4) + 1;
-                    quarterName = `Q${quarter} ${year}`;
-                } else {
-                    const year = options.startYear + maxIndex;
-                    quarterName = year.toString();
-                }
-                
-                // Draw quarter name on top
+                const year = options.startYear + Math.floor(maxIndex / 4);
+                const quarter = (maxIndex % 4) + 1;
+                quarterName = `Q${quarter} ${year}`;
+
+                // Draw top quarter name on top
                 ctx.fillStyle = '#495057';
                 ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
                 ctx.textAlign = 'center';
@@ -215,7 +202,7 @@ export function createDistributionWidget(containerId, options) {
                 ctx.fillText(quarterName, maxX, padding - 10);
             }
         }
-        
+
         // Draw the hardcoded 0% label at the bottom left
         ctx.fillStyle = '#495057';
         ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
@@ -236,16 +223,12 @@ export function createDistributionWidget(containerId, options) {
         // X-axis labels (years)
         for (let i = 0; i < numYears; i++) {
             let x;
-            if (options.quarterlyGranularity) {
-                if (i === numYears - 1) {
-                    // Final year label goes at the very end
-                    x = padding + (numPeriods - 1) * periodStep;
-                } else {
-                    // Other years go at the start of each year (every 4 quarters)
-                    x = padding + i * 4 * periodStep;
-                }
+            if (i === numYears - 1) {
+                // Final year label goes at the very end
+                x = padding + (numPeriods - 1) * periodStep;
             } else {
-                x = padding + i * periodStep;
+                // Other years go at the start of each year (every 4 quarters)
+                x = padding + i * 4 * periodStep;
             }
             const year = options.startYear + i;
             ctx.fillText(year.toString(), x, options.height - padding / 2 - 18);
@@ -349,8 +332,8 @@ export function createDistributionWidget(containerId, options) {
      * Handle mouse/touch events for drawing
      */
     function handlePointerDown(e) {
-        if (options.interactive === false) return; // Skip if not interactive
-        
+        if (options.interactive === false) return;
+
         isDrawing = true;
         const rect = canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
