@@ -62,6 +62,55 @@
         #total-mass[type=number] {
             -moz-appearance: textfield;
         }
+
+        /* Enhanced number input styling */
+        .number-input-container {
+            display: inline-flex;
+            align-items: center;
+            position: relative;
+        }
+
+        .number-input {
+            padding: 4px 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 30px;
+            text-align: center;
+            font-size: 14px;
+            transition: border-color 0.2s ease;
+        }
+
+        .number-input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        }
+
+        .number-input.invalid {
+            border-color: #dc3545;
+            background-color: #fff5f5;
+        }
+
+        .input-feedback {
+            position: absolute;
+            top: 100%;
+            left: 40%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: #6c757d;
+            white-space: nowrap;
+            margin-top: 0px;
+            text-align: center;
+            width: 100%;
+        }
+
+        .input-feedback.error {
+            color: #dc3545;
+        }
+
+        .input-feedback.success {
+            color: #28a745;
+        }
     </style>
 </head>
 <body>
@@ -90,11 +139,14 @@
     <div class="widget-container">
         <div style="margin-bottom: 15px; text-align: center;">
             <label for="total-mass" style="font-weight: bold; margin-right:
-            10px;">Total Distribution Mass:</label>
-            <input type="number" id="total-mass" value="50" min="0" max="100"
-            step="1" style="padding: 5px; border: 1px solid #ccc;
-            border-radius: 4px; width: 30px;">
-            <span style="margin-left: 5px;">%</span>
+            10px;">Probability of AGI by 2040:</label>
+            <div class="number-input-container">
+                <input type="text" id="total-mass" value="50" 
+                       class="number-input"
+                       inputmode="numeric" pattern="[0-9]*">
+                <span style="margin-left: 5px;">%</span>
+                <div id="input-feedback" class="input-feedback"></div>
+            </div>
         </div>
         <div id="distribution-widget"></div>
     </div>
@@ -148,28 +200,104 @@
                 totalMass: 50
             });
 
-            // Handle total mass input changes
+            // Handle total mass input changes with intelligent validation
             const totalMassInput = document.getElementById('total-mass');
-            totalMassInput.addEventListener('input', () => {
-                let targetMass = parseFloat(totalMassInput.value);
-
-                // Handle invalid input (NaN, undefined, etc.)
-                if (isNaN(targetMass)) {
-                    targetMass = 0;
-                    totalMassInput.value = '0';
-                } else {
-                    // Clamp to valid range (0-100)
-                    targetMass = Math.max(0, Math.min(100, targetMass));
-
-                    // Update input field if value was clamped
-                    const originalValue = parseFloat(totalMassInput.value);
-                    if (originalValue !== targetMass) {
-                        totalMassInput.value = targetMass.toString();
+            const inputFeedback = document.getElementById('input-feedback');
+            
+            // Debounce function to avoid excessive updates
+            let debounceTimer;
+            
+            function updateWidget(value) {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    widget.setTotalMass(value);
+                }, 100);
+            }
+            
+            function validateAndUpdateInput() {
+                const inputValue = totalMassInput.value.trim();
+                const feedback = inputFeedback;
+                
+                // Clear previous styling
+                totalMassInput.classList.remove('valid', 'invalid');
+                feedback.className = 'input-feedback';
+                feedback.textContent = '';
+                
+                // Handle empty input
+                if (inputValue === '') {
+                    totalMassInput.classList.add('invalid');
+                    feedback.classList.add('error');
+                    feedback.textContent = '0-100 only';
+                    return;
+                }
+                
+                // Check if input contains only digits
+                if (!/^\d+$/.test(inputValue)) {
+                    totalMassInput.classList.add('invalid');
+                    feedback.classList.add('error');
+                    feedback.textContent = 'Numbers only';
+                    return;
+                }
+                
+                const numValue = parseInt(inputValue, 10);
+                
+                // Check range
+                if (numValue < 0 || numValue > 100) {
+                    totalMassInput.classList.add('invalid');
+                    feedback.classList.add('error');
+                    feedback.textContent = '0-100 only';
+                    return;
+                }
+                
+                // Valid input
+                totalMassInput.classList.add('valid');
+                feedback.classList.add('success');
+                
+                // Update widget with valid value
+                updateWidget(numValue);
+            }
+            
+            // Handle input events
+            totalMassInput.addEventListener('input', validateAndUpdateInput);
+            totalMassInput.addEventListener('blur', () => {
+                // On blur, ensure we have a valid number
+                const inputValue = totalMassInput.value.trim();
+                if (inputValue === '') {
+                    totalMassInput.value = '50';
+                    validateAndUpdateInput();
+                } else if (/^\d+$/.test(inputValue)) {
+                    const numValue = parseInt(inputValue, 10);
+                    if (numValue >= 0 && numValue <= 100) {
+                        // Ensure clean formatting (remove leading zeros)
+                        totalMassInput.value = numValue.toString();
+                        validateAndUpdateInput();
                     }
                 }
-
-                widget.setTotalMass(targetMass);
             });
+            
+            // Handle keydown for better UX
+            totalMassInput.addEventListener('keydown', (e) => {
+                // Allow: backspace, delete, tab, escape, enter, and navigation keys
+                if ([8, 9, 27, 13, 46, 37, 38, 39, 40].includes(e.keyCode)) {
+                    return;
+                }
+                
+                // Allow digits only
+                if (e.keyCode >= 48 && e.keyCode <= 57) {
+                    return;
+                }
+                
+                // Allow numpad digits
+                if (e.keyCode >= 96 && e.keyCode <= 105) {
+                    return;
+                }
+                
+                // Prevent other keys
+                e.preventDefault();
+            });
+            
+            // Initialize with current value
+            validateAndUpdateInput();
         });
     </script>
 </body>
