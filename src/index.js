@@ -214,12 +214,12 @@ export function createDistributionWidget(containerId, options) {
                 x = padding + i * periodStep;
             }
             const year = options.startYear + i;
-            ctx.fillText(year.toString(), x, options.height - padding / 2 - 10);
+            ctx.fillText(year.toString(), x, options.height - padding / 2 - 14);
         }
 
         // X-axis title
         ctx.fillStyle = '#495057';
-        ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, sans-serif';
+        ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         ctx.fillText('Quarters Until 2040', widgetWidth / 2, options.height - padding / 2 + 7);
@@ -229,7 +229,7 @@ export function createDistributionWidget(containerId, options) {
         ctx.translate(padding / 2 - 14, options.height / 2);
         ctx.rotate(-Math.PI / 2);
         ctx.fillStyle = '#495057';
-        ctx.font = 'bold 14px -apple-system, BlinkMacSystemFont, sans-serif';
+        ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('Probability AGI First Built In', 0, 0);
