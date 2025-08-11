@@ -1,83 +1,106 @@
 /**
  * Bayesian Analysis Module
- * Simple log score calculation for comparing probability distributions
+ * Log score calculation for comparing sub-probability distributions
  */
 
 /**
- * Calculate log score for a prediction against ground truth
- * Log score = KL(groundTruth || prediction) - log(mass_groundTruth) + log(mass_prediction)
- * This handles unnormalized distributions properly
+ * Calculate log score for a prediction distribution against ground truth distribution
+ * Log score = H( Q_truth, P_prediction ) - log(predictionMass)
  * Lower scores are better (closer to ground truth)
- * 
- * @param {Array<number>} prediction - Predicted distribution (unnormalized)
- * @param {Array<number>} groundTruth - Ground truth distribution (unnormalized)
+ *
+ * @param {Array<number>} prediction - Predicted sub-probability distribution
+ * @param {Array<number>} truth - Ground truth sub-probability distribution
  * @returns {number} Log score (lower is better)
  */
-export function calculateLogScore(prediction, groundTruth) {
-    if (prediction.length !== groundTruth.length) {
-        throw new Error('Distributions must have the same length');
+
+export function calculateLogScore(prediction, truth) {
+    const tolerance = 1e-10;
+    const onePlusTol = 1 + tolerance;
+
+    // Catch distribution entry errors
+    if (prediction.length !== truth.length) {
+        throw new Error('Distributions must have the same shape');
     }
-    
-    // Calculate total masses
-    const predictionMass = prediction.reduce((sum, p) => sum + p, 0);
-    const groundTruthMass = groundTruth.reduce((sum, p) => sum + p, 0);
-    
-    if (predictionMass === 0 || groundTruthMass === 0) {
-        throw new Error('Distributions cannot have zero total mass');
+    if (prediction.length === 0) {
+        throw new Error('Distributions must have at least one entry');
     }
-    
-    // Normalize distributions
-    const normalizedPrediction = prediction.map(p => p / predictionMass);
-    const normalizedGroundTruth = groundTruth.map(p => p / groundTruthMass);
-    
-    // Calculate KL divergence: KL(groundTruth || prediction)
-    const epsilon = 1e-10;
-    let klDivergence = 0;
-    
-    for (let i = 0; i < normalizedGroundTruth.length; i++) {
-        const p = normalizedGroundTruth[i];
-        const q = normalizedPrediction[i];
-        
-        if (p > epsilon && q > epsilon) {
-            klDivergence += p * Math.log(p / q);
-        } else if (p > epsilon && q <= epsilon) {
-            // Ground truth has mass where prediction has none - infinite penalty
-            return Infinity;
-        }
-        // If p <= epsilon, contribution is 0 (0 * log(anything) = 0)
+    if (prediction.some(v => !Number.isFinite(v)) || truth.some(v => !Number.isFinite(v))) {
+        throw new Error('Distributions must be finite');
     }
-    
-    // Add log mass terms for proper handling of unnormalized distributions
-    const logScore = klDivergence - Math.log(groundTruthMass) + Math.log(predictionMass);
-    
-    return logScore;
+    if (prediction.some(v => v < -tolerance) || truth.some(v => v < -tolerance)) {
+        throw new Error('Distributions cannot contain negative values');
+    }
+
+    // Total masses
+    const predictionMass = prediction.reduce((sum, v) => sum + v, 0);
+    const truthMass = truth.reduce((sum, v) => sum + v, 0);
+
+    if (predictionMass > onePlusTol) {
+        throw new Error('Distribution mass cannot exceed 1');
+    }
+
+    if (predictionMass <= tolerance) return Infinity;
+    if (truthMass <= tolerance) {
+        throw new Error('Ground truth distribution mass cannot be 0');
+    }
+
+    // Normalize
+    const Q = truth.map(v => v / truthMass);
+    const P = prediction.map(v => v / predictionMass);
+
+    // H( Q_truth, P_prediction )
+    let crossEntropy = 0;
+    for (let i = 0; i < Q.length; i++) {
+        const q = Q[i], p = P[i];
+
+        if (q <= 0) continue;
+        if (p <= 0) return Infinity;
+        crossEntropy += -q * Math.log(p);
+    }
+
+    // Subtract log mass (to properly score sub-probability distributions)
+    return crossEntropy - Math.log(predictionMass);
 }
 
 /**
  * Compare two predictions against ground truth using log scores
- * @param {Array<number>} prediction1 - First prediction (unnormalized)
- * @param {Array<number>} prediction2 - Second prediction (unnormalized)
- * @param {Array<number>} groundTruth - Ground truth (unnormalized)
+ * @param {Array<number>} prediction1 - First sub-probability distribution
+ * @param {Array<number>} prediction2 - Second sub-probability distribution
+ * @param {Array<number>} truth - Ground truth sub-probability distribution
  * @returns {Object} Comparison results
  */
-export function comparePredictions(prediction1, prediction2, groundTruth) {
-    const score1 = calculateLogScore(prediction1, groundTruth);
-    const score2 = calculateLogScore(prediction2, groundTruth);
-    
-    const winner = score1 < score2 ? 'prediction1' : 'prediction2';
-    
-    // Handle case where scores are equal or both are 0
-    let improvement;
-    if (Math.abs(score1 - score2) < 1e-10) {
-        improvement = 0;
-    } else {
-        improvement = Math.abs(score1 - score2) / Math.max(score1, score2) * 100;
+
+export function comparePredictions(prediction1, prediction2, truth) {
+    const first = calculateLogScore(prediction1, truth);
+    const second = calculateLogScore(prediction2, truth);
+    const tolerance = 1e-10;
+
+    let winning = 'tie';
+    if (Number.isFinite(first) && Number.isFinite(second)) {
+        if (Math.abs(first - second) > tolerance) {
+            winning = first < second ? 'prediction1' : 'prediction2';
+        }
     }
-    
+    // Smaller scores are better
+    else if (Number.isFinite(first) && !Number.isFinite(second)) {
+        winning = 'prediction1';
+    }
+    else if (!Number.isFinite(first) && Number.isFinite(second)) {
+        winning = 'prediction2';
+    }
+    // else if both infinitely bad or very close, tie
+
+    let gap = null, factor = null;
+    if (Number.isFinite(first) && Number.isFinite(second)) {
+        gap = second - first;
+        factor = Math.exp(-gap);
+    }
+
     return {
-        prediction1: { logScore: score1 },
-        prediction2: { logScore: score2 },
-        winner,
-        improvement: improvement.toFixed(1)
+        prediction1: { logScore: first },
+        prediction2: { logScore: second },
+        winning: winning,
+        gap: gap,
+        factor: factor,
     };
 }
