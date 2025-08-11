@@ -30,7 +30,7 @@ export function createDistributionWidget(containerId, options) {
     let widgetWidth = options.width;
     if (!widgetWidth) {
         const containerRect = container.getBoundingClientRect();
-        widgetWidth = containerRect.width - 40; // Account for padding
+        widgetWidth = containerRect.width - 20; // Account for padding
     }
 
     canvas.width = widgetWidth;
