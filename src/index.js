@@ -66,17 +66,30 @@ export function createDistributionWidget(containerId, options) {
     const periodStep = plotWidth / (numPeriods - 1);
 
     // Color scheme based on options
-    const colorScheme = options.color === 'green' ? {
-        primary: '#28a745',
-        gradientStart: 'rgba(40, 167, 69, 0.3)',
-        gradientEnd: 'rgba(40, 167, 69, 0.1)',
-        stroke: '#28a745'
-    } : {
-        primary: '#007bff',
-        gradientStart: 'rgba(0, 123, 255, 0.3)',
-        gradientEnd: 'rgba(0, 123, 255, 0.1)',
-        stroke: '#007bff'
-    };
+    let colorScheme;
+    if (options.color === 'green') {
+        colorScheme = {
+            primary: '#28a745',
+            gradientStart: 'rgba(40, 167, 69, 0.3)',
+            gradientEnd: 'rgba(40, 167, 69, 0.1)',
+            stroke: '#28a745'
+        };
+    } else if (options.color === 'red') {
+        colorScheme = {
+            primary: '#dc3545',
+            gradientStart: 'rgba(220, 53, 69, 0.3)',
+            gradientEnd: 'rgba(220, 53, 69, 0.1)',
+            stroke: '#dc3545'
+        };
+    } else {
+        // Default blue
+        colorScheme = {
+            primary: '#007bff',
+            gradientStart: 'rgba(0, 123, 255, 0.3)',
+            gradientEnd: 'rgba(0, 123, 255, 0.1)',
+            stroke: '#007bff'
+        };
+    }
 
     /**
      * Convert canvas coordinates to period index and probability

@@ -110,6 +110,13 @@
             padding-bottom: 10px;
         }
 
+        .ground-truth-section h2 {
+            margin-top: 0;
+            color: #dc3545;
+            border-bottom: 2px solid #dc3545;
+            padding-bottom: 10px;
+        }
+
         /* Remove spinner arrows from number input */
         #total-mass::-webkit-outer-spin-button,
         #total-mass::-webkit-inner-spin-button {
@@ -248,6 +255,20 @@
         voluptas nulla pariatur?
     </p>
 
+    <div class="reference-section ground-truth-section">
+        <h2>Ground Truth AGI Timeline</h2>
+        <p>
+            This represents the hypothetical "ground truth" distribution over
+            quarters in which AGI might actually be developed:
+        </p>
+        <div id="ground-truth-widget"></div>
+        <p>
+            The ground truth distribution has a total mass of 85%, with a peak
+            in Q3 of 2035, indicating a later and more conservative timeline
+            compared to our estimates.
+        </p>
+    </div>
+
     <script type="module">
         import { createDistributionWidget } from './src/index.js';
 
@@ -284,6 +305,26 @@
                 initialDistribution: referenceDistribution,
                 totalMass: 75,
                 color: 'green',
+                interactive: false
+            });
+
+            // Create ground truth distribution (later peak, red color)
+            const groundTruthDistribution = Array(numPeriods).fill(0).map((_, i) => {
+                const center = numPeriods * 0.7; // Later peak (around 2035)
+                const sigma = numPeriods / 8; // Slightly wider spread
+                const x = (i - center) / sigma;
+                return Math.exp(-(x * x) / 2);
+            });
+
+            // Create ground truth widget with red gradient
+            const groundTruthWidget = createDistributionWidget('ground-truth-widget', {
+                height: 500,
+                startYear: 2026,
+                endYear: 2040,
+                quarterlyGranularity: true,
+                initialDistribution: groundTruthDistribution,
+                totalMass: 85,
+                color: 'red',
                 interactive: false
             });
 
