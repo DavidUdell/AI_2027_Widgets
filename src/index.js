@@ -178,7 +178,7 @@ export function createDistributionWidget(containerId, options) {
                 ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'bottom';
-                ctx.fillText(quarterName, maxX, padding - 5);
+                ctx.fillText(quarterName, maxX, padding - 10);
             }
         }
         
@@ -214,7 +214,7 @@ export function createDistributionWidget(containerId, options) {
                 x = padding + i * periodStep;
             }
             const year = options.startYear + i;
-            ctx.fillText(year.toString(), x, options.height - padding / 2 - 14);
+            ctx.fillText(year.toString(), x, options.height - padding / 2 - 18);
         }
 
         // X-axis title
