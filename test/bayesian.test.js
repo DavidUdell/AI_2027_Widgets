@@ -20,11 +20,13 @@ describe('Bayesian Analysis Module', () => {
             expect(logScore).toBeCloseTo(Math.log(2), 5);
         });
 
-        test('should return higher scores for different distributions', () => {
-            const prediction = [1, 2, 3];
-            const groundTruth = [3, 2, 1];
+        test('should return a positive score for differing distributions', () => {
+            const prediction = [0, 0, 1];
+            const groundTruth = [1, 0, 0];
+            const predProb = 100;
+            const truthProb = 100;
             
-            const logScore = calculateLogScore(prediction, groundTruth);
+            const logScore = calculateLogScore(prediction, predProb, groundTruth, truthProb);
             expect(logScore).toBeGreaterThan(0);
         });
 
