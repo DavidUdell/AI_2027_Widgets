@@ -5,7 +5,7 @@
 
 /**
  * Calculate log score for a prediction distribution against ground truth distribution
- * Log score = H( Q_truth, P_prediction ) - log(predictionMass)
+ * Score = truthMass * H( Q_truth, P_prediction ) - truthMass * log(predMass) - (1 - truthMass) * log(1 - predMass)
  * Lower scores are better (closer to ground truth)
  *
  * @param {Array<number>} prediction - Predicted sub-probability distribution
@@ -14,13 +14,13 @@
  */
 
 export function calculateLogScore(prediction, predProb, truth, truthProb) {
-    const tolerance = 1e-10;
+    const tolerance = 1e-12;
     const onePlusTol = 1 + tolerance;
 
     const predMass = predProb / 100;
     const truthMass = truthProb / 100;
 
-    // Catch distribution entry errors
+    // Catch distribution element errors
     if (prediction.length !== truth.length) {
         throw new Error('Distributions must have the same shape');
     }
@@ -34,14 +34,24 @@ export function calculateLogScore(prediction, predProb, truth, truthProb) {
         throw new Error('Distributions cannot contain negative values');
     }
 
+    // Catch total mass errors
     if (predMass > onePlusTol) {
-        throw new Error('Distribution mass cannot exceed 1, but was ' + predMass);
+        throw new Error('Prediction mass cannot exceed 1, but was ' + predMass);
+    }
+    if (truthMass > onePlusTol) {
+        throw new Error('Ground truth mass cannot exceed 1, but was ' + truthMass);
+    }
+    if (predMass <= -tolerance) {
+        throw new Error('Prediction mass cannot be negative, but was ' + predMass);
+    }
+    if (truthMass <= -tolerance) {
+        throw new Error('Ground truth mass cannot be negative, but was ' + truthMass);
     }
 
-    if (predMass <= tolerance) return Infinity;
-    if (truthMass <= tolerance) {
-        throw new Error('Ground truth distribution mass cannot be 0');
-    }
+    // You put nothing on the event that might have occured
+    if (predMass <= tolerance && truthMass > tolerance) return Infinity;
+    // You bet everything on an event that might not have happened
+    if ((1 - predMass) <= tolerance && (1 - truthMass) > tolerance) return Infinity;
 
     // Normalize--these are the behind-the-scenes mass values, not the proper
     // labeled values.
@@ -60,8 +70,7 @@ export function calculateLogScore(prediction, predProb, truth, truthProb) {
         crossEntropy += -q * Math.log(p);
     }
 
-    // Subtract log mass (to properly score sub-probability distributions)
-    return crossEntropy - Math.log(predMass);
+    return truthMass * crossEntropy - truthMass * Math.log(predMass) - (1 - truthMass) * Math.log(1 - predMass);
 }
 
 /**
