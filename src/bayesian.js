@@ -13,9 +13,12 @@
  * @returns {number} Log score (lower is better)
  */
 
-export function calculateLogScore(prediction, truth) {
+export function calculateLogScore(prediction, predProb, truth, truthProb) {
     const tolerance = 1e-10;
     const onePlusTol = 1 + tolerance;
+
+    const predMass = predProb / 100;
+    const truthMass = truthProb / 100;
 
     // Catch distribution entry errors
     if (prediction.length !== truth.length) {
@@ -31,22 +34,21 @@ export function calculateLogScore(prediction, truth) {
         throw new Error('Distributions cannot contain negative values');
     }
 
-    // Total masses
-    const predictionMass = prediction.reduce((sum, v) => sum + v, 0);
-    const truthMass = truth.reduce((sum, v) => sum + v, 0);
-
-    if (predictionMass > onePlusTol) {
-        throw new Error('Distribution mass cannot exceed 1, but was ' + predictionMass);
+    if (predMass > onePlusTol) {
+        throw new Error('Distribution mass cannot exceed 1, but was ' + predMass);
     }
 
-    if (predictionMass <= tolerance) return Infinity;
+    if (predMass <= tolerance) return Infinity;
     if (truthMass <= tolerance) {
         throw new Error('Ground truth distribution mass cannot be 0');
     }
 
-    // Normalize
-    const Q = truth.map(v => v / truthMass);
-    const P = prediction.map(v => v / predictionMass);
+    // Normalize--these are the behind-the-scenes mass values, not the proper
+    // labeled values.
+    const predDenominator = prediction.reduce((sum, v) => sum + v, 0);
+    const truthDenominator = truth.reduce((sum, v) => sum + v, 0);
+    const Q = truth.map(v => v / truthDenominator);
+    const P = prediction.map(v => v / predDenominator);
 
     // H( Q_truth, P_prediction )
     let crossEntropy = 0;
@@ -59,7 +61,7 @@ export function calculateLogScore(prediction, truth) {
     }
 
     // Subtract log mass (to properly score sub-probability distributions)
-    return crossEntropy - Math.log(predictionMass);
+    return crossEntropy - Math.log(predMass);
 }
 
 /**
@@ -70,9 +72,9 @@ export function calculateLogScore(prediction, truth) {
  * @returns {Object} Comparison results
  */
 
-export function comparePredictions(prediction1, prediction2, truth) {
-    const first = calculateLogScore(prediction1, truth);
-    const second = calculateLogScore(prediction2, truth);
+export function comparePredictions(prediction1, predProb1, prediction2, predProb2, truth, truthProb) {
+    const first = calculateLogScore(prediction1, predProb1, truth, truthProb);
+    const second = calculateLogScore(prediction2, predProb2, truth, truthProb);
     const tolerance = 1e-10;
 
     let winning = 'tie';

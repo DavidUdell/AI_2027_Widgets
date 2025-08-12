@@ -500,7 +500,7 @@
                     const yourDist = widget.getDistribution();
                     const trueDist = groundTruthWidget.getDistribution();
 
-                    const comparisons = comparePredictions(ourDist, yourDist, trueDist);
+                    const comparisons = comparePredictions(ourDist, 75, yourDist, 50, trueDist, 85);
 
                     const winner = comparisons.winning === 'prediction1' ? 'Our AGI Timelines' : 
                                   comparisons.winning === 'prediction2' ? 'Your AGI Timelines' : 'Tie';
@@ -513,7 +513,7 @@
                             <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #dee2e6;">
                                 <h3 style="color: #28a745; margin-top: 0;">Our AGI Timelines</h3>
                                 <p><strong>Log Score:</strong> ${comparisons.prediction1.logScore === Infinity ? '∞' : comparisons.prediction1.logScore.toFixed(6)}</p>
-                                <p><strong>Total Mass:</strong> ${referenceMass}%</p>
+                                <p><strong>Total Mass:</strong> ${75}%</p>
                                 <p><strong>Interpretation:</strong> ${comparisons.prediction1.logScore === Infinity ? 'Infinite penalty (zero mass where ground truth has mass)' : 
                                     comparisons.prediction1.logScore === 0 ? 'Perfect prediction' : 
                                     comparisons.prediction1.logScore < 0.1 ? 'Excellent prediction' :
@@ -523,7 +523,7 @@
                             <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #dee2e6;">
                                 <h3 style="color: #007bff; margin-top: 0;">Your AGI Timelines</h3>
                                 <p><strong>Log Score:</strong> ${comparisons.prediction2.logScore === Infinity ? '∞' : comparisons.prediction2.logScore.toFixed(6)}</p>
-                                <p><strong>Total Mass:</strong> ${interactiveMass}%</p>
+                                <p><strong>Total Mass:</strong> ${50}%</p>
                                 <p><strong>Interpretation:</strong> ${comparisons.prediction2.logScore === Infinity ? 'Infinite penalty (zero mass where ground truth has mass)' : 
                                     comparisons.prediction2.logScore === 0 ? 'Perfect prediction' : 
                                     comparisons.prediction2.logScore < 0.1 ? 'Excellent prediction' :
