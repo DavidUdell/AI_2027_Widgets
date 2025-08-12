@@ -494,6 +494,8 @@
                 const analysisContainer = document.getElementById('bayesian-analysis');
 
                 try {
+                    // Distributions are arrays of Numbers, with each number in
+                    // [0, 1].
                     const ourDist = referenceWidget.getDistribution();
                     const yourDist = widget.getDistribution();
                     const trueDist = groundTruthWidget.getDistribution();
