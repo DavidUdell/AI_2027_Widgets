@@ -53,12 +53,28 @@ export function calculateLogScore(prediction, predProb, truth, truthProb) {
     // You bet everything on an event that might not have happened
     if ((1 - predMass) <= tolerance && (1 - truthMass) > tolerance) return Infinity;
 
-    // Normalize arrays--these are the behind-the-scenes vector values, not the proper
+    // Normalize arrays--these are the behind-the-scenes vector values, not the
     // labeled probability mass values.
+    let Q;
+    let P;
     const predDenominator = prediction.reduce((sum, v) => sum + v, 0);
     const truthDenominator = truth.reduce((sum, v) => sum + v, 0);
-    const Q = truth.map(v => v / truthDenominator);
-    const P = prediction.map(v => v / predDenominator);
+    if (predMass > tolerance && predDenominator < tolerance) {
+        // Zero vector with mass becomes uniform sub-probability distribution
+        P = prediction.map(v => 1 / prediction.length);
+    }
+    else {
+        // Normalize vector
+        P = prediction.map(v => v / predDenominator);    
+    }
+    if (truthDenominator < tolerance) {
+        // Zero vector with mass
+        Q = truth.map(v => 1 / truth.length);
+    }
+    else {
+        // Normalize vector
+        Q = truth.map(v => v / truthDenominator);
+    }
 
     // H( Q_truth, P_prediction )
     let crossEntropy = 0;
