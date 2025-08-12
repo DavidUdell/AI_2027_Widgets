@@ -36,7 +36,7 @@ export function calculateLogScore(prediction, truth) {
     const truthMass = truth.reduce((sum, v) => sum + v, 0);
 
     if (predictionMass > onePlusTol) {
-        throw new Error('Distribution mass cannot exceed 1');
+        throw new Error('Distribution mass cannot exceed 1, but was ' + predictionMass);
     }
 
     if (predictionMass <= tolerance) return Infinity;
