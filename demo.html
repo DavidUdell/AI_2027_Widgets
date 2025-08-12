@@ -337,7 +337,7 @@
 
 
     <script type="module">
-        import { createDistributionWidget } from './src/index.js';
+        import { createDistributionWidget, calculateLogScore, comparePredictions } from './src/index.js';
 
         // Initialize widget when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
@@ -492,83 +492,6 @@
             // Initialize with current value
             validateAndUpdateInput();
 
-            // Bayesian analysis functions - Simplified Log Score
-            function calculateLogScore(prediction, groundTruth) {
-                if (prediction.length !== groundTruth.length) {
-                    throw new Error('Distributions must have the same length');
-                }
-
-                // Calculate total masses
-                const predictionMass = prediction.reduce((sum, p) => sum + p, 0);
-                const groundTruthMass = groundTruth.reduce((sum, p) => sum + p, 0);
-
-                if (predictionMass === 0 || groundTruthMass === 0) {
-                    throw new Error('Distributions cannot have zero total mass');
-                }
-
-                // Normalize distributions
-                const normalizedPrediction = prediction.map(p => p / predictionMass);
-                const normalizedGroundTruth = groundTruth.map(p => p / groundTruthMass);
-
-                // Calculate KL divergence: KL(groundTruth || prediction)
-                const epsilon = 1e-10;
-                let klDivergence = 0;
-
-                for (let i = 0; i < normalizedGroundTruth.length; i++) {
-                    const p = normalizedGroundTruth[i];
-                    const q = normalizedPrediction[i];
-
-                    if (p > epsilon && q > epsilon) {
-                        klDivergence += p * Math.log(p / q);
-                    } else if (p > epsilon && q <= epsilon) {
-                        // Ground truth has mass where prediction has none - infinite penalty
-                        return Infinity;
-                    }
-                }
-
-                // Add log mass terms for proper handling of unnormalized distributions
-                const logScore = klDivergence - Math.log(groundTruthMass) + Math.log(predictionMass);
-
-                return logScore;
-            }
-
-            function comparePredictions(prediction1, prediction2, groundTruth) {
-                const score1 = calculateLogScore(prediction1, groundTruth);
-                const score2 = calculateLogScore(prediction2, groundTruth);
-
-                const winner = score1 < score2 ? 'prediction1' : 'prediction2';
-
-                // Handle special cases
-                let improvement;
-                if (score1 === Infinity && score2 === Infinity) {
-                    // Both predictions are equally bad (both have infinite penalty)
-                    improvement = 0;
-                } else if (score1 === Infinity) {
-                    // prediction1 has infinite penalty, prediction2 wins
-                    improvement = 100;
-                } else if (score2 === Infinity) {
-                    // prediction2 has infinite penalty, prediction1 wins
-                    improvement = 100;
-                } else if (Math.abs(score1 - score2) < 1e-10 || Math.max(score1, score2) === 0) {
-                    // Scores are very close or both are 0
-                    improvement = 0;
-                } else {
-                    // Normal case: calculate percentage improvement
-                    improvement = Math.abs(score1 - score2) / Math.max(score1, score2) * 100;
-                    // Ensure improvement is finite
-                    if (!isFinite(improvement)) {
-                        improvement = 0;
-                    }
-                }
-
-                return {
-                    prediction1: { logScore: score1 },
-                    prediction2: { logScore: score2 },
-                    winner,
-                    improvement: improvement.toFixed(1)
-                };
-            }
-
             function updateBayesianAnalysis() {
                 const analysisContainer = document.getElementById('bayesian-analysis');
 
@@ -578,59 +501,66 @@
                     const interactiveDist = widget.getDistribution();
                     const groundTruthDist = groundTruthWidget.getDistribution();
 
-                    // Scale distributions to their total masses (for display purposes)
+                    // Get total masses as percentages
                     const referenceMass = 75;
                     const interactiveMass = parseInt(document.getElementById('total-mass').value) || 50;
                     const groundTruthMass = 85;
 
-                    const scaledReference = referenceDist.map(p => p * referenceMass / 100);
-                    const scaledInteractive = interactiveDist.map(p => p * interactiveMass / 100);
-                    const scaledGroundTruth = groundTruthDist.map(p => p * groundTruthMass / 100);
+                    // Convert percentage masses to decimal for the Bayesian module
+                    // The Bayesian module expects sub-probability distributions with masses <= 1
+                    // First normalize the distributions, then scale by the target mass
+                    const normalizeAndScale = (dist, targetMass) => {
+                        const totalMass = dist.reduce((sum, p) => sum + p, 0);
+                        if (totalMass === 0) return dist.map(() => 0);
+                        return dist.map(p => (p / totalMass) * (targetMass / 100));
+                    };
+                    
+                    const scaledReference = normalizeAndScale(referenceDist, referenceMass);
+                    const scaledInteractive = normalizeAndScale(interactiveDist, interactiveMass);
+                    const scaledGroundTruth = normalizeAndScale(groundTruthDist, groundTruthMass);
 
-                    // Calculate log scores
-                    const referenceScore = calculateLogScore(scaledReference, scaledGroundTruth);
-                    const interactiveScore = calculateLogScore(scaledInteractive, scaledGroundTruth);
-
-                    // Compare predictions
+                    // Use the refactored Bayesian analysis functions
                     const comparison = comparePredictions(scaledReference, scaledInteractive, scaledGroundTruth);
 
                     // Determine winner
-                    const winner = comparison.winner === 'prediction1' ? 'Our AGI Timelines' : 'Your AGI Timelines';
-                    const improvement = comparison.improvement;
+                    const winner = comparison.winning === 'prediction1' ? 'Our AGI Timelines' : 
+                                  comparison.winning === 'prediction2' ? 'Your AGI Timelines' : 'Tie';
+                    const gap = comparison.gap;
+                    const factor = comparison.factor;
 
                     // Create analysis HTML
                     const analysisHTML = `
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
                             <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #dee2e6;">
                                 <h3 style="color: #28a745; margin-top: 0;">Our AGI Timelines</h3>
-                                <p><strong>Log Score:</strong> ${referenceScore.toFixed(6)}</p>
+                                <p><strong>Log Score:</strong> ${comparison.prediction1.logScore === Infinity ? '∞' : comparison.prediction1.logScore.toFixed(6)}</p>
                                 <p><strong>Total Mass:</strong> ${referenceMass}%</p>
-                                <p><strong>Interpretation:</strong> ${referenceScore === Infinity ? 'Infinite penalty (zero mass where ground truth has mass)' : 
-                                    referenceScore === 0 ? 'Perfect prediction' : 
-                                    referenceScore < 0.1 ? 'Excellent prediction' :
-                                    referenceScore < 0.5 ? 'Good prediction' :
-                                    referenceScore < 1.0 ? 'Fair prediction' : 'Poor prediction'}</p>
+                                <p><strong>Interpretation:</strong> ${comparison.prediction1.logScore === Infinity ? 'Infinite penalty (zero mass where ground truth has mass)' : 
+                                    comparison.prediction1.logScore === 0 ? 'Perfect prediction' : 
+                                    comparison.prediction1.logScore < 0.1 ? 'Excellent prediction' :
+                                    comparison.prediction1.logScore < 0.5 ? 'Good prediction' :
+                                    comparison.prediction1.logScore < 1.0 ? 'Fair prediction' : 'Poor prediction'}</p>
                             </div>
                             <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #dee2e6;">
                                 <h3 style="color: #007bff; margin-top: 0;">Your AGI Timelines</h3>
-                                <p><strong>Log Score:</strong> ${interactiveScore.toFixed(6)}</p>
+                                <p><strong>Log Score:</strong> ${comparison.prediction2.logScore === Infinity ? '∞' : comparison.prediction2.logScore.toFixed(6)}</p>
                                 <p><strong>Total Mass:</strong> ${interactiveMass}%</p>
-                                <p><strong>Interpretation:</strong> ${interactiveScore === Infinity ? 'Infinite penalty (zero mass where ground truth has mass)' : 
-                                    interactiveScore === 0 ? 'Perfect prediction' : 
-                                    interactiveScore < 0.1 ? 'Excellent prediction' :
-                                    interactiveScore < 0.5 ? 'Good prediction' :
-                                    interactiveScore < 1.0 ? 'Fair prediction' : 'Poor prediction'}</p>
+                                <p><strong>Interpretation:</strong> ${comparison.prediction2.logScore === Infinity ? 'Infinite penalty (zero mass where ground truth has mass)' : 
+                                    comparison.prediction2.logScore === 0 ? 'Perfect prediction' : 
+                                    comparison.prediction2.logScore < 0.1 ? 'Excellent prediction' :
+                                    comparison.prediction2.logScore < 0.5 ? 'Good prediction' :
+                                    comparison.prediction2.logScore < 1.0 ? 'Fair prediction' : 'Poor prediction'}</p>
                             </div>
                         </div>
                         <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #dee2e6; margin-top: 20px;">
                             <h3 style="color: #495057; margin-top: 0;">Analysis Results</h3>
-                            <p><strong>Winner:</strong> <span style="color: ${winner.includes('Our') ? '#28a745' : '#007bff'}; font-weight: bold;">${winner}</span></p>
-                            <p><strong>Improvement:</strong> ${improvement}% better than the alternative</p>
+                            <p><strong>Winner:</strong> <span style="color: ${winner.includes('Our') ? '#28a745' : winner.includes('Your') ? '#007bff' : '#6c757d'}; font-weight: bold;">${winner}</span></p>
+                            ${gap !== null ? `<p><strong>Score Gap:</strong> ${gap.toFixed(6)} (lower is better)</p>` : ''}
+                            ${factor !== null ? `<p><strong>Likelihood Ratio:</strong> ${factor.toFixed(6)}x</p>` : ''}
                             <p><strong>Interpretation:</strong> The ${winner.toLowerCase()} distribution more accurately predicted the ground truth. 
-                            Lower log scores indicate better predictions. The log score properly handles unnormalized distributions 
+                            Lower log scores indicate better predictions. The log score properly handles sub-probability distributions 
                             and penalizes both shape differences and mass differences.</p>
                         </div>
-
                     `;
 
                     analysisContainer.innerHTML = analysisHTML;
@@ -638,7 +568,7 @@
                     console.error('Error in Bayesian analysis:', error);
                     analysisContainer.innerHTML = `
                         <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; color: #856404;">
-                            <strong>Analysis Error:</strong> Unable to perform Bayesian analysis. Please try refreshing the page.
+                            <strong>Analysis Error:</strong> ${error.message}. Please try refreshing the page.
                         </div>
                     `;
                 }
