@@ -78,12 +78,14 @@ export function calculateLogScore(prediction, predProb, truth, truthProb) {
 
     // H( Q_truth, P_prediction )
     let crossEntropy = 0;
-    for (let i = 0; i < Q.length; i++) {
-        const q = Q[i], p = P[i];
+    if (truthMass > tolerance) {
+        for (let i = 0; i < Q.length; i++) {
+            const q = Q[i], p = P[i];
 
-        if (q <= 0) continue;
-        if (p <= 0) return Infinity;
-        crossEntropy += -q * Math.log(p);
+            if (q <= 0) continue;
+            if (!(p > 0)) return Infinity;
+            crossEntropy += -q * Math.log(p);
+        }
     }
 
     const conditionalScore = truthMass > tolerance ? truthMass * crossEntropy : 0;
