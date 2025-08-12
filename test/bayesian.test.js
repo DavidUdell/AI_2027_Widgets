@@ -10,6 +10,7 @@ import {
 
 describe('Bayesian Analysis Module', () => {
     describe('calculateLogScore', () => {
+        // Proper distributions
         test('should return ln(2) for identical distributions', () => {
             const prediction = [0.5, 0.5];
             const groundTruth = [0.5, 0.5];
@@ -25,11 +26,22 @@ describe('Bayesian Analysis Module', () => {
             const groundTruth = [1, 0, 0];
             const predProb = 100;
             const truthProb = 100;
-            
+
             const logScore = calculateLogScore(prediction, predProb, groundTruth, truthProb);
             expect(logScore).toBeGreaterThan(0);
         });
 
+        test('should return 0 for identical point-mass distributions', () => {
+            const prediction = [0, 0, 1, 0, 0];
+            const groundTruth = [0, 0, 1, 0, 0];
+            const predProb = 100;
+            const truthProb = 100;
+
+            const logScore = calculateLogScore(prediction, predProb, groundTruth, truthProb);
+            expect(logScore).toBeCloseTo(0, 5);
+        });
+
+        // Sub-probability distributions
         test('should handle unnormalized distributions with different masses', () => {
             const prediction = [2, 4, 6, 8]; // Sum = 20
             const groundTruth = [1, 2, 3, 4]; // Sum = 10
