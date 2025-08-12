@@ -407,6 +407,7 @@ export function createDistributionWidget(containerId, options) {
     // Return methods for external control
     return {
         getDistribution: () => [...distribution],
+        getTotalMass: () => options.totalMass,
         setDistribution: (newDistribution) => {
             distribution = [...newDistribution];
             drawWidget();
