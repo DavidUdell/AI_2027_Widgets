@@ -327,10 +327,8 @@
         <h2 style="color: #495057; border-bottom-color: #dee2e6;">Discrete
         Bayesian Analysis</h2>
         <p>
-            This section compares how well each distribution predicted the
-            ground truth using discrete Bayesian logic. We calculate the
-            likelihood of observing the ground truth given each prediction,
-            then update our beliefs.
+            This section evaluates how well each model predicted the ground
+            truth distribution.
         </p>
         <div id="bayesian-analysis"></div>
     </div>
@@ -507,38 +505,27 @@
                     const gap = comparisons.gap;
                     const factor = comparisons.factor;
 
-                    // Create analysis HTML
                     const analysisHTML = `
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
                             <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #dee2e6;">
                                 <h3 style="color: #28a745; margin-top: 0;">Our AGI Timelines</h3>
-                                <p><strong>Log Score:</strong> ${comparisons.prediction1.logScore === Infinity ? '∞' : comparisons.prediction1.logScore.toFixed(6)}</p>
-                                <p><strong>Total Mass:</strong> ${75}%</p>
-                                <p><strong>Interpretation:</strong> ${comparisons.prediction1.logScore === Infinity ? 'Infinite penalty (zero mass where ground truth has mass)' : 
-                                    comparisons.prediction1.logScore === 0 ? 'Perfect prediction' : 
-                                    comparisons.prediction1.logScore < 0.1 ? 'Excellent prediction' :
-                                    comparisons.prediction1.logScore < 0.5 ? 'Good prediction' :
-                                    comparisons.prediction1.logScore < 1.0 ? 'Fair prediction' : 'Poor prediction'}</p>
+                                <p><strong>Log Score (lower is better):</strong> ${comparisons.prediction1.logScore === Infinity ? '+∞' : comparisons.prediction1.logScore.toFixed(2)}</p>
                             </div>
                             <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #dee2e6;">
                                 <h3 style="color: #007bff; margin-top: 0;">Your AGI Timelines</h3>
-                                <p><strong>Log Score:</strong> ${comparisons.prediction2.logScore === Infinity ? '∞' : comparisons.prediction2.logScore.toFixed(6)}</p>
-                                <p><strong>Total Mass:</strong> ${50}%</p>
-                                <p><strong>Interpretation:</strong> ${comparisons.prediction2.logScore === Infinity ? 'Infinite penalty (zero mass where ground truth has mass)' : 
-                                    comparisons.prediction2.logScore === 0 ? 'Perfect prediction' : 
-                                    comparisons.prediction2.logScore < 0.1 ? 'Excellent prediction' :
-                                    comparisons.prediction2.logScore < 0.5 ? 'Good prediction' :
-                                    comparisons.prediction2.logScore < 1.0 ? 'Fair prediction' : 'Poor prediction'}</p>
+                                <p><strong>Log Score (lower is better):</strong> ${comparisons.prediction2.logScore === Infinity ? '+∞' : comparisons.prediction2.logScore.toFixed(2)}</p>
                             </div>
                         </div>
-                        <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #dee2e6; margin-top: 20px;">
-                            <h3 style="color: #495057; margin-top: 0;">Analysis Results</h3>
-                            <p><strong>Winner:</strong> <span style="color: ${winner.includes('Our') ? '#28a745' : winner.includes('Your') ? '#007bff' : '#6c757d'}; font-weight: bold;">${winner}</span></p>
-                            ${gap !== null ? `<p><strong>Score Gap:</strong> ${gap.toFixed(6)} (lower is better)</p>` : ''}
-                            ${factor !== null ? `<p><strong>Likelihood Ratio:</strong> ${factor.toFixed(6)}x</p>` : ''}
-                            <p><strong>Interpretation:</strong> The ${winner.toLowerCase()} distribution more accurately predicted the ground truth. 
-                            Lower log scores indicate better predictions. The log score properly handles sub-probability distributions 
-                            and penalizes both shape differences and mass differences.</p>
+                        <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #dee2e6;">
+                            <h3 style="color: #343a40; margin-top: 0;">Comparison Metrics</h3>
+                            <p>
+                                <strong>Log Diff (our minus yours):</strong>
+                                ${gap === null ? 'Undefined' : gap.toFixed(2)}
+                            </p>
+                            <p>
+                                <strong>Bayes Factor (our vs. yours):</strong>
+                                ${factor === null ? 'Undefined' : factor.toFixed(2)}
+                            </p>
                         </div>
                     `;
 
@@ -547,7 +534,7 @@
                     console.error('Error in Bayesian analysis:', error);
                     analysisContainer.innerHTML = `
                         <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; color: #856404;">
-                            <strong>Analysis Error:</strong> ${error.message}. Please try refreshing the page.
+                            <strong>Analysis Error:</strong> ${error.message}.
                         </div>
                     `;
                 }
