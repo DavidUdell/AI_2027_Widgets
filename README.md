@@ -90,6 +90,52 @@ widget.reset();
    });
    ```
 
+## Bayesian Analysis Module
+
+The project includes a clean, tested Bayesian analysis module focused on log score calculation for comparing probability distributions. The log score properly handles unnormalized distributions by incorporating log mass terms.
+
+```javascript
+import { comparePredictions, calculateLogScore } from './src/index.js';
+
+const prediction1 = [40, 30, 20, 10];
+const prediction2 = [10, 20, 30, 40];
+const groundTruth = [35, 35, 20, 10];
+
+const result = comparePredictions(prediction1, prediction2, groundTruth);
+console.log('Winner:', result.winner); // 'prediction1'
+console.log('Improvement:', result.improvement); // '98.3%'
+
+// Handles unnormalized distributions
+const highMassPrediction = [2, 4, 6, 8]; // Sum = 20
+const lowMassTruth = [1, 2, 3, 4]; // Sum = 10
+const logScore = calculateLogScore(highMassPrediction, lowMassTruth);
+console.log('Log Score:', logScore); // log(2) ≈ 0.693
+```
+
+### Available Functions
+
+- `calculateLogScore(prediction, groundTruth)` - Calculate log score (lower is better)
+- `comparePredictions(pred1, pred2, groundTruth)` - Compare two predictions
+
+### Key Features
+
+- **Unnormalized distributions**: Works with raw probability values of any scale
+- **Mass-aware**: Properly penalizes differences in total mass between distributions
+- **Scale-invariant**: Relative scores remain the same regardless of overall scale
+- **Standard metric**: Log score is widely used in Bayesian analysis and forecasting
+
+See `src/bayesian.md` for complete documentation and `examples/bayesian-example.js` for usage examples.
+
+## Testing
+
+Run the test suite:
+
+```bash
+npm test
+```
+
+The test suite covers both the widget functionality and the Bayesian analysis module.
+
 ## How It Works
 
 The widget provides an interactive canvas where users can:
