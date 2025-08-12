@@ -500,7 +500,12 @@
                     const yourDist = widget.getDistribution();
                     const trueDist = groundTruthWidget.getDistribution();
 
-                    const comparisons = comparePredictions(ourDist, 75, yourDist, 50, trueDist, 85);
+                    // Get dynamic total mass values
+                    const ourTotalMass = referenceWidget.getTotalMass();
+                    const yourTotalMass = widget.getTotalMass();
+                    const trueTotalMass = groundTruthWidget.getTotalMass();
+
+                    const comparisons = comparePredictions(ourDist, ourTotalMass, yourDist, yourTotalMass, trueDist, trueTotalMass);
 
                     const winner = comparisons.winning === 'prediction1' ? 'Our AGI Timelines' : 
                                   comparisons.winning === 'prediction2' ? 'Your AGI Timelines' : 'Tie';

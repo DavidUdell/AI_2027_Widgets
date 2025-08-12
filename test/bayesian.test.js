@@ -1,5 +1,5 @@
 /**
- * Tests for Bayesian Analysis Module - Log Score Focus
+ * Tests for Bayesian Analysis Module
  */
 
 import { describe, test, expect } from 'vitest';
@@ -8,14 +8,16 @@ import {
     comparePredictions
 } from '../src/bayesian.js';
 
-describe('Bayesian Analysis Module - Log Score', () => {
+describe('Bayesian Analysis Module', () => {
     describe('calculateLogScore', () => {
-        test('should return 0 for identical distributions', () => {
-            const prediction = [1, 2, 3, 4];
-            const groundTruth = [1, 2, 3, 4];
-            
-            const logScore = calculateLogScore(prediction, groundTruth);
-            expect(logScore).toBeCloseTo(0, 5);
+        test('should return ln(2) for identical distributions', () => {
+            const prediction = [0.5, 0.5];
+            const groundTruth = [0.5, 0.5];
+            const predProb = 100;
+            const truthProb = 100;
+
+            const logScore = calculateLogScore(prediction, predProb, groundTruth, truthProb);
+            expect(logScore).toBeCloseTo(Math.log(2), 5);
         });
 
         test('should return higher scores for different distributions', () => {
