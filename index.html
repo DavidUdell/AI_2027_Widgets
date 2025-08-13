@@ -71,14 +71,7 @@
             margin: 0 auto;
         }
 
-        .reference-widget-canvas {
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            background: #f8f9fa;
-            max-width: 100%;
-            display: block;
-            margin: 0 auto;
-        }
+
 
         .highlight {
             background: #fff3cd;
@@ -94,28 +87,7 @@
             border-radius: 4px;
         }
 
-        .reference-section {
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 8px;
-            padding: 30px;
-            margin: 40px 0;
-            box-sizing: border-box;
-        }
 
-        .reference-section h2 {
-            margin-top: 0;
-            color: #28a745;
-            border-bottom: 2px solid #28a745;
-            padding-bottom: 10px;
-        }
-
-        .ground-truth-section h2 {
-            margin-top: 0;
-            color: #dc3545;
-            border-bottom: 2px solid #dc3545;
-            padding-bottom: 10px;
-        }
 
         /* Remove spinner arrows from number input */
         #total-mass::-webkit-outer-spin-button,
@@ -330,20 +302,11 @@
         vel quis leo. Suspendisse varius molestie tristique.
     </p>
 
-    <div class="reference-section" style="background: #f8f9fa; border-color:
-    #dee2e6;">
-        <h2 style="color: #495057; border-bottom-color: #dee2e6;">Discrete
-        Bayesian Analysis</h2>
-        <p>
-            This section evaluates how well each model predicted the ground
-            truth distribution.
-        </p>
-        <div id="bayesian-analysis"></div>
-    </div>
+
 
 
     <script type="module">
-        import { createDistributionWidget, createMultiDistributionWidget, comparePredictions } from './src/index.js';
+        import { createMultiDistributionWidget } from './src/index.js';
 
         // Initialize widget when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
@@ -352,51 +315,11 @@
             const numPeriods = (2040 - 2026) * 4 + 1; // 14 years * 4 quarters + 1 = 57 quarters
             const initialDistribution = Array(numPeriods).fill(0).map((_, i) => 0.2 + (0.8 * i / (numPeriods - 1)));
 
-            // Create reference distribution (bell curve shape)
-            const referenceDistribution = Array(numPeriods).fill(0).map((_, i) => {
-                const center = numPeriods / 2;
-                const sigma = numPeriods / 6;
-                const x = (i - center) / sigma;
-                return Math.exp(-(x * x) / 2);
-            });
-
             // Create multi-distribution widget
             const widget = createMultiDistributionWidget('distribution-widget', {
                 height: 500,
                 startYear: 2026,
                 endYear: 2040
-            });
-
-
-
-            // Create reference widget with green gradient
-            const referenceWidget = createDistributionWidget('reference-widget', {
-                height: 500,
-                startYear: 2026,
-                endYear: 2040,
-                initialDistribution: referenceDistribution,
-                totalMass: 75,
-                color: 'green',
-                interactive: false
-            });
-
-            // Create ground truth distribution (later peak, red color)
-            const groundTruthDistribution = Array(numPeriods).fill(0).map((_, i) => {
-                const center = numPeriods * 0.7; // Later peak (around 2035)
-                const sigma = numPeriods / 8; // Slightly wider spread
-                const x = (i - center) / sigma;
-                return Math.exp(-(x * x) / 2);
-            });
-
-            // Create ground truth widget with red gradient
-            const groundTruthWidget = createDistributionWidget('ground-truth-widget', {
-                height: 500,
-                startYear: 2026,
-                endYear: 2040,
-                initialDistribution: groundTruthDistribution,
-                totalMass: 85,
-                color: 'red',
-                interactive: false
             });
 
             // Multi-distribution widget controls
@@ -468,7 +391,6 @@
                 const color = colorSelect.value;
                 widget.setActiveDistributionByColor(color);
                 updateMassInput();
-                updateBayesianAnalysis();
             });
 
             // Handle mass input changes
@@ -477,7 +399,6 @@
                 
                 const mass = parseInt(subMassInput.value, 10);
                 widget.setActiveDistributionMass(mass);
-                updateBayesianAnalysis();
             });
 
 
@@ -523,74 +444,6 @@
             // Initialize
             validateSubMassInput();
             updateMassInput();
-            updateBayesianAnalysis();
-
-
-
-            function updateBayesianAnalysis() {
-                const analysisContainer = document.getElementById('bayesian-analysis');
-
-                try {
-                    // Distributions are arrays of Numbers, with each number in
-                    // [0, 1].
-                    const ourDist = referenceWidget.getDistribution();
-                    const yourDist = widget.getCombinedDistribution();
-                    const trueDist = groundTruthWidget.getDistribution();
-
-                    // Get dynamic total mass values
-                    const ourTotalMass = referenceWidget.getTotalMass();
-                    const yourTotalMass = widget.getTotalMass();
-                    const trueTotalMass = groundTruthWidget.getTotalMass();
-
-                    const comparisons = comparePredictions(ourDist, ourTotalMass, yourDist, yourTotalMass, trueDist, trueTotalMass);
-
-                    const winner = comparisons.winning === 'prediction1' ? 'Our AGI Timelines' : 
-                                  comparisons.winning === 'prediction2' ? 'Your AGI Timelines' : 'Tie';
-                    const gap = comparisons.gap;
-                    const factor = comparisons.factor;
-
-                    const analysisHTML = `
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
-                            <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #dee2e6;">
-                                <h3 style="color: #28a745; margin-top: 0;">Our AGI Timelines</h3>
-                                <p><strong>Log Score (lower is better):</strong> ${comparisons.prediction1.logScore === Infinity ? '+∞' : comparisons.prediction1.logScore.toFixed(2)}</p>
-                            </div>
-                            <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #dee2e6;">
-                                <h3 style="color: #007bff; margin-top: 0;">Your AGI Timelines</h3>
-                                <p><strong>Log Score (lower is better):</strong> ${comparisons.prediction2.logScore === Infinity ? '+∞' : comparisons.prediction2.logScore.toFixed(2)}</p>
-                            </div>
-                        </div>
-                        <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #dee2e6;">
-                            <h3 style="color: #343a40; margin-top: 0;">Comparison Metrics</h3>
-                            <p>
-                                <strong>Num Nats Better ([−∞, +∞], below 0 favors you):</strong>
-                                ${gap === null ? 'Undefined' : gap.toFixed(2)}
-                            </p>
-                            <p>
-                                <strong>Perplexity Ratio ([0, +∞], below 1 favors you):</strong>
-                                ${factor === null ? 'Undefined' : factor.toFixed(2)}
-                            </p>
-                        </div>
-                    `;
-
-                    analysisContainer.innerHTML = analysisHTML;
-                } catch (error) {
-                    console.error('Error in Bayesian analysis:', error);
-                    analysisContainer.innerHTML = `
-                        <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; color: #856404;">
-                            <strong>Analysis Error:</strong> ${error.message}.
-                        </div>
-                    `;
-                }
-            }
-
-            // Update Bayesian analysis when distribution changes
-            widget.setOnChange(() => {
-                updateBayesianAnalysis();
-            });
-
-            // Initial analysis
-            updateBayesianAnalysis();
         });
     </script>
 </body>
