@@ -15,13 +15,11 @@
   "type": "module",
   "main": "dist/ai-2027-widgets.es.js",
   "scripts": {
-    "test": "vitest",
+    "build": "vite build --config vite.demo.config.js",
     "dev": "vite",
-    "demo": "vite --open demo.html",
-    "build": "vite build",
     "preview": "vite preview",
-    "test:ci": "vitest run --coverage",
-    "prepublishOnly": "npm run build"
+    "test": "vitest",
+    "test:ci": "vitest run --coverage"
   },
   "files": [
     "dist"
