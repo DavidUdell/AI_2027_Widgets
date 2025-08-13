@@ -85,11 +85,11 @@ export function createMultiDistributionWidget(containerId, options) {
             gradientEnd: 'rgba(253, 126, 20, 0.1)',
             stroke: '#fd7e14'
         },
-        teal: {
-            primary: '#20c997',
-            gradientStart: 'rgba(32, 201, 151, 0.3)',
-            gradientEnd: 'rgba(32, 201, 151, 0.1)',
-            stroke: '#20c997'
+        yellow: {
+            primary: '#ffc107',
+            gradientStart: 'rgba(255, 193, 7, 0.3)',
+            gradientEnd: 'rgba(255, 193, 7, 0.1)',
+            stroke: '#ffc107'
         }
     };
 
@@ -450,12 +450,12 @@ export function createMultiDistributionWidget(containerId, options) {
     canvas.addEventListener('contextmenu', e => e.preventDefault());
 
     // Initialize all distributions
-    const colors = ['blue', 'green', 'red', 'purple', 'orange', 'teal'];
+    const colors = ['blue', 'green', 'red', 'purple', 'orange', 'yellow'];
     colors.forEach((color, index) => {
         const initialValues = Array(numPeriods).fill(0).map((_, i) => 0.2 + (0.8 * i / (numPeriods - 1)));
         distributions.push({
             color: color,
-            mass: 25, // Default mass
+            mass: 50, // Default mass
             values: initialValues
         });
     });
