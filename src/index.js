@@ -443,3 +443,6 @@ export function createWidget(containerId, options) {
 
 // Export Bayesian analysis functions
 export * from './bayesian.js';
+
+// Export multi-distribution widget
+export { createMultiDistributionWidget } from './multi-distribution-widget.js';

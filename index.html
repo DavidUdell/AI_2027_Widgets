@@ -176,6 +176,67 @@
         .input-feedback.success {
             color: #28a745;
         }
+
+        /* Distribution list styles */
+        .distribution-list {
+            margin: 15px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+
+        .distribution-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+        }
+
+        .distribution-color-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .distribution-info {
+            flex: 1;
+            font-size: 14px;
+        }
+
+        .distribution-mass {
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .remove-distribution {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .remove-distribution:hover {
+            background: #c82333;
+        }
+
+        /* Button hover effects */
+        #add-distribution:hover {
+            background: #0056b3;
+        }
+
+        #clear-all:hover {
+            background: #5a6268;
+        }
     </style>
 </head>
 <body>
@@ -228,21 +289,59 @@
     <div class="widget-container">
         <h2>Your AGI Timelines</h2>
         <div class="instructions">
-            <strong>Instructions:</strong> Set your total subjective
-            probability on AGI being developed by the year 2040 using the box
-            below. Click and drag in the interactive widget to change the
-            distribution of that probability over quarters.
+            <strong>Instructions:</strong> Create multiple sub-probability distributions by selecting a color, setting a mass value, and drawing in the widget. Each color represents a different component of your overall probability distribution.
         </div>
-            <div style="margin-bottom: 15px; text-align: center;">
-            <label for="total-mass" style="font-weight: bold; margin-right:
-            10px;">Probability AGI by 2040:</label>
-            <div class="number-input-container">
-                <input type="text" id="total-mass" value="50" 
-                       class="number-input"
-                       inputmode="numeric" pattern="[0-9]*">
-                <span style="margin-left: 5px;">%</span>
-                <div id="input-feedback" class="input-feedback"></div>
+        
+        <!-- Distribution Controls -->
+        <div style="margin-bottom: 20px; text-align: center;">
+            <div style="display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap;">
+                <!-- Color Selection -->
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label for="distribution-color" style="font-weight: bold;">Color:</label>
+                    <select id="distribution-color" style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+                        <option value="blue">Blue</option>
+                        <option value="green">Green</option>
+                        <option value="red">Red</option>
+                        <option value="purple">Purple</option>
+                        <option value="orange">Orange</option>
+                        <option value="teal">Teal</option>
+                    </select>
+                </div>
+                
+                <!-- Mass Input -->
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <label for="sub-mass" style="font-weight: bold;">Mass:</label>
+                    <div class="number-input-container">
+                        <input type="text" id="sub-mass" value="25" 
+                               class="number-input"
+                               inputmode="numeric" pattern="[0-9]*">
+                        <span style="margin-left: 5px;">%</span>
+                        <div id="sub-mass-feedback" class="input-feedback"></div>
+                    </div>
+                </div>
+                
+                <!-- Add Distribution Button -->
+                <button id="add-distribution" style="padding: 6px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                    Add Distribution
+                </button>
+                
+                <!-- Clear All Button -->
+                <button id="clear-all" style="padding: 6px 12px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
+                    Clear All
+                </button>
             </div>
+        </div>
+        
+        <!-- Total Mass Display -->
+        <div style="margin-bottom: 15px; text-align: center;">
+            <label style="font-weight: bold; margin-right: 10px;">Total Probability AGI by 2040:</label>
+            <span id="total-mass-display" style="font-weight: bold; color: #007bff; font-size: 18px;">0%</span>
+        </div>
+        
+        <!-- Distribution List -->
+        <div id="distribution-list" class="distribution-list" style="display: none;">
+            <h4 style="margin-top: 0; margin-bottom: 10px; color: #495057;">Your Distributions:</h4>
+            <div id="distribution-items"></div>
         </div>
         <div id="distribution-widget"></div>
     </div>
@@ -335,7 +434,7 @@
 
 
     <script type="module">
-        import { createDistributionWidget, comparePredictions } from './src/index.js';
+        import { createDistributionWidget, createMultiDistributionWidget, comparePredictions } from './src/index.js';
 
         // Initialize widget when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
@@ -352,13 +451,14 @@
                 return Math.exp(-(x * x) / 2);
             });
 
-            const widget = createDistributionWidget('distribution-widget', {
+            // Create multi-distribution widget
+            const widget = createMultiDistributionWidget('distribution-widget', {
                 height: 500,
                 startYear: 2026,
-                endYear: 2040,
-                initialDistribution: initialDistribution,
-                totalMass: 50
+                endYear: 2040
             });
+
+
 
             // Create reference widget with green gradient
             const referenceWidget = createDistributionWidget('reference-widget', {
@@ -390,84 +490,171 @@
                 interactive: false
             });
 
-            // Handle total mass input changes with intelligent validation
-            const totalMassInput = document.getElementById('total-mass');
-            const inputFeedback = document.getElementById('input-feedback');
+            // Multi-distribution widget controls
+            const colorSelect = document.getElementById('distribution-color');
+            const subMassInput = document.getElementById('sub-mass');
+            const subMassFeedback = document.getElementById('sub-mass-feedback');
+            const addDistributionBtn = document.getElementById('add-distribution');
+            const clearAllBtn = document.getElementById('clear-all');
+            const totalMassDisplay = document.getElementById('total-mass-display');
+            const distributionList = document.getElementById('distribution-list');
+            const distributionItems = document.getElementById('distribution-items');
 
             // Debounce function to avoid excessive updates
             let debounceTimer;
 
-            function updateWidget(value) {
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(() => {
-                    widget.setTotalMass(value);
-                    updateBayesianAnalysis(); // Update analysis when total mass changes
-                }, 100);
-            }
-
-            function validateAndUpdateInput() {
-                const inputValue = totalMassInput.value.trim();
-                const feedback = inputFeedback;
+            function validateSubMassInput() {
+                const inputValue = subMassInput.value.trim();
+                const feedback = subMassFeedback;
 
                 // Clear previous styling
-                totalMassInput.classList.remove('valid', 'invalid');
+                subMassInput.classList.remove('valid', 'invalid');
                 feedback.className = 'input-feedback';
                 feedback.textContent = '';
 
                 // Handle empty input
                 if (inputValue === '') {
-                    totalMassInput.classList.add('invalid');
+                    subMassInput.classList.add('invalid');
                     feedback.classList.add('error');
                     feedback.textContent = '0-100 only';
-                    return;
+                    return false;
                 }
 
                 // Check if input contains only digits
                 if (!/^\d+$/.test(inputValue)) {
-                    totalMassInput.classList.add('invalid');
+                    subMassInput.classList.add('invalid');
                     feedback.classList.add('error');
                     feedback.textContent = 'Numbers only';
-                    return;
+                    return false;
                 }
 
                 const numValue = parseInt(inputValue, 10);
 
                 // Check range
                 if (numValue < 0 || numValue > 100) {
-                    totalMassInput.classList.add('invalid');
+                    subMassInput.classList.add('invalid');
                     feedback.classList.add('error');
                     feedback.textContent = '0-100 only';
-                    return;
+                    return false;
                 }
 
                 // Valid input
-                totalMassInput.classList.add('valid');
+                subMassInput.classList.add('valid');
                 feedback.classList.add('success');
-
-                // Update widget with valid value
-                updateWidget(numValue);
+                return true;
             }
 
-            // Handle input events
-            totalMassInput.addEventListener('input', validateAndUpdateInput);
-            totalMassInput.addEventListener('blur', () => {
-                // On blur, ensure we have a valid number
-                const inputValue = totalMassInput.value.trim();
+            function updateTotalMassDisplay() {
+                const totalMass = widget.getTotalMass();
+                totalMassDisplay.textContent = totalMass + '%';
+            }
+
+            function updateDistributionList() {
+                const distributions = widget.getDistributions();
+                
+                if (distributions.length === 0) {
+                    distributionList.style.display = 'none';
+                    return;
+                }
+
+                distributionList.style.display = 'block';
+                distributionItems.innerHTML = '';
+
+                distributions.forEach((dist, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'distribution-item';
+                    
+                    const colorIndicator = document.createElement('div');
+                    colorIndicator.className = 'distribution-color-indicator';
+                    colorIndicator.style.backgroundColor = getColorValue(dist.color);
+                    
+                    const info = document.createElement('div');
+                    info.className = 'distribution-info';
+                    info.innerHTML = `<span class="distribution-mass">${dist.color.charAt(0).toUpperCase() + dist.color.slice(1)}: ${dist.mass}%</span>`;
+                    
+                    const removeBtn = document.createElement('button');
+                    removeBtn.className = 'remove-distribution';
+                    removeBtn.textContent = 'Remove';
+                    removeBtn.onclick = () => {
+                        widget.removeDistribution(index);
+                        updateDistributionList();
+                        updateTotalMassDisplay();
+                        updateBayesianAnalysis();
+                    };
+
+                    // Make item clickable to set as active
+                    item.onclick = (e) => {
+                        if (e.target !== removeBtn) {
+                            widget.setActiveDistribution(index);
+                            updateDistributionList();
+                        }
+                    };
+
+                    // Highlight active distribution
+                    const activeIndex = widget.getActiveDistributionIndex();
+                    if (index === activeIndex) {
+                        item.style.border = '2px solid #007bff';
+                        item.style.backgroundColor = '#f8f9fa';
+                    }
+
+                    item.appendChild(colorIndicator);
+                    item.appendChild(info);
+                    item.appendChild(removeBtn);
+                    distributionItems.appendChild(item);
+                });
+            }
+
+            function getColorValue(colorName) {
+                const colorMap = {
+                    blue: '#007bff',
+                    green: '#28a745',
+                    red: '#dc3545',
+                    purple: '#6f42c1',
+                    orange: '#fd7e14',
+                    teal: '#20c997'
+                };
+                return colorMap[colorName] || '#007bff';
+            }
+
+            // Handle add distribution button
+            addDistributionBtn.addEventListener('click', () => {
+                if (!validateSubMassInput()) return;
+
+                const color = colorSelect.value;
+                const mass = parseInt(subMassInput.value, 10);
+                
+                widget.addDistribution(color, mass);
+                updateDistributionList();
+                updateTotalMassDisplay();
+                updateBayesianAnalysis();
+            });
+
+            // Handle clear all button
+            clearAllBtn.addEventListener('click', () => {
+                widget.clearAllDistributions();
+                updateDistributionList();
+                updateTotalMassDisplay();
+                updateBayesianAnalysis();
+            });
+
+            // Handle sub-mass input validation
+            subMassInput.addEventListener('input', validateSubMassInput);
+            subMassInput.addEventListener('blur', () => {
+                const inputValue = subMassInput.value.trim();
                 if (inputValue === '') {
-                    totalMassInput.value = '50';
-                    validateAndUpdateInput();
+                    subMassInput.value = '25';
+                    validateSubMassInput();
                 } else if (/^\d+$/.test(inputValue)) {
                     const numValue = parseInt(inputValue, 10);
                     if (numValue >= 0 && numValue <= 100) {
-                        // Ensure clean formatting (remove leading zeros)
-                        totalMassInput.value = numValue.toString();
-                        validateAndUpdateInput();
+                        subMassInput.value = numValue.toString();
+                        validateSubMassInput();
                     }
                 }
             });
 
-            // Handle keydown for better UX
-            totalMassInput.addEventListener('keydown', (e) => {
+            // Handle keydown for sub-mass input
+            subMassInput.addEventListener('keydown', (e) => {
                 // Allow: backspace, delete, tab, escape, enter, and navigation keys
                 if ([8, 9, 27, 13, 46, 37, 38, 39, 40].includes(e.keyCode)) {
                     return;
@@ -487,8 +674,12 @@
                 e.preventDefault();
             });
 
-            // Initialize with current value
-            validateAndUpdateInput();
+            // Initialize
+            validateSubMassInput();
+            updateTotalMassDisplay();
+            updateDistributionList();
+
+
 
             function updateBayesianAnalysis() {
                 const analysisContainer = document.getElementById('bayesian-analysis');
@@ -497,7 +688,7 @@
                     // Distributions are arrays of Numbers, with each number in
                     // [0, 1].
                     const ourDist = referenceWidget.getDistribution();
-                    const yourDist = widget.getDistribution();
+                    const yourDist = widget.getCombinedDistribution();
                     const trueDist = groundTruthWidget.getDistribution();
 
                     // Get dynamic total mass values
@@ -548,7 +739,11 @@
             }
 
             // Update Bayesian analysis when distribution changes
-            widget.setOnChange(updateBayesianAnalysis);
+            widget.setOnChange(() => {
+                updateTotalMassDisplay();
+                updateDistributionList();
+                updateBayesianAnalysis();
+            });
 
             // Initial analysis
             updateBayesianAnalysis();
