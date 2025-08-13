@@ -126,7 +126,7 @@ export function comparePredictions(prediction1, predProb1, prediction2, predProb
     let gap = null, factor = null;
     if (Number.isFinite(first) && Number.isFinite(second)) {
         gap = second - first;
-        factor = Math.exp(-gap);
+        factor = Math.exp(gap);
     }
 
     return {
