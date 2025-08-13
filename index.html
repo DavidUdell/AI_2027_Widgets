@@ -233,10 +233,6 @@
         #add-distribution:hover {
             background: #0056b3;
         }
-
-        #clear-all:hover {
-            background: #5a6268;
-        }
     </style>
 </head>
 <body>
@@ -323,11 +319,6 @@
                 <!-- Add Distribution Button -->
                 <button id="add-distribution" style="padding: 6px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
                     Add Distribution
-                </button>
-                
-                <!-- Clear All Button -->
-                <button id="clear-all" style="padding: 6px 12px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
-                    Clear All
                 </button>
             </div>
         </div>
@@ -495,7 +486,6 @@
             const subMassInput = document.getElementById('sub-mass');
             const subMassFeedback = document.getElementById('sub-mass-feedback');
             const addDistributionBtn = document.getElementById('add-distribution');
-            const clearAllBtn = document.getElementById('clear-all');
             const totalMassDisplay = document.getElementById('total-mass-display');
             const distributionList = document.getElementById('distribution-list');
             const distributionItems = document.getElementById('distribution-items');
@@ -629,13 +619,7 @@
                 updateBayesianAnalysis();
             });
 
-            // Handle clear all button
-            clearAllBtn.addEventListener('click', () => {
-                widget.clearAllDistributions();
-                updateDistributionList();
-                updateTotalMassDisplay();
-                updateBayesianAnalysis();
-            });
+
 
             // Handle sub-mass input validation
             subMassInput.addEventListener('input', validateSubMassInput);
