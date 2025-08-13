@@ -18,7 +18,7 @@ interface, specifically designed for AGI timeline predictions.
 
 1. **Install dependencies:** `npm install`
 
-2. **Run the demo:** `npm run demo`
+2. **Run the demo locally:** `npm run demo`
 
 3. **Start development:** `npm run dev`
 
@@ -172,7 +172,7 @@ console.log('Bayes factor:', result.factor); // How much better the winner is
 
 ## Development
 
-- **Build library:** `npm run build`
+- **Build:** `npm run build`
 - **Run tests:** `npm test`
 - **Preview build:** `npm run preview`
 
