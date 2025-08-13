@@ -1,14 +1,29 @@
-import { defineConfig } from "vite";
+import { defineConfig } from 'vite';
 
 export default defineConfig({
-  build: {
-    lib: {
-      entry: "src/index.js",
-      name: "AI_2027_Widgets",
-      fileName: (format) => `ai-2027-widgets.${format}.js`,
+  // Demo build
+    build: {
+      outDir: 'dist',
+      emptyOutDir: true,
+      assetsDir: 'assets',
     },
-  },
-  // Serve demo.html as the main page during development
-  root: ".",
-  publicDir: "public",
+    root: '.',
+    publicDir: 'public',
+    base: './',
 });
+
+  // Library build
+  // {
+  //   build: {
+  //     outDir: 'dist',
+  //     emptyOutDir: false,
+  //     lib: {
+  //       entry: 'src/index.js',
+  //       name: 'AI_2027_Widgets',
+  //       formats: ['es', 'umd'],
+  //       fileName: (format) => `ai-2027-widgets.${format}.js`,
+  //     },
+  //     copyPublicDir: false,
+  //     sourcemap: true,
+  //   },
+  // }
