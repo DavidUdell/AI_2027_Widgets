@@ -20,6 +20,8 @@ interface, specifically designed for AGI timeline predictions.
 
 2. **Run the demo locally:** `npm run dev`
 
+3. **Run test suite:** `npm test`
+
 ## Widget Usage
 
 ### How It Works
@@ -170,9 +172,8 @@ console.log('Bayes factor:', result.factor); // How much better the winner is
 
 ## Development
 
-- **Run tests:** `npm test`
-- **Build:** `npm run build`
-- **Preview build:** `npm run preview`
+- **Build demo:** `npm run build`
+- **Preview built demo:** `npm run preview`
 
 ## License
 

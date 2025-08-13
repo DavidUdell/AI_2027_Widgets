@@ -1,6 +1,6 @@
 {
   "name": "ai_2027_widgets",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "In-line Bayesian probability widgets",
   "homepage": "https://github.com/DavidUdell/AI_2027_Widgets#readme",
   "bugs": {
@@ -15,8 +15,8 @@
   "type": "module",
   "main": "dist/ai-2027-widgets.es.js",
   "scripts": {
-    "build": "vite build --config vite.demo.config.js",
     "dev": "vite",
+    "build": "vite build",
     "preview": "vite preview",
     "test": "vitest",
     "test:ci": "vitest run --coverage"
