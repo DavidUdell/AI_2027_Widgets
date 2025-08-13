@@ -108,6 +108,39 @@ export function createComparisonsWidget(containerId, options) {
     }
 
     /**
+     * Calculate scaling factors for distributions based on their masses
+     */
+    function calculateScalingFactors() {
+        if (!options.distributions || options.distributions.length === 0) {
+            return {};
+        }
+
+        // Find the maximum mass among visible distributions
+        let maxMass = 0;
+        options.distributions.forEach((distribution, index) => {
+            if (visibilityState[index] && distribution.mass > maxMass) {
+                maxMass = distribution.mass;
+            }
+        });
+
+        // If no visible distributions or max mass is 0, return no scaling
+        if (maxMass === 0) {
+            return {};
+        }
+
+        // Calculate scaling factors for each distribution
+        const scalingFactors = {};
+        options.distributions.forEach((distribution, index) => {
+            if (visibilityState[index]) {
+                // Scale each distribution so that its visual height represents its mass relative to the max mass
+                scalingFactors[index] = distribution.mass / maxMass;
+            }
+        });
+
+        return scalingFactors;
+    }
+
+    /**
      * Draw the complete comparison widget
      */
     function drawWidget() {
@@ -134,12 +167,67 @@ export function createComparisonsWidget(containerId, options) {
 
         // Calculate the maximum mass among visible distributions for scaling reference
         let maxMass = 0;
+        let maxScaledValue = 0;
+        let maxDistributionIndex = -1;
+        
         if (options.distributions && options.distributions.length > 0) {
+            // Find the maximum mass and corresponding distribution
             options.distributions.forEach((distribution, index) => {
                 if (visibilityState[index] && distribution.mass > maxMass) {
                     maxMass = distribution.mass;
+                    maxDistributionIndex = index;
                 }
             });
+            
+            // Calculate scaling factors
+            const scalingFactors = calculateScalingFactors();
+            
+            // Find the maximum scaled probability value
+            if (maxDistributionIndex >= 0) {
+                const maxDistribution = options.distributions[maxDistributionIndex];
+                const scaleFactor = scalingFactors[maxDistributionIndex] || 1;
+                maxScaledValue = Math.max(...maxDistribution.values) * scaleFactor;
+            }
+        }
+
+        // Draw horizontal guideline at the maximum scaled distribution value
+        if (maxScaledValue > 0 && maxDistributionIndex >= 0) {
+            const maxY = dataToCanvas(0, maxScaledValue).y;
+
+            // Draw the gridline
+            ctx.strokeStyle = '#6c757d';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([5, 5]); // Dashed line
+            ctx.beginPath();
+            ctx.moveTo(padding, maxY);
+            ctx.lineTo(widgetWidth - padding, maxY);
+            ctx.stroke();
+            ctx.setLineDash([]); // Reset to solid lines
+
+            // Calculate and display the normalized value at this height
+            const maxDistribution = options.distributions[maxDistributionIndex];
+            const totalMass = maxDistribution.mass;
+            const distributionSum = maxDistribution.values.reduce((sum, prob) => sum + prob, 0);
+            const normalizationFactor = distributionSum > 0 ? totalMass / (distributionSum * 100) : 0;
+            // Use the original maximum value (before scaling) for the normalization calculation
+            const originalMaxValue = Math.max(...maxDistribution.values);
+            const maxNormalizedValue = originalMaxValue * normalizationFactor * 100;
+
+            // Format the percentage value
+            const formatPercentage = (value) => {
+                if (value < 1) {
+                    return value.toFixed(2) + '%';
+                } else {
+                    return Math.round(value) + '%';
+                }
+            };
+
+            // Draw the percentage label on the y-axis (left side)
+            ctx.fillStyle = '#495057';
+            ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(formatPercentage(maxNormalizedValue), padding - 10, maxY);
         }
 
         // Draw the hardcoded 0% label at the bottom left
@@ -148,15 +236,6 @@ export function createComparisonsWidget(containerId, options) {
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
         ctx.fillText('0%', padding - 10, options.height - padding);
-
-        // Draw the maximum mass label at the top if there are visible distributions
-        if (maxMass > 0) {
-            ctx.fillStyle = '#495057';
-            ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
-            ctx.textAlign = 'right';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(`${maxMass}%`, padding - 10, padding);
-        }
     }
 
     /**
@@ -201,40 +280,7 @@ export function createComparisonsWidget(containerId, options) {
         ctx.restore();
     }
 
-    /**
-     * Calculate scaling factors for distributions based on their masses
-     */
-    function calculateScalingFactors() {
-        if (!options.distributions || options.distributions.length === 0) {
-            return {};
-        }
 
-        // Find the maximum mass among visible distributions
-        let maxMass = 0;
-        options.distributions.forEach((distribution, index) => {
-            if (visibilityState[index] && distribution.mass > maxMass) {
-                maxMass = distribution.mass;
-            }
-        });
-
-        // If no visible distributions or max mass is 0, return no scaling
-        if (maxMass === 0) {
-            return {};
-        }
-
-        // Calculate scaling factors for each distribution
-        const scalingFactors = {};
-        options.distributions.forEach((distribution, index) => {
-            if (visibilityState[index]) {
-                // Scale each distribution so that its visual height represents its mass relative to the max mass
-                scalingFactors[index] = distribution.mass / maxMass;
-            }
-        });
-
-
-
-        return scalingFactors;
-    }
 
     /**
      * Draw all distributions with fill areas and curves
