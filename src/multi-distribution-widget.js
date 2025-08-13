@@ -163,7 +163,7 @@ export function createMultiDistributionWidget(containerId, options) {
 
                 // Format the percentage value
                 const formatPercentage = (value) => {
-                    if (value < 1) {
+                    if (value < 10) {
                         return value.toFixed(2) + '%';
                     } else {
                         return Math.round(value) + '%';
