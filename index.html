@@ -71,6 +71,15 @@
             margin: 0 auto;
         }
 
+        .comparisons-widget-canvas {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: #f8f9fa;
+            max-width: 100%;
+            display: block;
+            margin: 0 auto;
+        }
+
 
 
         .highlight {
@@ -240,6 +249,16 @@
         <div id="distribution-widget"></div>
     </div>
 
+    <div class="widget-container">
+        <h2>Distribution Comparisons</h2>
+        <div class="instructions">
+            <strong>Overview:</strong> This view displays all your distributions together for easy comparison. 
+            Each curve represents a different sub-probability distribution with its associated probability mass.
+        </div>
+        
+        <div id="comparisons-widget"></div>
+    </div>
+
     <p>
         Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis
         suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur? Quis
@@ -306,7 +325,7 @@
 
 
     <script type="module">
-        import { createMultiDistributionWidget } from './src/index.js';
+        import { createMultiDistributionWidget, createComparisonsWidget } from './src/index.js';
 
         // Initialize widget when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
@@ -320,6 +339,14 @@
                 height: 500,
                 startYear: 2026,
                 endYear: 2040
+            });
+
+            // Create comparisons widget
+            const comparisonsWidget = createComparisonsWidget('comparisons-widget', {
+                height: 500,
+                startYear: 2026,
+                endYear: 2040,
+                distributions: widget.getDistributions()
             });
 
             // Multi-distribution widget controls
@@ -439,6 +466,11 @@
 
                 // Prevent other keys
                 e.preventDefault();
+            });
+
+            // Set up callback to update comparisons widget when distributions change
+            widget.setOnChange((distributions) => {
+                comparisonsWidget.updateDistributions(distributions);
             });
 
             // Initialize
