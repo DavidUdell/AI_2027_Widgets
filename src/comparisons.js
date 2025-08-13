@@ -132,12 +132,31 @@ export function createComparisonsWidget(containerId, options) {
         ctx.rect(padding, padding, plotWidth, plotHeight);
         ctx.stroke();
 
+        // Calculate the maximum mass among visible distributions for scaling reference
+        let maxMass = 0;
+        if (options.distributions && options.distributions.length > 0) {
+            options.distributions.forEach((distribution, index) => {
+                if (visibilityState[index] && distribution.mass > maxMass) {
+                    maxMass = distribution.mass;
+                }
+            });
+        }
+
         // Draw the hardcoded 0% label at the bottom left
         ctx.fillStyle = '#495057';
         ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
         ctx.fillText('0%', padding - 10, options.height - padding);
+
+        // Draw the maximum mass label at the top if there are visible distributions
+        if (maxMass > 0) {
+            ctx.fillStyle = '#495057';
+            ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`${maxMass}%`, padding - 10, padding);
+        }
     }
 
     /**
@@ -183,6 +202,41 @@ export function createComparisonsWidget(containerId, options) {
     }
 
     /**
+     * Calculate scaling factors for distributions based on their masses
+     */
+    function calculateScalingFactors() {
+        if (!options.distributions || options.distributions.length === 0) {
+            return {};
+        }
+
+        // Find the maximum mass among visible distributions
+        let maxMass = 0;
+        options.distributions.forEach((distribution, index) => {
+            if (visibilityState[index] && distribution.mass > maxMass) {
+                maxMass = distribution.mass;
+            }
+        });
+
+        // If no visible distributions or max mass is 0, return no scaling
+        if (maxMass === 0) {
+            return {};
+        }
+
+        // Calculate scaling factors for each distribution
+        const scalingFactors = {};
+        options.distributions.forEach((distribution, index) => {
+            if (visibilityState[index]) {
+                // Scale each distribution so that its visual height represents its mass relative to the max mass
+                scalingFactors[index] = distribution.mass / maxMass;
+            }
+        });
+
+
+
+        return scalingFactors;
+    }
+
+    /**
      * Draw all distributions with fill areas and curves
      */
     function drawAllDistributions() {
@@ -198,6 +252,9 @@ export function createComparisonsWidget(containerId, options) {
             return;
         }
 
+        // Calculate scaling factors for all visible distributions
+        const scalingFactors = calculateScalingFactors();
+
         // Draw each distribution with fill and curve (only if visible)
         options.distributions.forEach((distribution, index) => {
             // Skip if distribution is hidden
@@ -205,6 +262,9 @@ export function createComparisonsWidget(containerId, options) {
 
             const colorScheme = colorSchemes[distribution.color];
             if (!colorScheme) return;
+
+            // Get scaling factor for this distribution
+            const scaleFactor = scalingFactors[index] || 1;
 
             // Create gradient for the fill
             const gradient = ctx.createLinearGradient(padding, padding, padding, options.height - padding);
@@ -218,9 +278,11 @@ export function createComparisonsWidget(containerId, options) {
             // Start at the bottom-left corner
             ctx.moveTo(padding, options.height - padding);
 
-            // Draw the curve
+            // Draw the curve with scaling applied
             for (let i = 0; i < numPeriods; i++) {
-                const coords = dataToCanvas(i, distribution.values[i]);
+                // Apply scaling factor to the probability value
+                const scaledProbability = distribution.values[i] * scaleFactor;
+                const coords = dataToCanvas(i, scaledProbability);
                 ctx.lineTo(coords.x, coords.y);
             }
 
@@ -235,7 +297,9 @@ export function createComparisonsWidget(containerId, options) {
             ctx.beginPath();
 
             for (let i = 0; i < numPeriods; i++) {
-                const coords = dataToCanvas(i, distribution.values[i]);
+                // Apply scaling factor to the probability value
+                const scaledProbability = distribution.values[i] * scaleFactor;
+                const coords = dataToCanvas(i, scaledProbability);
                 if (i === 0) {
                     ctx.moveTo(coords.x, coords.y);
                 } else {
