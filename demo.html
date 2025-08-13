@@ -526,11 +526,11 @@
                         <div style="background: white; padding: 20px; border-radius: 8px; border: 2px solid #dee2e6;">
                             <h3 style="color: #343a40; margin-top: 0;">Comparison Metrics</h3>
                             <p>
-                                <strong>Log Diff (our minus yours):</strong>
+                                <strong>Num Nats Better ([−∞, +∞], below 0 favors you):</strong>
                                 ${gap === null ? 'Undefined' : gap.toFixed(2)}
                             </p>
                             <p>
-                                <strong>Bayes Factor (our vs. yours):</strong>
+                                <strong>Perplexity Ratio ([0, +∞], below 1 favors you):</strong>
                                 ${factor === null ? 'Undefined' : factor.toFixed(2)}
                             </p>
                         </div>

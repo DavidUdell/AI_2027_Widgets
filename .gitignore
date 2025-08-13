@@ -1,5 +1,6 @@
 # Build artefacts
 dist/
+dist-demo/
 
 # Dependencies
 node_modules/
