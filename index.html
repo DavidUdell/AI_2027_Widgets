@@ -306,7 +306,7 @@
                 
                 <!-- Mass Input -->
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <label for="sub-mass" style="font-weight: bold;">Mass:</label>
+                    <label for="sub-mass" style="font-weight: bold;">Total Probability AGI by 2040:</label>
                     <div class="number-input-container">
                         <input type="text" id="sub-mass" value="25" 
                                class="number-input"
@@ -323,11 +323,7 @@
             </div>
         </div>
         
-        <!-- Total Mass Display -->
-        <div style="margin-bottom: 15px; text-align: center;">
-            <label style="font-weight: bold; margin-right: 10px;">Total Probability AGI by 2040:</label>
-            <span id="total-mass-display" style="font-weight: bold; color: #007bff; font-size: 18px;">0%</span>
-        </div>
+
         
         <!-- Distribution List -->
         <div id="distribution-list" class="distribution-list" style="display: none;">
@@ -486,7 +482,6 @@
             const subMassInput = document.getElementById('sub-mass');
             const subMassFeedback = document.getElementById('sub-mass-feedback');
             const addDistributionBtn = document.getElementById('add-distribution');
-            const totalMassDisplay = document.getElementById('total-mass-display');
             const distributionList = document.getElementById('distribution-list');
             const distributionItems = document.getElementById('distribution-items');
 
@@ -534,10 +529,7 @@
                 return true;
             }
 
-            function updateTotalMassDisplay() {
-                const totalMass = widget.getTotalMass();
-                totalMassDisplay.textContent = totalMass + '%';
-            }
+
 
             function updateDistributionList() {
                 const distributions = widget.getDistributions();
@@ -568,7 +560,6 @@
                     removeBtn.onclick = () => {
                         widget.removeDistribution(index);
                         updateDistributionList();
-                        updateTotalMassDisplay();
                         updateBayesianAnalysis();
                     };
 
@@ -615,7 +606,6 @@
                 
                 widget.addDistribution(color, mass);
                 updateDistributionList();
-                updateTotalMassDisplay();
                 updateBayesianAnalysis();
             });
 
@@ -660,13 +650,11 @@
 
             // Initialize
             validateSubMassInput();
-            updateTotalMassDisplay();
             updateDistributionList();
 
             // Start with a Blue distribution
             widget.addDistribution('blue', 50);
             updateDistributionList();
-            updateTotalMassDisplay();
             updateBayesianAnalysis();
 
 
@@ -730,7 +718,6 @@
 
             // Update Bayesian analysis when distribution changes
             widget.setOnChange(() => {
-                updateTotalMassDisplay();
                 updateDistributionList();
                 updateBayesianAnalysis();
             });

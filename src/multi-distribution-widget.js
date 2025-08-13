@@ -280,8 +280,7 @@ export function createMultiDistributionWidget(containerId, options) {
             drawSingleDistribution(activeDist, true);
         }
 
-        // Draw total mass in center
-        const totalMass = getTotalMass();
+        // Draw active distribution's mass in center
         const centerX = widgetWidth / 2;
         const centerY = options.height / 2;
 
@@ -290,8 +289,10 @@ export function createMultiDistributionWidget(containerId, options) {
         const clampedPeriodIndex = Math.max(0, Math.min(numPeriods - 1, Math.round(centerPeriodIndex)));
         
         let centerProbability = 0;
+        let activeMass = 0;
         if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length) {
             centerProbability = distributions[activeDistributionIndex].values[clampedPeriodIndex];
+            activeMass = distributions[activeDistributionIndex].mass;
         }
         
         const centerYInData = (1 - (centerY - padding) / plotHeight);
@@ -306,12 +307,12 @@ export function createMultiDistributionWidget(containerId, options) {
             textColor = 'rgba(0, 0, 0, 0.3)';
         }
 
-        // Draw total probability text with appropriate color
+        // Draw active distribution's probability text with appropriate color
         ctx.fillStyle = textColor;
         ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(totalMass.toString() + '%', centerX, centerY);
+        ctx.fillText(activeMass.toString() + '%', centerX, centerY);
     }
 
     /**
