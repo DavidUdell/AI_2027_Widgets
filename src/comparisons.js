@@ -234,7 +234,7 @@ export function createComparisonsWidget(containerId, options) {
     function drawLegend() {
         if (!options.distributions || options.distributions.length === 0) return;
 
-        const legendStartY = 20;
+        const legendStartY = 14;
         const legendItemHeight = 25;
         const legendItemSpacing = 5;
         const colorBoxSize = 15;
@@ -245,12 +245,12 @@ export function createComparisonsWidget(containerId, options) {
         // Calculate legend dimensions
         const maxTextWidth = Math.max(...options.distributions.map(dist => {
             const text = `${dist.color.charAt(0).toUpperCase() + dist.color.slice(1)}: ${dist.mass}%`;
-            ctx.font = '14px -apple-system, BlinkMacSystemFont, sans-serif';
+            ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
             return ctx.measureText(text).width;
         }));
 
         const itemWidth = maxTextWidth + colorBoxSize + textMargin;
-        const totalLegendWidth = itemWidth * itemsPerRow + (itemsPerRow - 1) * 20; // 20px spacing between columns
+        const totalLegendWidth = itemWidth * itemsPerRow + (itemsPerRow - 1) * 40; // 40px spacing between columns
         const legendX = (widgetWidth - totalLegendWidth) / 2;
 
         options.distributions.forEach((distribution, index) => {
@@ -259,20 +259,28 @@ export function createComparisonsWidget(containerId, options) {
 
             const row = Math.floor(index / itemsPerRow);
             const col = index % itemsPerRow;
-            const x = legendX + col * (itemWidth + 20); // 20px spacing between columns
+            const x = legendX + col * (itemWidth + 40); // 40px spacing between columns
             const y = legendStartY + row * (legendItemHeight + rowSpacing);
 
             // Draw color box
             ctx.fillStyle = colorScheme.stroke;
             ctx.fillRect(x, y + 2, colorBoxSize, colorBoxSize);
 
-            // Draw text
+            // Draw text with right-aligned percentage
             ctx.fillStyle = '#495057';
-            ctx.font = '14px -apple-system, BlinkMacSystemFont, sans-serif';
+            ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
             ctx.textAlign = 'left';
             ctx.textBaseline = 'middle';
-            const text = `${distribution.color.charAt(0).toUpperCase() + distribution.color.slice(1)}: ${distribution.mass}%`;
-            ctx.fillText(text, x + colorBoxSize + textMargin, y + colorBoxSize / 2 + 2);
+            
+            // Draw color name
+            const colorName = `${distribution.color.charAt(0).toUpperCase() + distribution.color.slice(1)}: `;
+            ctx.fillText(colorName, x + colorBoxSize + textMargin, y + colorBoxSize / 2 + 2);
+            
+            // Draw percentage right-aligned within the item width
+            const percentageText = `${distribution.mass}%`;
+            const colorNameWidth = ctx.measureText(colorName).width;
+            const percentageX = x + colorBoxSize + textMargin + colorNameWidth + (itemWidth - colorBoxSize - textMargin - colorNameWidth - ctx.measureText(percentageText).width);
+            ctx.fillText(percentageText, percentageX, y + colorBoxSize / 2 + 2);
         });
     }
 
