@@ -43,6 +43,9 @@ export function createComparisonsWidget(containerId, options) {
     const plotHeight = options.height - 2 * padding;
     const periodStep = plotWidth / (numPeriods - 1);
 
+    // Track visibility state for each distribution
+    const visibilityState = {};
+
     // Color schemes for different distributions
     const colorSchemes = {
         blue: {
@@ -90,6 +93,18 @@ export function createComparisonsWidget(containerId, options) {
         const x = padding + periodIndex * periodStep;
         const y = padding + (1 - probability) * plotHeight;
         return { x, y };
+    }
+
+    /**
+     * Initialize visibility state for distributions
+     */
+    function initializeVisibilityState() {
+        if (!options.distributions) return;
+        
+        options.distributions.forEach((distribution, index) => {
+            // Default all distributions to visible
+            visibilityState[index] = true;
+        });
     }
 
     /**
@@ -183,8 +198,11 @@ export function createComparisonsWidget(containerId, options) {
             return;
         }
 
-        // Draw each distribution with fill and curve
+        // Draw each distribution with fill and curve (only if visible)
         options.distributions.forEach((distribution, index) => {
+            // Skip if distribution is hidden
+            if (!visibilityState[index]) return;
+
             const colorScheme = colorSchemes[distribution.color];
             if (!colorScheme) return;
 
@@ -229,7 +247,7 @@ export function createComparisonsWidget(containerId, options) {
     }
 
     /**
-     * Draw legend showing all distributions with their masses
+     * Draw legend showing all distributions with their masses and checkboxes
      */
     function drawLegend() {
         if (!options.distributions || options.distributions.length === 0) return;
@@ -238,6 +256,7 @@ export function createComparisonsWidget(containerId, options) {
         const legendItemHeight = 25;
         const legendItemSpacing = 5;
         const colorBoxSize = 15;
+        const checkboxSize = 12;
         const textMargin = 10;
         const itemsPerRow = 3;
         const rowSpacing = 10;
@@ -249,7 +268,7 @@ export function createComparisonsWidget(containerId, options) {
             return ctx.measureText(text).width;
         }));
 
-        const itemWidth = maxTextWidth + colorBoxSize + textMargin;
+        const itemWidth = maxTextWidth + colorBoxSize + checkboxSize + textMargin * 2;
         const totalLegendWidth = itemWidth * itemsPerRow + (itemsPerRow - 1) * 40; // 40px spacing between columns
         const legendX = (widgetWidth - totalLegendWidth) / 2;
 
@@ -262,9 +281,24 @@ export function createComparisonsWidget(containerId, options) {
             const x = legendX + col * (itemWidth + 40); // 40px spacing between columns
             const y = legendStartY + row * (legendItemHeight + rowSpacing);
 
+            // Draw checkbox
+            const checkboxX = x;
+            const checkboxY = y + 2;
+            
+            // Checkbox border
+            ctx.strokeStyle = '#495057';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(checkboxX, checkboxY, checkboxSize, checkboxSize);
+            
+            // Checkbox fill if checked
+            if (visibilityState[index]) {
+                ctx.fillStyle = '#495057';
+                ctx.fillRect(checkboxX + 2, checkboxY + 2, checkboxSize - 4, checkboxSize - 4);
+            }
+
             // Draw color box
             ctx.fillStyle = colorScheme.stroke;
-            ctx.fillRect(x, y + 2, colorBoxSize, colorBoxSize);
+            ctx.fillRect(x + checkboxSize + textMargin, y + 2, colorBoxSize, colorBoxSize);
 
             // Draw text with right-aligned percentage
             ctx.fillStyle = '#495057';
@@ -274,30 +308,94 @@ export function createComparisonsWidget(containerId, options) {
             
             // Draw color name
             const colorName = `${distribution.color.charAt(0).toUpperCase() + distribution.color.slice(1)}: `;
-            ctx.fillText(colorName, x + colorBoxSize + textMargin, y + colorBoxSize / 2 + 2);
+            ctx.fillText(colorName, x + checkboxSize + textMargin + colorBoxSize + textMargin, y + colorBoxSize / 2 + 2);
             
             // Draw percentage right-aligned within the item width
             const percentageText = `${distribution.mass}%`;
             const colorNameWidth = ctx.measureText(colorName).width;
-            const percentageX = x + colorBoxSize + textMargin + colorNameWidth + (itemWidth - colorBoxSize - textMargin - colorNameWidth - ctx.measureText(percentageText).width);
+            const percentageX = x + checkboxSize + textMargin + colorBoxSize + textMargin + colorNameWidth + (itemWidth - checkboxSize - textMargin * 2 - colorBoxSize - colorNameWidth - ctx.measureText(percentageText).width);
             ctx.fillText(percentageText, percentageX, y + colorBoxSize / 2 + 2);
         });
     }
 
+    /**
+     * Handle click events on the canvas
+     */
+    function handleCanvasClick(e) {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        // Check if click is in legend area
+        if (y < 80) { // Legend area is roughly in the top 80px
+            const legendStartY = 14;
+            const legendItemHeight = 25;
+            const checkboxSize = 12;
+            const textMargin = 10;
+            const itemsPerRow = 3;
+            const rowSpacing = 10;
+
+            // Calculate legend dimensions (same as in drawLegend)
+            const maxTextWidth = Math.max(...options.distributions.map(dist => {
+                const text = `${dist.color.charAt(0).toUpperCase() + dist.color.slice(1)}: ${dist.mass}%`;
+                ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+                return ctx.measureText(text).width;
+            }));
+
+            const itemWidth = maxTextWidth + 15 + checkboxSize + textMargin * 2;
+            const totalLegendWidth = itemWidth * itemsPerRow + (itemsPerRow - 1) * 40;
+            const legendX = (widgetWidth - totalLegendWidth) / 2;
+
+            // Check each checkbox area
+            options.distributions.forEach((distribution, index) => {
+                const row = Math.floor(index / itemsPerRow);
+                const col = index % itemsPerRow;
+                const itemX = legendX + col * (itemWidth + 40);
+                const itemY = legendStartY + row * (legendItemHeight + rowSpacing);
+
+                const checkboxX = itemX;
+                const checkboxY = itemY + 2;
+
+                // Check if click is within checkbox bounds
+                if (x >= checkboxX && x <= checkboxX + checkboxSize &&
+                    y >= checkboxY && y <= checkboxY + checkboxSize) {
+                    // Toggle visibility
+                    visibilityState[index] = !visibilityState[index];
+                    drawWidget();
+                }
+            });
+        }
+    }
+
+    // Add click event listener to canvas
+    canvas.addEventListener('click', handleCanvasClick);
+
     // Append canvas to container
     container.appendChild(canvas);
 
-    // Initial draw
+    // Initialize visibility state and draw
+    initializeVisibilityState();
     drawWidget();
 
     // Return methods for external control
     return {
         updateDistributions: (newDistributions) => {
             options.distributions = newDistributions;
+            // Reset visibility state for new distributions
+            initializeVisibilityState();
             drawWidget();
         },
         redraw: () => {
             drawWidget();
+        },
+        setDistributionVisibility: (index, visible) => {
+            if (visibilityState.hasOwnProperty(index)) {
+                visibilityState[index] = visible;
+                drawWidget();
+            }
+        },
+        getDistributionVisibility: (index) => {
+            return visibilityState[index] || false;
         }
     };
 }
