@@ -108,32 +108,44 @@ export function createComparisonsWidget(containerId, options) {
     }
 
     /**
-     * Calculate scaling factors for distributions based on their masses
+     * Calculate scaling factors for distributions based on their masses and integrals
      */
     function calculateScalingFactors() {
         if (!options.distributions || options.distributions.length === 0) {
             return {};
         }
 
-        // Find the maximum mass among visible distributions
-        let maxMass = 0;
+        // Calculate the effective mass for each visible distribution (mass / integral)
+        const effectiveMasses = {};
+        let maxEffectiveMass = 0;
+        
         options.distributions.forEach((distribution, index) => {
-            if (visibilityState[index] && distribution.mass > maxMass) {
-                maxMass = distribution.mass;
+            if (visibilityState[index]) {
+                // Calculate the integral (sum of all probability values)
+                const distributionSum = distribution.values.reduce((sum, prob) => sum + prob, 0);
+                
+                // The effective mass represents how concentrated the distribution is
+                // Higher effective mass = more concentrated = should appear taller
+                const effectiveMass = distributionSum > 0 ? distribution.mass / distributionSum : 0;
+                effectiveMasses[index] = effectiveMass;
+                
+                if (effectiveMass > maxEffectiveMass) {
+                    maxEffectiveMass = effectiveMass;
+                }
             }
         });
 
-        // If no visible distributions or max mass is 0, return no scaling
-        if (maxMass === 0) {
+        // If no visible distributions or max effective mass is 0, return no scaling
+        if (maxEffectiveMass === 0) {
             return {};
         }
 
-        // Calculate scaling factors for each distribution
+        // Calculate scaling factors based on effective masses
         const scalingFactors = {};
         options.distributions.forEach((distribution, index) => {
             if (visibilityState[index]) {
-                // Scale each distribution so that its visual height represents its mass relative to the max mass
-                scalingFactors[index] = distribution.mass / maxMass;
+                // Scale each distribution so that its visual height represents its effective mass relative to the max
+                scalingFactors[index] = effectiveMasses[index] / maxEffectiveMass;
             }
         });
 
@@ -165,17 +177,22 @@ export function createComparisonsWidget(containerId, options) {
         ctx.rect(padding, padding, plotWidth, plotHeight);
         ctx.stroke();
 
-        // Calculate the maximum mass among visible distributions for scaling reference
-        let maxMass = 0;
+        // Calculate the maximum effective mass among visible distributions for scaling reference
+        let maxEffectiveMass = 0;
         let maxScaledValue = 0;
         let maxDistributionIndex = -1;
         
         if (options.distributions && options.distributions.length > 0) {
-            // Find the maximum mass and corresponding distribution
+            // Find the distribution with the highest effective mass
             options.distributions.forEach((distribution, index) => {
-                if (visibilityState[index] && distribution.mass > maxMass) {
-                    maxMass = distribution.mass;
-                    maxDistributionIndex = index;
+                if (visibilityState[index]) {
+                    const distributionSum = distribution.values.reduce((sum, prob) => sum + prob, 0);
+                    const effectiveMass = distributionSum > 0 ? distribution.mass / distributionSum : 0;
+                    
+                    if (effectiveMass > maxEffectiveMass) {
+                        maxEffectiveMass = effectiveMass;
+                        maxDistributionIndex = index;
+                    }
                 }
             });
             
