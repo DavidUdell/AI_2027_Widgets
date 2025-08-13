@@ -108,44 +108,49 @@ export function createComparisonsWidget(containerId, options) {
     }
 
     /**
-     * Calculate scaling factors for distributions based on their masses and integrals
+     * Calculate the normalized peak value for a distribution
+     */
+    function calculateNormalizedPeak(distribution) {
+        const totalMass = distribution.mass;
+        const distributionSum = distribution.values.reduce((sum, prob) => sum + prob, 0);
+        const normalizationFactor = distributionSum > 0 ? totalMass / (distributionSum * 100) : 0;
+        const originalMaxValue = Math.max(...distribution.values);
+        return originalMaxValue * normalizationFactor * 100;
+    }
+
+    /**
+     * Calculate scaling factors for distributions based on their peak values
      */
     function calculateScalingFactors() {
         if (!options.distributions || options.distributions.length === 0) {
             return {};
         }
 
-        // Calculate the effective mass for each visible distribution (mass / integral)
-        const effectiveMasses = {};
-        let maxEffectiveMass = 0;
+        // Calculate normalized peak values for all visible distributions
+        const peakValues = {};
+        let maxPeakValue = 0;
         
         options.distributions.forEach((distribution, index) => {
             if (visibilityState[index]) {
-                // Calculate the integral (sum of all probability values)
-                const distributionSum = distribution.values.reduce((sum, prob) => sum + prob, 0);
-                
-                // The effective mass represents how concentrated the distribution is
-                // Higher effective mass = more concentrated = should appear taller
-                const effectiveMass = distributionSum > 0 ? distribution.mass / distributionSum : 0;
-                effectiveMasses[index] = effectiveMass;
-                
-                if (effectiveMass > maxEffectiveMass) {
-                    maxEffectiveMass = effectiveMass;
+                const peakValue = calculateNormalizedPeak(distribution);
+                peakValues[index] = peakValue;
+                if (peakValue > maxPeakValue) {
+                    maxPeakValue = peakValue;
                 }
             }
         });
 
-        // If no visible distributions or max effective mass is 0, return no scaling
-        if (maxEffectiveMass === 0) {
+        // If no visible distributions or max peak is 0, return no scaling
+        if (maxPeakValue === 0) {
             return {};
         }
 
-        // Calculate scaling factors based on effective masses
+        // Calculate scaling factors for each distribution based on peak values
         const scalingFactors = {};
         options.distributions.forEach((distribution, index) => {
             if (visibilityState[index]) {
-                // Scale each distribution so that its visual height represents its effective mass relative to the max
-                scalingFactors[index] = effectiveMasses[index] / maxEffectiveMass;
+                // Scale each distribution so that its visual height represents its peak relative to the max peak
+                scalingFactors[index] = peakValues[index] / maxPeakValue;
             }
         });
 
@@ -177,74 +182,82 @@ export function createComparisonsWidget(containerId, options) {
         ctx.rect(padding, padding, plotWidth, plotHeight);
         ctx.stroke();
 
-        // Calculate the maximum effective mass among visible distributions for scaling reference
-        let maxEffectiveMass = 0;
-        let maxScaledValue = 0;
-        let maxDistributionIndex = -1;
-        
+        // Draw guidelines for all visible distributions
         if (options.distributions && options.distributions.length > 0) {
-            // Find the distribution with the highest effective mass
-            options.distributions.forEach((distribution, index) => {
-                if (visibilityState[index]) {
-                    const distributionSum = distribution.values.reduce((sum, prob) => sum + prob, 0);
-                    const effectiveMass = distributionSum > 0 ? distribution.mass / distributionSum : 0;
-                    
-                    if (effectiveMass > maxEffectiveMass) {
-                        maxEffectiveMass = effectiveMass;
-                        maxDistributionIndex = index;
-                    }
-                }
-            });
-            
             // Calculate scaling factors
             const scalingFactors = calculateScalingFactors();
             
-            // Find the maximum scaled probability value
-            if (maxDistributionIndex >= 0) {
-                const maxDistribution = options.distributions[maxDistributionIndex];
-                const scaleFactor = scalingFactors[maxDistributionIndex] || 1;
-                maxScaledValue = Math.max(...maxDistribution.values) * scaleFactor;
-            }
-        }
+            // Collect all guideline positions to avoid label overlap
+            const guidelinePositions = [];
+            
+            // First pass: collect all positions
+            options.distributions.forEach((distribution, index) => {
+                if (!visibilityState[index]) return;
 
-        // Draw horizontal guideline at the maximum scaled distribution value
-        if (maxScaledValue > 0 && maxDistributionIndex >= 0) {
-            const maxY = dataToCanvas(0, maxScaledValue).y;
-
-            // Draw the gridline
-            ctx.strokeStyle = '#6c757d';
-            ctx.lineWidth = 1;
-            ctx.setLineDash([5, 5]); // Dashed line
-            ctx.beginPath();
-            ctx.moveTo(padding, maxY);
-            ctx.lineTo(widgetWidth - padding, maxY);
-            ctx.stroke();
-            ctx.setLineDash([]); // Reset to solid lines
-
-            // Calculate and display the normalized value at this height
-            const maxDistribution = options.distributions[maxDistributionIndex];
-            const totalMass = maxDistribution.mass;
-            const distributionSum = maxDistribution.values.reduce((sum, prob) => sum + prob, 0);
-            const normalizationFactor = distributionSum > 0 ? totalMass / (distributionSum * 100) : 0;
-            // Use the original maximum value (before scaling) for the normalization calculation
-            const originalMaxValue = Math.max(...maxDistribution.values);
-            const maxNormalizedValue = originalMaxValue * normalizationFactor * 100;
-
-            // Format the percentage value
-            const formatPercentage = (value) => {
-                if (value < 1) {
-                    return value.toFixed(2) + '%';
-                } else {
-                    return Math.round(value) + '%';
+                const scaleFactor = scalingFactors[index] || 1;
+                const maxScaledValue = Math.max(...distribution.values) * scaleFactor;
+                
+                if (maxScaledValue > 0) {
+                    const maxY = dataToCanvas(0, maxScaledValue).y;
+                    const normalizedPeak = calculateNormalizedPeak(distribution);
+                    
+                    guidelinePositions.push({
+                        y: maxY,
+                        peak: normalizedPeak,
+                        distribution: distribution,
+                        index: index
+                    });
                 }
-            };
+            });
+            
+            // Sort by peak value (highest to lowest) to identify the three largest peaks
+            guidelinePositions.sort((a, b) => b.peak - a.peak);
+            
+            // Second pass: draw guidelines only for the top two peaks
+            guidelinePositions.forEach((guideline, i) => {
+                // Only draw guidelines and labels for the two largest peaks
+                if (i < 2) {
+                    const maxY = guideline.y;
+                    
+                    // Get the color scheme for this distribution
+                    const colorScheme = colorSchemes[guideline.distribution.color];
+                    const guidelineColor = colorScheme ? colorScheme.stroke : '#6c757d';
+                    
+                    // Draw the gridline in the distribution's color
+                    ctx.strokeStyle = guidelineColor;
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([5, 5]); // Dashed line
+                    ctx.beginPath();
+                    ctx.moveTo(padding, maxY);
+                    ctx.lineTo(widgetWidth - padding, maxY);
+                    ctx.stroke();
+                    ctx.setLineDash([]); // Reset to solid lines
 
-            // Draw the percentage label on the y-axis (left side)
-            ctx.fillStyle = '#495057';
-            ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
-            ctx.textAlign = 'right';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(formatPercentage(maxNormalizedValue), padding - 10, maxY);
+                    // Format the percentage value
+                    const formatPercentage = (value) => {
+                        if (value < 1) {
+                            return value.toFixed(2) + '%';
+                        } else {
+                            return Math.round(value) + '%';
+                        }
+                    };
+
+                    // Position labels: first on left, second on right
+                    let labelX;
+                    if (i === 0) {
+                        labelX = padding - 10; // First label on the left
+                    } else {
+                        labelX = widgetWidth - padding + 10; // Second label on the right
+                    }
+
+                    // Draw the percentage label in the distribution's color
+                    ctx.fillStyle = guidelineColor;
+                    ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+                    ctx.textAlign = labelX < widgetWidth / 2 ? 'right' : 'left';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(formatPercentage(guideline.peak), labelX, maxY);
+                }
+            });
         }
 
         // Draw the hardcoded 0% label at the bottom left
