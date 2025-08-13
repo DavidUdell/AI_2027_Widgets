@@ -159,7 +159,7 @@ export function createDistributionWidget(containerId, options) {
 
             // Format the percentage value
             const formatPercentage = (value) => {
-                if (value < 1) {
+                if (value < 10) {
                     return value.toFixed(2) + '%';
                 } else {
                     return Math.round(value) + '%';
@@ -443,3 +443,9 @@ export function createWidget(containerId, options) {
 
 // Export Bayesian analysis functions
 export * from './bayesian.js';
+
+// Export multi-distribution widget
+export { createMultiDistributionWidget } from './multi-distribution-widget.js';
+
+// Export comparisons widget
+export { createComparisonsWidget } from './comparisons.js';
