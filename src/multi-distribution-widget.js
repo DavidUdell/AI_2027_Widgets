@@ -346,7 +346,7 @@ export function createMultiDistributionWidget(containerId, options) {
 
         // Draw the curve line on top
         ctx.strokeStyle = colorScheme.stroke;
-        ctx.lineWidth = isActive ? 3 : 2;
+        ctx.lineWidth = isActive ? 2 : 1.5;
         ctx.beginPath();
 
         for (let i = 0; i < numPeriods; i++) {
@@ -459,10 +459,13 @@ export function createMultiDistributionWidget(containerId, options) {
     // Return methods for external control
     return {
         addDistribution: (color, mass) => {
+            // Create sloping initial distribution from 20% at start to 100% at end
+            const initialValues = Array(numPeriods).fill(0).map((_, i) => 0.2 + (0.8 * i / (numPeriods - 1)));
+            
             const newDistribution = {
                 color: color,
                 mass: mass,
-                values: Array(numPeriods).fill(0.5) // Default to 50% for all periods
+                values: initialValues
             };
             distributions.push(newDistribution);
             activeDistributionIndex = distributions.length - 1;

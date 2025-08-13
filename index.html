@@ -663,6 +663,12 @@
             updateTotalMassDisplay();
             updateDistributionList();
 
+            // Start with a Blue distribution
+            widget.addDistribution('blue', 50);
+            updateDistributionList();
+            updateTotalMassDisplay();
+            updateBayesianAnalysis();
+
 
 
             function updateBayesianAnalysis() {
