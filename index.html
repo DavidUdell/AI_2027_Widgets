@@ -202,21 +202,6 @@
         laborum.
     </p>
 
-    <div class="reference-section">
-        <h2>Our AGI Timelines</h2>
-        <p>
-            Our distribution over quarters in which AGI might be developed is
-            shown here:
-        </p>
-        <div id="reference-widget"></div>
-        <p>
-            The total mass of the distribution is 75%, which is our subjective
-            probability that AGI will be developed by 2040. Our distribution
-            peaks in Q1 of 2033, with a 3% probability that AGI will be
-            developed in that particular quarter.
-        </p>
-    </div>
-
     <p>
         Sed ut perspiciatis unde omnis iste natus error sit voluptatem
         accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae
@@ -235,16 +220,23 @@
     <div class="widget-container">
         <h2>Your AGI Timelines</h2>
         <div class="instructions">
-            <strong>Instructions:</strong> Create multiple sub-probability distributions by selecting a color, setting a mass value, and drawing in the widget. Each color represents a different component of your overall probability distribution.
+            <strong>Instructions:</strong> Create multiple sub-probability
+            distributions by selecting a color, setting its total probability
+            value, and drawing in the widget. Each color represents a different
+            sub-probability distribution.
         </div>
         
         <!-- Distribution Controls -->
         <div style="margin-bottom: 20px; text-align: center;">
-            <div style="display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap;">
+            <div style="display: flex; justify-content: center; align-items:
+            center; gap: 15px; flex-wrap: wrap;">
                 <!-- Color Selection -->
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <label for="distribution-color" style="font-weight: bold;">Distribution:</label>
-                    <select id="distribution-color" style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
+                    <label for="distribution-color" style="font-weight:
+                    bold;">Distribution:</label>
+                    <select id="distribution-color" style="padding: 4px 8px;
+                    border: 1px solid #ccc; border-radius: 4px; font-size:
+                    14px;">
                         <option value="blue">Blue</option>
                         <option value="green">Green</option>
                         <option value="red">Red</option>
@@ -256,13 +248,15 @@
                 
                 <!-- Mass Input -->
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <label for="sub-mass" style="font-weight: bold;">Total Probability AGI by 2040:</label>
+                    <label for="sub-mass" style="font-weight: bold;">Total
+                    Probability AGI by 2040:</label>
                     <div class="number-input-container">
-                        <input type="text" id="sub-mass" value="50" 
-                               class="number-input"
-                               inputmode="numeric" pattern="[0-9]*">
+                        <input type="text" id="sub-mass" value="50"
+                        class="number-input" inputmode="numeric"
+                        pattern="[0-9]*">
                         <span style="margin-left: 5px;">%</span>
-                        <div id="sub-mass-feedback" class="input-feedback"></div>
+                        <div id="sub-mass-feedback"
+                        class="input-feedback"></div>
                     </div>
                 </div>
             </div>
@@ -326,20 +320,6 @@
         consequat augue.        
     </p>
 
-    <div class="reference-section ground-truth-section">
-        <h2>Ground Truth AGI Timeline</h2>
-        <p>
-            This represents the hypothetical "ground truth" distribution over
-            quarters in which AGI might actually be developed:
-        </p>
-        <div id="ground-truth-widget"></div>
-        <p>
-            The ground truth distribution has a total mass of 85%, with a peak
-            in Q3 of 2035, indicating a later and more conservative timeline
-            compared to our estimates.
-        </p>
-    </div>
-
     <p>
         Ut leo augue, fermentum sed nisi non, tempus mattis elit. Praesent eu
         ipsum ac arcu porttitor consequat a at tellus. Praesent non volutpat
@@ -350,7 +330,8 @@
         vel quis leo. Suspendisse varius molestie tristique.
     </p>
 
-    <div class="reference-section" style="background: #f8f9fa; border-color: #dee2e6;">
+    <div class="reference-section" style="background: #f8f9fa; border-color:
+    #dee2e6;">
         <h2 style="color: #495057; border-bottom-color: #dee2e6;">Discrete
         Bayesian Analysis</h2>
         <p>
@@ -519,7 +500,8 @@
 
             // Handle keydown for sub-mass input
             subMassInput.addEventListener('keydown', (e) => {
-                // Allow: backspace, delete, tab, escape, enter, and navigation keys
+                // Allow: backspace, delete, tab, escape, enter, and navigation
+                // keys
                 if ([8, 9, 27, 13, 46, 37, 38, 39, 40].includes(e.keyCode)) {
                     return;
                 }
