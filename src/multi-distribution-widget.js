@@ -38,9 +38,9 @@ export function createMultiDistributionWidget(containerId, options) {
     const numYears = options.endYear - options.startYear + 1;
     const numPeriods = (numYears - 1) * 4 + 1;
 
-    // Store multiple distributions
+    // Store multiple distributions - initialize all colors
     let distributions = [];
-    let activeDistributionIndex = -1;
+    let activeDistributionIndex = 0; // Start with blue
 
     // Drawing state
     let isDrawing = false;
@@ -449,6 +449,17 @@ export function createMultiDistributionWidget(containerId, options) {
     // Prevent context menu
     canvas.addEventListener('contextmenu', e => e.preventDefault());
 
+    // Initialize all distributions
+    const colors = ['blue', 'green', 'red', 'purple', 'orange', 'teal'];
+    colors.forEach((color, index) => {
+        const initialValues = Array(numPeriods).fill(0).map((_, i) => 0.2 + (0.8 * i / (numPeriods - 1)));
+        distributions.push({
+            color: color,
+            mass: 25, // Default mass
+            values: initialValues
+        });
+    });
+
     // Append canvas to container
     container.appendChild(canvas);
 
@@ -497,6 +508,22 @@ export function createMultiDistributionWidget(containerId, options) {
             if (index >= 0 && index < distributions.length) {
                 activeDistributionIndex = index;
                 drawWidget();
+            }
+        },
+        setActiveDistributionByColor: (color) => {
+            const index = distributions.findIndex(dist => dist.color === color);
+            if (index !== -1) {
+                activeDistributionIndex = index;
+                drawWidget();
+            }
+        },
+        setActiveDistributionMass: (mass) => {
+            if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length) {
+                distributions[activeDistributionIndex].mass = mass;
+                drawWidget();
+                if (options.onChange) {
+                    options.onChange(distributions);
+                }
             }
         },
         getDistributions: () => [...distributions],

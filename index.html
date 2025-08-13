@@ -177,57 +177,7 @@
             color: #28a745;
         }
 
-        /* Distribution list styles */
-        .distribution-list {
-            margin: 15px 0;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border: 1px solid #dee2e6;
-        }
 
-        .distribution-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 8px;
-            margin: 5px 0;
-            background: white;
-            border-radius: 4px;
-            border: 1px solid #e9ecef;
-        }
-
-        .distribution-color-indicator {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            border: 2px solid #fff;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-        }
-
-        .distribution-info {
-            flex: 1;
-            font-size: 14px;
-        }
-
-        .distribution-mass {
-            font-weight: bold;
-            color: #495057;
-        }
-
-        .remove-distribution {
-            background: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 4px 8px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        .remove-distribution:hover {
-            background: #c82333;
-        }
 
         /* Button hover effects */
         #add-distribution:hover {
@@ -293,7 +243,7 @@
             <div style="display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap;">
                 <!-- Color Selection -->
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <label for="distribution-color" style="font-weight: bold;">Color:</label>
+                    <label for="distribution-color" style="font-weight: bold;">Distribution:</label>
                     <select id="distribution-color" style="padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;">
                         <option value="blue">Blue</option>
                         <option value="green">Green</option>
@@ -315,21 +265,12 @@
                         <div id="sub-mass-feedback" class="input-feedback"></div>
                     </div>
                 </div>
-                
-                <!-- Add Distribution Button -->
-                <button id="add-distribution" style="padding: 6px 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px;">
-                    Add Distribution
-                </button>
             </div>
         </div>
         
 
         
-        <!-- Distribution List -->
-        <div id="distribution-list" class="distribution-list" style="display: none;">
-            <h4 style="margin-top: 0; margin-bottom: 10px; color: #495057;">Your Distributions:</h4>
-            <div id="distribution-items"></div>
-        </div>
+
         <div id="distribution-widget"></div>
     </div>
 
@@ -481,9 +422,7 @@
             const colorSelect = document.getElementById('distribution-color');
             const subMassInput = document.getElementById('sub-mass');
             const subMassFeedback = document.getElementById('sub-mass-feedback');
-            const addDistributionBtn = document.getElementById('add-distribution');
-            const distributionList = document.getElementById('distribution-list');
-            const distributionItems = document.getElementById('distribution-items');
+
 
             // Debounce function to avoid excessive updates
             let debounceTimer;
@@ -531,81 +470,32 @@
 
 
 
-            function updateDistributionList() {
-                const distributions = widget.getDistributions();
-                
-                if (distributions.length === 0) {
-                    distributionList.style.display = 'none';
-                    return;
+
+
+            function updateMassInput() {
+                const activeIndex = widget.getActiveDistributionIndex();
+                if (activeIndex >= 0) {
+                    const distributions = widget.getDistributions();
+                    subMassInput.value = distributions[activeIndex].mass.toString();
                 }
-
-                distributionList.style.display = 'block';
-                distributionItems.innerHTML = '';
-
-                distributions.forEach((dist, index) => {
-                    const item = document.createElement('div');
-                    item.className = 'distribution-item';
-                    
-                    const colorIndicator = document.createElement('div');
-                    colorIndicator.className = 'distribution-color-indicator';
-                    colorIndicator.style.backgroundColor = getColorValue(dist.color);
-                    
-                    const info = document.createElement('div');
-                    info.className = 'distribution-info';
-                    info.innerHTML = `<span class="distribution-mass">${dist.color.charAt(0).toUpperCase() + dist.color.slice(1)}: ${dist.mass}%</span>`;
-                    
-                    const removeBtn = document.createElement('button');
-                    removeBtn.className = 'remove-distribution';
-                    removeBtn.textContent = 'Remove';
-                    removeBtn.onclick = () => {
-                        widget.removeDistribution(index);
-                        updateDistributionList();
-                        updateBayesianAnalysis();
-                    };
-
-                    // Make item clickable to set as active
-                    item.onclick = (e) => {
-                        if (e.target !== removeBtn) {
-                            widget.setActiveDistribution(index);
-                            updateDistributionList();
-                        }
-                    };
-
-                    // Highlight active distribution
-                    const activeIndex = widget.getActiveDistributionIndex();
-                    if (index === activeIndex) {
-                        item.style.border = '2px solid #007bff';
-                        item.style.backgroundColor = '#f8f9fa';
-                    }
-
-                    item.appendChild(colorIndicator);
-                    item.appendChild(info);
-                    item.appendChild(removeBtn);
-                    distributionItems.appendChild(item);
-                });
             }
 
-            function getColorValue(colorName) {
-                const colorMap = {
-                    blue: '#007bff',
-                    green: '#28a745',
-                    red: '#dc3545',
-                    purple: '#6f42c1',
-                    orange: '#fd7e14',
-                    teal: '#20c997'
-                };
-                return colorMap[colorName] || '#007bff';
-            }
 
-            // Handle add distribution button
-            addDistributionBtn.addEventListener('click', () => {
-                if (!validateSubMassInput()) return;
 
+            // Handle color dropdown changes
+            colorSelect.addEventListener('change', () => {
                 const color = colorSelect.value;
-                const mass = parseInt(subMassInput.value, 10);
+                widget.setActiveDistributionByColor(color);
+                updateMassInput();
+                updateBayesianAnalysis();
+            });
+
+            // Handle mass input changes
+            subMassInput.addEventListener('input', () => {
+                if (!validateSubMassInput()) return;
                 
-                widget.addDistribution(color, mass);
-                updateDistributionList();
+                const mass = parseInt(subMassInput.value, 10);
+                widget.setActiveDistributionMass(mass);
                 updateBayesianAnalysis();
             });
 
@@ -650,11 +540,7 @@
 
             // Initialize
             validateSubMassInput();
-            updateDistributionList();
-
-            // Start with a Blue distribution
-            widget.addDistribution('blue', 50);
-            updateDistributionList();
+            updateMassInput();
             updateBayesianAnalysis();
 
 
@@ -718,7 +604,6 @@
 
             // Update Bayesian analysis when distribution changes
             widget.setOnChange(() => {
-                updateDistributionList();
                 updateBayesianAnalysis();
             });
 
