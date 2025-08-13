@@ -15,8 +15,8 @@
   "type": "module",
   "main": "dist/ai-2027-widgets.es.js",
   "scripts": {
-    "build": "vite build",
     "dev": "vite",
+    "build": "vite build",
     "preview": "vite preview",
     "test": "vitest",
     "test:ci": "vitest run --coverage"
