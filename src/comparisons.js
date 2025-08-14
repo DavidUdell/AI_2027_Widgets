@@ -172,7 +172,7 @@ export function createComparisonsWidget(containerId, options) {
             const percentSpan = document.createElement('span');
             percentSpan.textContent = '%';
             percentSpan.style.position = 'absolute';
-            percentSpan.style.left = (x + checkboxSize + textMargin + colorBoxSize + textMargin + maxTextWidth + 50) + 'px';
+            percentSpan.style.left = (x + checkboxSize + textMargin + colorBoxSize + textMargin + maxTextWidth + 55) + 'px';
             percentSpan.style.top = (y + 4) + 'px';
             percentSpan.style.fontSize = '12px';
             percentSpan.style.fontFamily = '-apple-system, BlinkMacSystemFont, sans-serif';
