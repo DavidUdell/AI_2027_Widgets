@@ -201,13 +201,13 @@
     <div class="widget-container">
         <h2>Your AGI Timelines</h2>
         <div class="instructions">
-            <strong>Instructions:</strong> Create multiple sub-probability
-            distributions by selecting a color and drawing in the widget. Each color represents a different
-            sub-probability distribution. The active distribution is drawn on top, 
-            while other distributions are shown in the background with reduced opacity.
-            Set the probability masses directly in the legend below.
+            <strong>Instructions:</strong> Shape a sub-probability distribution
+            by selecting a color and drawing in the widget. The active
+            distribution is drawn on top, while other distributions are shown
+            in the background. The active distribution's maximum probability
+            quarter is indicated.
         </div>
-        
+
         <!-- Distribution Controls -->
         <div style="margin-bottom: 20px; text-align: center;">
             <div style="display: flex; justify-content: center; align-items:
@@ -215,7 +215,7 @@
                 <!-- Color Selection -->
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <label for="distribution-color" style="font-weight:
-                    bold;">Distribution:</label>
+                    bold;">Select Distribution:</label>
                     <select id="distribution-color" style="padding: 4px 8px;
                     border: 1px solid #ccc; border-radius: 4px; font-size:
                     14px;">
@@ -241,12 +241,10 @@
     <div class="widget-container">
         <h2>Distribution Comparisons</h2>
         <div class="instructions">
-            <strong>Overview:</strong> This view displays all your distributions together for easy comparison. 
-            Each curve represents a different sub-probability distribution with its associated probability mass.
-            <br><br>
-            <strong>Scaling:</strong> Distributions are automatically scaled relative to one another based on their peak probability values. 
-            The distribution with the highest peak serves as the benchmark (100% height), and other distributions are scaled proportionally.
-            Horizontal guidelines show the actual percentage values at each distribution's peak.
+            <strong>Instructions:</strong> This view displays all your
+            distributions together for comparison. Set the total probability of
+            each distribution in its input box. Distributions are automatically
+            scaled relative to one another.
         </div>
         
 
