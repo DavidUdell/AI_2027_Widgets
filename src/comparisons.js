@@ -129,28 +129,35 @@ export function createComparisonsWidget(containerId, options) {
         // Calculate normalized peak values for all visible distributions
         const peakValues = {};
         let maxPeakValue = 0;
-        
+        let refIndex = -1;
+
         options.distributions.forEach((distribution, index) => {
             if (visibilityState[index]) {
                 const peakValue = calculateNormalizedPeak(distribution);
                 peakValues[index] = peakValue;
                 if (peakValue > maxPeakValue) {
                     maxPeakValue = peakValue;
+                    refIndex = index;
                 }
             }
         });
 
         // If no visible distributions or max peak is 0, return no scaling
-        if (maxPeakValue === 0) {
+        if (maxPeakValue === 0 || refIndex === -1) {
             return {};
         }
 
         // Calculate scaling factors for each distribution based on peak values
+        const refSum = options.distributions[refIndex].values.reduce((sum, prob) => sum + prob, 0);
+        const refMass = options.distributions[refIndex].mass;
+        const refRatio = refSum > 0 && refMass > 0 ? (refMass / refSum) : 0;
         const scalingFactors = {};
+
         options.distributions.forEach((distribution, index) => {
             if (visibilityState[index]) {
-                // Scale each distribution so that its visual height represents its peak relative to the max peak
-                scalingFactors[index] = peakValues[index] / maxPeakValue;
+                const sum = distribution.values.reduce((sum, prob) => sum + prob, 0);
+                const mass = distribution.mass;
+                scalingFactors[index] = (sum > 0 && mass > 0 && refRatio > 0) ? (mass / sum) / refRatio : 0;
             }
         });
 
