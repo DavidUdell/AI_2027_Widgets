@@ -201,12 +201,13 @@
     <div class="widget-container">
         <h2>Your AGI Timelines</h2>
         <div class="instructions">
-            <strong>Instructions:</strong> Create multiple sub-probability
-            distributions by selecting a color, setting its total probability
-            value, and drawing in the widget. Each color represents a different
-            sub-probability distribution.
+            <strong>Instructions:</strong> Shape a sub-probability distribution
+            by selecting a color and drawing in the widget. The active
+            distribution is drawn on top, while other distributions are shown
+            in the background. The active distribution's maximum probability
+            quarter is indicated.
         </div>
-        
+
         <!-- Distribution Controls -->
         <div style="margin-bottom: 20px; text-align: center;">
             <div style="display: flex; justify-content: center; align-items:
@@ -214,7 +215,7 @@
                 <!-- Color Selection -->
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <label for="distribution-color" style="font-weight:
-                    bold;">Distribution:</label>
+                    bold;">Select Distribution:</label>
                     <select id="distribution-color" style="padding: 4px 8px;
                     border: 1px solid #ccc; border-radius: 4px; font-size:
                     14px;">
@@ -227,19 +228,7 @@
                     </select>
                 </div>
                 
-                <!-- Mass Input -->
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <label for="sub-mass" style="font-weight: bold;">Total
-                    Probability AGI by 2040:</label>
-                    <div class="number-input-container">
-                        <input type="text" id="sub-mass" value="50"
-                        class="number-input" inputmode="numeric"
-                        pattern="[0-9]*">
-                        <span style="margin-left: 5px;">%</span>
-                        <div id="sub-mass-feedback"
-                        class="input-feedback"></div>
-                    </div>
-                </div>
+
             </div>
         </div>
         
@@ -252,13 +241,13 @@
     <div class="widget-container">
         <h2>Distribution Comparisons</h2>
         <div class="instructions">
-            <strong>Overview:</strong> This view displays all your distributions together for easy comparison. 
-            Each curve represents a different sub-probability distribution with its associated probability mass.
-            <br><br>
-            <strong>Scaling:</strong> Distributions are automatically scaled relative to one another based on their peak probability values. 
-            The distribution with the highest peak serves as the benchmark (100% height), and other distributions are scaled proportionally.
-            Horizontal guidelines show the actual percentage values at each distribution's peak.
+            <strong>Instructions:</strong> This view displays all your
+            distributions together for comparison. Set the total probability of
+            each distribution in its input box. Distributions are automatically
+            scaled relative to one another.
         </div>
+        
+
         
         <div id="comparisons-widget"></div>
     </div>
@@ -355,63 +344,21 @@
 
             // Multi-distribution widget controls
             const colorSelect = document.getElementById('distribution-color');
-            const subMassInput = document.getElementById('sub-mass');
-            const subMassFeedback = document.getElementById('sub-mass-feedback');
+            
+
 
 
             // Debounce function to avoid excessive updates
             let debounceTimer;
 
-            function validateSubMassInput() {
-                const inputValue = subMassInput.value.trim();
-                const feedback = subMassFeedback;
-
-                // Clear previous styling
-                subMassInput.classList.remove('valid', 'invalid');
-                feedback.className = 'input-feedback';
-                feedback.textContent = '';
-
-                // Handle empty input
-                if (inputValue === '') {
-                    subMassInput.classList.add('invalid');
-                    feedback.classList.add('error');
-                    feedback.textContent = '0-100 only';
-                    return false;
-                }
-
-                // Check if input contains only digits
-                if (!/^\d+$/.test(inputValue)) {
-                    subMassInput.classList.add('invalid');
-                    feedback.classList.add('error');
-                    feedback.textContent = 'Numbers only';
-                    return false;
-                }
-
-                const numValue = parseInt(inputValue, 10);
-
-                // Check range
-                if (numValue < 0 || numValue > 100) {
-                    subMassInput.classList.add('invalid');
-                    feedback.classList.add('error');
-                    feedback.textContent = '0-100 only';
-                    return false;
-                }
-
-                // Valid input
-                subMassInput.classList.add('valid');
-                feedback.classList.add('success');
-                return true;
-            }
 
 
-
-
-
-            function updateMassInput() {
+            function updateColorSelect() {
                 const activeIndex = widget.getActiveDistributionIndex();
                 if (activeIndex >= 0) {
                     const distributions = widget.getDistributions();
-                    subMassInput.value = distributions[activeIndex].mass.toString();
+                    const activeColor = distributions[activeIndex].color;
+                    colorSelect.value = activeColor;
                 }
             }
 
@@ -421,65 +368,19 @@
             colorSelect.addEventListener('change', () => {
                 const color = colorSelect.value;
                 widget.setActiveDistributionByColor(color);
-                updateMassInput();
-            });
-
-            // Handle mass input changes
-            subMassInput.addEventListener('input', () => {
-                if (!validateSubMassInput()) return;
-                
-                const mass = parseInt(subMassInput.value, 10);
-                widget.setActiveDistributionMass(mass);
             });
 
 
-
-            // Handle sub-mass input validation
-            subMassInput.addEventListener('input', validateSubMassInput);
-            subMassInput.addEventListener('blur', () => {
-                const inputValue = subMassInput.value.trim();
-                if (inputValue === '') {
-                    subMassInput.value = '25';
-                    validateSubMassInput();
-                } else if (/^\d+$/.test(inputValue)) {
-                    const numValue = parseInt(inputValue, 10);
-                    if (numValue >= 0 && numValue <= 100) {
-                        subMassInput.value = numValue.toString();
-                        validateSubMassInput();
-                    }
-                }
-            });
-
-            // Handle keydown for sub-mass input
-            subMassInput.addEventListener('keydown', (e) => {
-                // Allow: backspace, delete, tab, escape, enter, and navigation
-                // keys
-                if ([8, 9, 27, 13, 46, 37, 38, 39, 40].includes(e.keyCode)) {
-                    return;
-                }
-
-                // Allow digits only
-                if (e.keyCode >= 48 && e.keyCode <= 57) {
-                    return;
-                }
-
-                // Allow numpad digits
-                if (e.keyCode >= 96 && e.keyCode <= 105) {
-                    return;
-                }
-
-                // Prevent other keys
-                e.preventDefault();
-            });
 
             // Set up callback to update comparisons widget when distributions change
             widget.setOnChange((distributions) => {
                 comparisonsWidget.updateDistributions(distributions);
+                // Update the UI controls to reflect the active distribution
+                updateColorSelect();
             });
 
             // Initialize
-            validateSubMassInput();
-            updateMassInput();
+            updateColorSelect();
         });
     </script>
 </body>

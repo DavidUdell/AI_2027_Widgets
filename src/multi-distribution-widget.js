@@ -129,7 +129,7 @@ export function createMultiDistributionWidget(containerId, options) {
     }
 
     /**
-     * Draw static and dynamic gridlines
+     * Draw static gridlines
      */
     function drawGrid() {
         ctx.strokeStyle = '#dee2e6';
@@ -139,44 +139,11 @@ export function createMultiDistributionWidget(containerId, options) {
         ctx.rect(padding, padding, plotWidth, plotHeight);
         ctx.stroke();
 
-        // Draw horizontal gridline at the maximum active distribution value
+        // Draw vertical guideline at the maximum active distribution value
         if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length) {
             const activeDist = distributions[activeDistributionIndex];
             const maxDistributionValue = Math.max(...activeDist.values);
             if (maxDistributionValue > 0) {
-                const maxY = dataToCanvas(0, maxDistributionValue).y;
-
-                // Draw the gridline
-                ctx.strokeStyle = '#6c757d';
-                ctx.lineWidth = 1;
-                ctx.setLineDash([5, 5]); // Dashed line
-                ctx.beginPath();
-                ctx.moveTo(padding, maxY);
-                ctx.lineTo(widgetWidth - padding, maxY);
-                ctx.stroke();
-                ctx.setLineDash([]); // Reset to solid lines
-
-                // Calculate and display the normalized value at this height
-                const distributionSum = activeDist.values.reduce((sum, prob) => sum + prob, 0);
-                const normalizationFactor = distributionSum > 0 ? activeDist.mass / (distributionSum * 100) : 0;
-                const maxNormalizedValue = maxDistributionValue * normalizationFactor * 100;
-
-                // Format the percentage value
-                const formatPercentage = (value) => {
-                    if (value < 10) {
-                        return value.toFixed(2) + '%';
-                    } else {
-                        return Math.round(value) + '%';
-                    }
-                };
-
-                // Draw the percentage label on the y-axis (left side)
-                ctx.fillStyle = '#495057';
-                ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
-                ctx.textAlign = 'right';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(formatPercentage(maxNormalizedValue), padding - 10, maxY);
-
                 // Find the quarter with maximum probability and draw vertical guideline
                 const maxIndex = activeDist.values.indexOf(maxDistributionValue);
                 if (maxIndex !== -1) {
@@ -185,7 +152,7 @@ export function createMultiDistributionWidget(containerId, options) {
                     // Draw vertical guideline
                     ctx.strokeStyle = '#6c757d';
                     ctx.lineWidth = 1;
-                    ctx.setLineDash([5, 5]); // Dashed line - same as horizontal
+                    ctx.setLineDash([5, 5]); // Dashed line
                     ctx.beginPath();
                     ctx.moveTo(maxX, padding);
                     ctx.lineTo(maxX, options.height - padding);
@@ -274,45 +241,18 @@ export function createMultiDistributionWidget(containerId, options) {
             return;
         }
 
-        // Only draw the active distribution
+        // Draw all non-active distributions in the background first
+        distributions.forEach((distribution, index) => {
+            if (index !== activeDistributionIndex) {
+                drawSingleDistribution(distribution, false);
+            }
+        });
+
+        // Draw the active distribution on top
         if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length) {
             const activeDist = distributions[activeDistributionIndex];
             drawSingleDistribution(activeDist, true);
         }
-
-        // Draw active distribution's mass in center
-        const centerX = widgetWidth / 2;
-        const centerY = options.height / 2;
-
-        // Determine if the center point is under the active distribution
-        const centerPeriodIndex = (centerX - padding) / periodStep;
-        const clampedPeriodIndex = Math.max(0, Math.min(numPeriods - 1, Math.round(centerPeriodIndex)));
-        
-        let centerProbability = 0;
-        let activeMass = 0;
-        if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length) {
-            centerProbability = distributions[activeDistributionIndex].values[clampedPeriodIndex];
-            activeMass = distributions[activeDistributionIndex].mass;
-        }
-        
-        const centerYInData = (1 - (centerY - padding) / plotHeight);
-
-        // Choose color based on whether text is over shaded region
-        let textColor;
-        if (centerYInData < centerProbability) {
-            // Text is over the shaded region - use faint white
-            textColor = 'rgba(255, 255, 255, 0.8)';
-        } else {
-            // Text is over white background or exactly at boundary - use faint dark
-            textColor = 'rgba(0, 0, 0, 0.3)';
-        }
-
-        // Draw active distribution's probability text with appropriate color
-        ctx.fillStyle = textColor;
-        ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(activeMass.toString() + '%', centerX, centerY);
     }
 
     /**
@@ -322,10 +262,18 @@ export function createMultiDistributionWidget(containerId, options) {
         const colorScheme = colorSchemes[distribution.color];
         if (!colorScheme) return;
 
-        // Create gradient for the fill
+        // Create gradient for the fill with reduced opacity for background distributions
         const gradient = ctx.createLinearGradient(padding, padding, padding, options.height - padding);
-        gradient.addColorStop(0, colorScheme.gradientStart);
-        gradient.addColorStop(1, colorScheme.gradientEnd);
+        if (isActive) {
+            gradient.addColorStop(0, colorScheme.gradientStart);
+            gradient.addColorStop(1, colorScheme.gradientEnd);
+        } else {
+            // Reduce opacity for background distributions
+            const backgroundGradientStart = colorScheme.gradientStart.replace('0.3)', '0.15)');
+            const backgroundGradientEnd = colorScheme.gradientEnd.replace('0.1)', '0.05)');
+            gradient.addColorStop(0, backgroundGradientStart);
+            gradient.addColorStop(1, backgroundGradientEnd);
+        }
 
         // Draw the filled area under the curve
         ctx.fillStyle = gradient;
@@ -345,9 +293,21 @@ export function createMultiDistributionWidget(containerId, options) {
         ctx.closePath();
         ctx.fill();
 
-        // Draw the curve line on top
-        ctx.strokeStyle = colorScheme.stroke;
-        ctx.lineWidth = isActive ? 2 : 1.5;
+        // Draw the curve line on top with reduced opacity for background distributions
+        if (isActive) {
+            ctx.strokeStyle = colorScheme.stroke;
+            ctx.lineWidth = 2;
+        } else {
+            // Reduce opacity for background distributions
+            // Convert hex to rgba with 50% opacity
+            const hex = colorScheme.stroke.replace('#', '');
+            const r = parseInt(hex.substr(0, 2), 16);
+            const g = parseInt(hex.substr(2, 2), 16);
+            const b = parseInt(hex.substr(4, 2), 16);
+            ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.5)`;
+            ctx.lineWidth = 1.5;
+        }
+        
         ctx.beginPath();
 
         for (let i = 0; i < numPeriods; i++) {
@@ -360,6 +320,8 @@ export function createMultiDistributionWidget(containerId, options) {
         }
         ctx.stroke();
     }
+
+
 
     /**
      * Get combined distribution (sum of all distributions)
@@ -440,6 +402,8 @@ export function createMultiDistributionWidget(containerId, options) {
         isDrawing = false;
     }
 
+
+
     // Add event listeners
     canvas.addEventListener('pointerdown', handlePointerDown);
     canvas.addEventListener('pointermove', handlePointerMove);
@@ -455,7 +419,7 @@ export function createMultiDistributionWidget(containerId, options) {
         const initialValues = Array(numPeriods).fill(0).map((_, i) => 0.2 + (0.8 * i / (numPeriods - 1)));
         distributions.push({
             color: color,
-            mass: 50, // Default mass
+            mass: 50, // Default mass of 50%
             values: initialValues
         });
     });
@@ -517,15 +481,7 @@ export function createMultiDistributionWidget(containerId, options) {
                 drawWidget();
             }
         },
-        setActiveDistributionMass: (mass) => {
-            if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length) {
-                distributions[activeDistributionIndex].mass = mass;
-                drawWidget();
-                if (options.onChange) {
-                    options.onChange(distributions);
-                }
-            }
-        },
+
         getDistributions: () => [...distributions],
         getActiveDistributionIndex: () => activeDistributionIndex,
         getCombinedDistribution: getCombinedDistribution,
