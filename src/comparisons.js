@@ -155,6 +155,7 @@ export function createComparisonsWidget(containerId, options) {
             const input = document.createElement('input');
             input.type = 'text';
             input.value = distribution.mass.toString();
+            input.placeholder = '0-100';
             input.style.position = 'absolute';
             input.style.left = (x + checkboxSize + textMargin + colorBoxSize + textMargin + maxTextWidth + 5) + 'px';
             input.style.top = (y + 2) + 'px';
