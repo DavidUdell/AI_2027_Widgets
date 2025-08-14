@@ -20,6 +20,12 @@ export function createComparisonsWidget(containerId, options) {
         return;
     }
 
+    // Create a wrapper div to hold both canvas and legend inputs
+    const wrapper = document.createElement('div');
+    wrapper.style.position = 'relative';
+    wrapper.style.width = '100%';
+    wrapper.style.height = options.height + 'px';
+
     const canvas = document.createElement('canvas');
     // Calculate responsive width if not provided
     let widgetWidth = options.width;
@@ -31,6 +37,9 @@ export function createComparisonsWidget(containerId, options) {
     canvas.width = widgetWidth;
     canvas.height = options.height;
     canvas.className = 'comparisons-widget-canvas';
+    canvas.style.position = 'absolute';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
 
     const ctx = canvas.getContext('2d');
 
@@ -45,6 +54,9 @@ export function createComparisonsWidget(containerId, options) {
 
     // Track visibility state for each distribution
     const visibilityState = {};
+    
+    // Store legend input elements
+    const legendInputs = {};
 
     // Color schemes for different distributions
     const colorSchemes = {
@@ -104,6 +116,106 @@ export function createComparisonsWidget(containerId, options) {
         options.distributions.forEach((distribution, index) => {
             // Default all distributions to visible
             visibilityState[index] = true;
+        });
+    }
+
+    /**
+     * Create legend input elements
+     */
+    function createLegendInputs() {
+        if (!options.distributions) return;
+
+        const legendStartY = 14;
+        const legendItemHeight = 25;
+        const legendItemSpacing = 5;
+        const colorBoxSize = 15;
+        const checkboxSize = 12;
+        const textMargin = 10;
+        const itemsPerRow = 3;
+        const rowSpacing = 10;
+
+        // Calculate legend dimensions
+        const maxTextWidth = Math.max(...options.distributions.map(dist => {
+            const text = `${dist.color.charAt(0).toUpperCase() + dist.color.slice(1)}: `;
+            ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+            return ctx.measureText(text).width;
+        }));
+
+        const itemWidth = maxTextWidth + colorBoxSize + checkboxSize + textMargin * 2 + 50; // Extra space for input
+        const totalLegendWidth = itemWidth * itemsPerRow + (itemsPerRow - 1) * 40;
+        const legendX = (widgetWidth - totalLegendWidth) / 2;
+
+        options.distributions.forEach((distribution, index) => {
+            const row = Math.floor(index / itemsPerRow);
+            const col = index % itemsPerRow;
+            const x = legendX + col * (itemWidth + 40);
+            const y = legendStartY + row * (legendItemHeight + rowSpacing);
+
+            // Create input element
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = distribution.mass.toString();
+            input.style.position = 'absolute';
+            input.style.left = (x + checkboxSize + textMargin + colorBoxSize + textMargin + maxTextWidth + 5) + 'px';
+            input.style.top = (y + 2) + 'px';
+            input.style.width = '40px';
+            input.style.height = '20px';
+            input.style.border = '1px solid #ccc';
+            input.style.borderRadius = '3px';
+            input.style.fontSize = '12px';
+            input.style.textAlign = 'center';
+            input.style.fontFamily = '-apple-system, BlinkMacSystemFont, sans-serif';
+            input.style.zIndex = '10';
+
+            // Add % symbol after input
+            const percentSpan = document.createElement('span');
+            percentSpan.textContent = '%';
+            percentSpan.style.position = 'absolute';
+            percentSpan.style.left = (x + checkboxSize + textMargin + colorBoxSize + textMargin + maxTextWidth + 50) + 'px';
+            percentSpan.style.top = (y + 4) + 'px';
+            percentSpan.style.fontSize = '12px';
+            percentSpan.style.fontFamily = '-apple-system, BlinkMacSystemFont, sans-serif';
+            percentSpan.style.color = '#495057';
+            percentSpan.style.zIndex = '10';
+
+            // Add event listeners
+            input.addEventListener('input', (e) => {
+                const value = e.target.value.trim();
+                if (/^\d*$/.test(value)) {
+                    const mass = parseInt(value) || 0;
+                    if (mass >= 0 && mass <= 100) {
+                        distribution.mass = mass;
+                        drawWidget();
+                        if (options.onChange) {
+                            options.onChange(options.distributions);
+                        }
+                    }
+                }
+            });
+
+            input.addEventListener('blur', (e) => {
+                const value = e.target.value.trim();
+                if (value === '') {
+                    input.value = '0';
+                    distribution.mass = 0;
+                } else {
+                    const mass = parseInt(value) || 0;
+                    const clampedMass = Math.max(0, Math.min(100, mass));
+                    input.value = clampedMass.toString();
+                    distribution.mass = clampedMass;
+                }
+                drawWidget();
+                if (options.onChange) {
+                    options.onChange(options.distributions);
+                }
+            });
+
+            // Store references
+            legendInputs[distribution.color] = input;
+
+            // Add to wrapper
+            wrapper.appendChild(input);
+            wrapper.appendChild(percentSpan);
         });
     }
 
@@ -410,12 +522,12 @@ export function createComparisonsWidget(containerId, options) {
 
         // Calculate legend dimensions
         const maxTextWidth = Math.max(...options.distributions.map(dist => {
-            const text = `${dist.color.charAt(0).toUpperCase() + dist.color.slice(1)}: ${dist.mass}%`;
+            const text = `${dist.color.charAt(0).toUpperCase() + dist.color.slice(1)}: `;
             ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
             return ctx.measureText(text).width;
         }));
 
-        const itemWidth = maxTextWidth + colorBoxSize + checkboxSize + textMargin * 2;
+        const itemWidth = maxTextWidth + colorBoxSize + checkboxSize + textMargin * 2 + 50; // Extra space for input
         const totalLegendWidth = itemWidth * itemsPerRow + (itemsPerRow - 1) * 40; // 40px spacing between columns
         const legendX = (widgetWidth - totalLegendWidth) / 2;
 
@@ -447,7 +559,7 @@ export function createComparisonsWidget(containerId, options) {
             ctx.fillStyle = colorScheme.stroke;
             ctx.fillRect(x + checkboxSize + textMargin, y + 2, colorBoxSize, colorBoxSize);
 
-            // Draw text with right-aligned percentage
+            // Draw text
             ctx.fillStyle = '#495057';
             ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
             ctx.textAlign = 'left';
@@ -456,12 +568,6 @@ export function createComparisonsWidget(containerId, options) {
             // Draw color name
             const colorName = `${distribution.color.charAt(0).toUpperCase() + distribution.color.slice(1)}: `;
             ctx.fillText(colorName, x + checkboxSize + textMargin + colorBoxSize + textMargin, y + colorBoxSize / 2 + 2);
-            
-            // Draw percentage right-aligned within the item width
-            const percentageText = `${distribution.mass}%`;
-            const colorNameWidth = ctx.measureText(colorName).width;
-            const percentageX = x + checkboxSize + textMargin + colorBoxSize + textMargin + colorNameWidth + (itemWidth - checkboxSize - textMargin * 2 - colorBoxSize - colorNameWidth - ctx.measureText(percentageText).width);
-            ctx.fillText(percentageText, percentageX, y + colorBoxSize / 2 + 2);
         });
     }
 
@@ -484,12 +590,12 @@ export function createComparisonsWidget(containerId, options) {
 
             // Calculate legend dimensions (same as in drawLegend)
             const maxTextWidth = Math.max(...options.distributions.map(dist => {
-                const text = `${dist.color.charAt(0).toUpperCase() + dist.color.slice(1)}: ${dist.mass}%`;
+                const text = `${dist.color.charAt(0).toUpperCase() + dist.color.slice(1)}: `;
                 ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
                 return ctx.measureText(text).width;
             }));
 
-            const itemWidth = maxTextWidth + 15 + checkboxSize + textMargin * 2;
+            const itemWidth = maxTextWidth + 15 + checkboxSize + textMargin * 2 + 50; // Extra space for input
             const totalLegendWidth = itemWidth * itemsPerRow + (itemsPerRow - 1) * 40;
             const legendX = (widgetWidth - totalLegendWidth) / 2;
 
@@ -517,11 +623,15 @@ export function createComparisonsWidget(containerId, options) {
     // Add click event listener to canvas
     canvas.addEventListener('click', handleCanvasClick);
 
-    // Append canvas to container
-    container.appendChild(canvas);
+    // Append canvas to wrapper
+    wrapper.appendChild(canvas);
 
-    // Initialize visibility state and draw
+    // Append wrapper to container
+    container.appendChild(wrapper);
+
+    // Initialize visibility state and create legend inputs
     initializeVisibilityState();
+    createLegendInputs();
     drawWidget();
 
     // Return methods for external control
@@ -530,6 +640,14 @@ export function createComparisonsWidget(containerId, options) {
             options.distributions = newDistributions;
             // Reset visibility state for new distributions
             initializeVisibilityState();
+            // Update input values
+            if (newDistributions) {
+                newDistributions.forEach(distribution => {
+                    if (legendInputs[distribution.color]) {
+                        legendInputs[distribution.color].value = distribution.mass.toString();
+                    }
+                });
+            }
             drawWidget();
         },
         redraw: () => {

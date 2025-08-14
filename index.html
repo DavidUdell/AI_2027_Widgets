@@ -205,7 +205,7 @@
             distributions by selecting a color and drawing in the widget. Each color represents a different
             sub-probability distribution. The active distribution is drawn on top, 
             while other distributions are shown in the background with reduced opacity.
-            Set the probability masses for each distribution in the comparison widget below.
+            Set the probability masses directly in the legend below.
         </div>
         
         <!-- Distribution Controls -->
@@ -249,70 +249,7 @@
             Horizontal guidelines show the actual percentage values at each distribution's peak.
         </div>
         
-        <!-- Distribution Mass Controls -->
-        <div style="margin-bottom: 20px; text-align: center;">
-            <div style="display: flex; justify-content: center; align-items: center; gap: 15px; flex-wrap: wrap;">
-                <!-- Blue Distribution Mass -->
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <label for="blue-mass" style="font-weight: bold; color: #007bff;">Blue:</label>
-                    <div class="number-input-container">
-                        <input type="text" id="blue-mass" value="0" class="number-input" inputmode="numeric" pattern="[0-9]*">
-                        <span style="margin-left: 5px;">%</span>
-                        <div id="blue-mass-feedback" class="input-feedback"></div>
-                    </div>
-                </div>
-                
-                <!-- Green Distribution Mass -->
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <label for="green-mass" style="font-weight: bold; color: #28a745;">Green:</label>
-                    <div class="number-input-container">
-                        <input type="text" id="green-mass" value="0" class="number-input" inputmode="numeric" pattern="[0-9]*">
-                        <span style="margin-left: 5px;">%</span>
-                        <div id="green-mass-feedback" class="input-feedback"></div>
-                    </div>
-                </div>
-                
-                <!-- Red Distribution Mass -->
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <label for="red-mass" style="font-weight: bold; color: #dc3545;">Red:</label>
-                    <div class="number-input-container">
-                        <input type="text" id="red-mass" value="0" class="number-input" inputmode="numeric" pattern="[0-9]*">
-                        <span style="margin-left: 5px;">%</span>
-                        <div id="red-mass-feedback" class="input-feedback"></div>
-                    </div>
-                </div>
-                
-                <!-- Purple Distribution Mass -->
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <label for="purple-mass" style="font-weight: bold; color: #6f42c1;">Purple:</label>
-                    <div class="number-input-container">
-                        <input type="text" id="purple-mass" value="0" class="number-input" inputmode="numeric" pattern="[0-9]*">
-                        <span style="margin-left: 5px;">%</span>
-                        <div id="purple-mass-feedback" class="input-feedback"></div>
-                    </div>
-                </div>
-                
-                <!-- Orange Distribution Mass -->
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <label for="orange-mass" style="font-weight: bold; color: #fd7e14;">Orange:</label>
-                    <div class="number-input-container">
-                        <input type="text" id="orange-mass" value="0" class="number-input" inputmode="numeric" pattern="[0-9]*">
-                        <span style="margin-left: 5px;">%</span>
-                        <div id="orange-mass-feedback" class="input-feedback"></div>
-                    </div>
-                </div>
-                
-                <!-- Yellow Distribution Mass -->
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <label for="yellow-mass" style="font-weight: bold; color: #ffc107;">Yellow:</label>
-                    <div class="number-input-container">
-                        <input type="text" id="yellow-mass" value="0" class="number-input" inputmode="numeric" pattern="[0-9]*">
-                        <span style="margin-left: 5px;">%</span>
-                        <div id="yellow-mass-feedback" class="input-feedback"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
+
         
         <div id="comparisons-widget"></div>
     </div>
@@ -410,79 +347,13 @@
             // Multi-distribution widget controls
             const colorSelect = document.getElementById('distribution-color');
             
-            // Distribution mass controls
-            const massInputs = {
-                blue: document.getElementById('blue-mass'),
-                green: document.getElementById('green-mass'),
-                red: document.getElementById('red-mass'),
-                purple: document.getElementById('purple-mass'),
-                orange: document.getElementById('orange-mass'),
-                yellow: document.getElementById('yellow-mass')
-            };
-            
-            const massFeedbacks = {
-                blue: document.getElementById('blue-mass-feedback'),
-                green: document.getElementById('green-mass-feedback'),
-                red: document.getElementById('red-mass-feedback'),
-                purple: document.getElementById('purple-mass-feedback'),
-                orange: document.getElementById('orange-mass-feedback'),
-                yellow: document.getElementById('yellow-mass-feedback')
-            };
+
 
 
             // Debounce function to avoid excessive updates
             let debounceTimer;
 
-            function validateMassInput(inputElement, feedbackElement) {
-                const inputValue = inputElement.value.trim();
 
-                // Clear previous styling
-                inputElement.classList.remove('valid', 'invalid');
-                feedbackElement.className = 'input-feedback';
-                feedbackElement.textContent = '';
-
-                // Handle empty input
-                if (inputValue === '') {
-                    inputElement.classList.add('invalid');
-                    feedbackElement.classList.add('error');
-                    feedbackElement.textContent = '0-100 only';
-                    return false;
-                }
-
-                // Check if input contains only digits
-                if (!/^\d+$/.test(inputValue)) {
-                    inputElement.classList.add('invalid');
-                    feedbackElement.classList.add('error');
-                    feedbackElement.textContent = 'Numbers only';
-                    return false;
-                }
-
-                const numValue = parseInt(inputValue, 10);
-
-                // Check range
-                if (numValue < 0 || numValue > 100) {
-                    inputElement.classList.add('invalid');
-                    feedbackElement.classList.add('error');
-                    feedbackElement.textContent = '0-100 only';
-                    return false;
-                }
-
-                // Valid input
-                inputElement.classList.add('valid');
-                feedbackElement.classList.add('success');
-                return true;
-            }
-
-            function updateMassInputs() {
-                const distributions = widget.getDistributions();
-                distributions.forEach((distribution, index) => {
-                    const color = distribution.color;
-                    if (massInputs[color]) {
-                        massInputs[color].value = distribution.mass.toString();
-                        validateMassInput(massInputs[color], massFeedbacks[color]);
-                    }
-                });
-            }
 
             function updateColorSelect() {
                 const activeIndex = widget.getActiveDistributionIndex();
@@ -501,72 +372,16 @@
                 widget.setActiveDistributionByColor(color);
             });
 
-            // Handle mass input changes for all distributions
-            Object.keys(massInputs).forEach(color => {
-                const input = massInputs[color];
-                const feedback = massFeedbacks[color];
-                
-                input.addEventListener('input', () => {
-                    if (!validateMassInput(input, feedback)) return;
-                    
-                    const mass = parseInt(input.value, 10);
-                    const distributions = widget.getDistributions();
-                    const distributionIndex = distributions.findIndex(dist => dist.color === color);
-                    
-                    if (distributionIndex !== -1) {
-                        distributions[distributionIndex].mass = mass;
-                        comparisonsWidget.updateDistributions(distributions);
-                    }
-                });
 
-                input.addEventListener('blur', () => {
-                    const inputValue = input.value.trim();
-                    if (inputValue === '') {
-                        input.value = '0';
-                        validateMassInput(input, feedback);
-                    } else if (/^\d+$/.test(inputValue)) {
-                        const numValue = parseInt(inputValue, 10);
-                        if (numValue >= 0 && numValue <= 100) {
-                            input.value = numValue.toString();
-                            validateMassInput(input, feedback);
-                        }
-                    }
-                });
-
-                input.addEventListener('keydown', (e) => {
-                    // Allow: backspace, delete, tab, escape, enter, and navigation keys
-                    if ([8, 9, 27, 13, 46, 37, 38, 39, 40].includes(e.keyCode)) {
-                        return;
-                    }
-
-                    // Allow digits only
-                    if (e.keyCode >= 48 && e.keyCode <= 57) {
-                        return;
-                    }
-
-                    // Allow numpad digits
-                    if (e.keyCode >= 96 && e.keyCode <= 105) {
-                        return;
-                    }
-
-                    // Prevent other keys
-                    e.preventDefault();
-                });
-            });
 
             // Set up callback to update comparisons widget when distributions change
             widget.setOnChange((distributions) => {
                 comparisonsWidget.updateDistributions(distributions);
                 // Update the UI controls to reflect the active distribution
-                updateMassInputs();
                 updateColorSelect();
             });
 
             // Initialize
-            Object.keys(massInputs).forEach(color => {
-                validateMassInput(massInputs[color], massFeedbacks[color]);
-            });
-            updateMassInputs();
             updateColorSelect();
         });
     </script>
