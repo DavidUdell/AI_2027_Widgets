@@ -181,15 +181,23 @@ export function createComparisonsWidget(containerId, options) {
             // Add event listeners
             input.addEventListener('input', (e) => {
                 const value = e.target.value.trim();
+                // Only allow digits
                 if (/^\d*$/.test(value)) {
                     const mass = parseInt(value) || 0;
-                    if (mass >= 0 && mass <= 100) {
-                        distribution.mass = mass;
-                        drawWidget();
-                        if (options.onChange) {
-                            options.onChange(options.distributions);
-                        }
+                    // Actively clamp to 0-100 range
+                    const clampedMass = Math.max(0, Math.min(100, mass));
+                    if (clampedMass !== mass) {
+                        // If value was clamped, update the input field
+                        e.target.value = clampedMass.toString();
                     }
+                    distribution.mass = clampedMass;
+                    drawWidget();
+                    if (options.onChange) {
+                        options.onChange(options.distributions);
+                    }
+                } else {
+                    // Revert to previous valid value if invalid input
+                    e.target.value = distribution.mass.toString();
                 }
             });
 
@@ -208,6 +216,26 @@ export function createComparisonsWidget(containerId, options) {
                 if (options.onChange) {
                     options.onChange(options.distributions);
                 }
+            });
+
+            input.addEventListener('keydown', (e) => {
+                // Allow: backspace, delete, tab, escape, enter, and navigation keys
+                if ([8, 9, 27, 13, 46, 37, 38, 39, 40].includes(e.keyCode)) {
+                    return;
+                }
+
+                // Allow digits only
+                if (e.keyCode >= 48 && e.keyCode <= 57) {
+                    return;
+                }
+
+                // Allow numpad digits
+                if (e.keyCode >= 96 && e.keyCode <= 105) {
+                    return;
+                }
+
+                // Prevent other keys
+                e.preventDefault();
             });
 
             // Store references
@@ -312,6 +340,9 @@ export function createComparisonsWidget(containerId, options) {
             // First pass: collect all positions
             options.distributions.forEach((distribution, index) => {
                 if (!visibilityState[index]) return;
+                
+                // Skip zero mass distributions
+                if (distribution.mass === 0) return;
 
                 const scaleFactor = scalingFactors[index] || 1;
                 const maxScaledValue = Math.max(...distribution.values) * scaleFactor;
@@ -457,6 +488,12 @@ export function createComparisonsWidget(containerId, options) {
 
             const colorScheme = colorSchemes[distribution.color];
             if (!colorScheme) return;
+
+            // Handle zero mass case - flatten distribution to 0%
+            if (distribution.mass === 0) {
+                // Don't draw anything for zero mass distributions
+                return;
+            }
 
             // Get scaling factor for this distribution
             const scaleFactor = scalingFactors[index] || 1;
