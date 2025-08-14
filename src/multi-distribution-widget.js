@@ -126,6 +126,7 @@ export function createMultiDistributionWidget(containerId, options) {
         drawGrid();
         drawAxisLabels();
         drawAllDistributions();
+        drawLegend();
     }
 
     /**
@@ -274,7 +275,14 @@ export function createMultiDistributionWidget(containerId, options) {
             return;
         }
 
-        // Only draw the active distribution
+        // Draw all non-active distributions in the background first
+        distributions.forEach((distribution, index) => {
+            if (index !== activeDistributionIndex) {
+                drawSingleDistribution(distribution, false);
+            }
+        });
+
+        // Draw the active distribution on top
         if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length) {
             const activeDist = distributions[activeDistributionIndex];
             drawSingleDistribution(activeDist, true);
@@ -322,10 +330,18 @@ export function createMultiDistributionWidget(containerId, options) {
         const colorScheme = colorSchemes[distribution.color];
         if (!colorScheme) return;
 
-        // Create gradient for the fill
+        // Create gradient for the fill with reduced opacity for background distributions
         const gradient = ctx.createLinearGradient(padding, padding, padding, options.height - padding);
-        gradient.addColorStop(0, colorScheme.gradientStart);
-        gradient.addColorStop(1, colorScheme.gradientEnd);
+        if (isActive) {
+            gradient.addColorStop(0, colorScheme.gradientStart);
+            gradient.addColorStop(1, colorScheme.gradientEnd);
+        } else {
+            // Reduce opacity for background distributions
+            const backgroundGradientStart = colorScheme.gradientStart.replace('0.3)', '0.15)');
+            const backgroundGradientEnd = colorScheme.gradientEnd.replace('0.1)', '0.05)');
+            gradient.addColorStop(0, backgroundGradientStart);
+            gradient.addColorStop(1, backgroundGradientEnd);
+        }
 
         // Draw the filled area under the curve
         ctx.fillStyle = gradient;
@@ -345,9 +361,21 @@ export function createMultiDistributionWidget(containerId, options) {
         ctx.closePath();
         ctx.fill();
 
-        // Draw the curve line on top
-        ctx.strokeStyle = colorScheme.stroke;
-        ctx.lineWidth = isActive ? 2 : 1.5;
+        // Draw the curve line on top with reduced opacity for background distributions
+        if (isActive) {
+            ctx.strokeStyle = colorScheme.stroke;
+            ctx.lineWidth = 2;
+        } else {
+            // Reduce opacity for background distributions
+            // Convert hex to rgba with 50% opacity
+            const hex = colorScheme.stroke.replace('#', '');
+            const r = parseInt(hex.substr(0, 2), 16);
+            const g = parseInt(hex.substr(2, 2), 16);
+            const b = parseInt(hex.substr(4, 2), 16);
+            ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.5)`;
+            ctx.lineWidth = 1.5;
+        }
+        
         ctx.beginPath();
 
         for (let i = 0; i < numPeriods; i++) {
@@ -359,6 +387,69 @@ export function createMultiDistributionWidget(containerId, options) {
             }
         }
         ctx.stroke();
+    }
+
+    /**
+     * Draw legend showing all distributions with their masses
+     */
+    function drawLegend() {
+        if (distributions.length === 0) return;
+
+        const legendStartY = 14;
+        const legendItemHeight = 25;
+        const legendItemSpacing = 5;
+        const colorBoxSize = 15;
+        const textMargin = 10;
+        const itemsPerRow = 3;
+        const rowSpacing = 10;
+
+        // Calculate legend dimensions
+        const maxTextWidth = Math.max(...distributions.map(dist => {
+            const text = `${dist.color.charAt(0).toUpperCase() + dist.color.slice(1)}: ${dist.mass}%`;
+            ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+            return ctx.measureText(text).width;
+        }));
+
+        const itemWidth = maxTextWidth + colorBoxSize + textMargin * 2;
+        const totalLegendWidth = itemWidth * itemsPerRow + (itemsPerRow - 1) * 40; // 40px spacing between columns
+        const legendX = (widgetWidth - totalLegendWidth) / 2;
+
+        distributions.forEach((distribution, index) => {
+            const colorScheme = colorSchemes[distribution.color];
+            if (!colorScheme) return;
+
+            const row = Math.floor(index / itemsPerRow);
+            const col = index % itemsPerRow;
+            const x = legendX + col * (itemWidth + 40); // 40px spacing between columns
+            const y = legendStartY + row * (legendItemHeight + rowSpacing);
+
+            // Draw color box
+            ctx.fillStyle = colorScheme.stroke;
+            ctx.fillRect(x + textMargin, y + 2, colorBoxSize, colorBoxSize);
+
+            // Draw text with right-aligned percentage
+            ctx.fillStyle = '#495057';
+            ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            
+            // Draw color name
+            const colorName = `${distribution.color.charAt(0).toUpperCase() + distribution.color.slice(1)}: `;
+            ctx.fillText(colorName, x + textMargin + colorBoxSize + textMargin, y + colorBoxSize / 2 + 2);
+            
+            // Draw percentage right-aligned within the item width
+            const percentageText = `${distribution.mass}%`;
+            const colorNameWidth = ctx.measureText(colorName).width;
+            const percentageX = x + textMargin + colorBoxSize + textMargin + colorNameWidth + (itemWidth - textMargin * 2 - colorBoxSize - colorNameWidth - ctx.measureText(percentageText).width);
+            ctx.fillText(percentageText, percentageX, y + colorBoxSize / 2 + 2);
+
+            // Highlight active distribution
+            if (index === activeDistributionIndex) {
+                ctx.strokeStyle = '#495057';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(x + textMargin - 2, y, colorBoxSize + 4, colorBoxSize + 4);
+            }
+        });
     }
 
     /**
@@ -440,11 +531,63 @@ export function createMultiDistributionWidget(containerId, options) {
         isDrawing = false;
     }
 
+    /**
+     * Handle click events on the canvas (for legend interaction)
+     */
+    function handleCanvasClick(e) {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        // Check if click is in legend area
+        if (y < 80) { // Legend area is roughly in the top 80px
+            const legendStartY = 14;
+            const legendItemHeight = 25;
+            const colorBoxSize = 15;
+            const textMargin = 10;
+            const itemsPerRow = 3;
+            const rowSpacing = 10;
+
+            // Calculate legend dimensions (same as in drawLegend)
+            const maxTextWidth = Math.max(...distributions.map(dist => {
+                const text = `${dist.color.charAt(0).toUpperCase() + dist.color.slice(1)}: ${dist.mass}%`;
+                ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+                return ctx.measureText(text).width;
+            }));
+
+            const itemWidth = maxTextWidth + colorBoxSize + textMargin * 2;
+            const totalLegendWidth = itemWidth * itemsPerRow + (itemsPerRow - 1) * 40;
+            const legendX = (widgetWidth - totalLegendWidth) / 2;
+
+            // Check each legend item area
+            distributions.forEach((distribution, index) => {
+                const row = Math.floor(index / itemsPerRow);
+                const col = index % itemsPerRow;
+                const itemX = legendX + col * (itemWidth + 40);
+                const itemY = legendStartY + row * (legendItemHeight + rowSpacing);
+
+                // Check if click is within legend item bounds
+                if (x >= itemX && x <= itemX + itemWidth &&
+                    y >= itemY && y <= itemY + legendItemHeight) {
+                    // Set this distribution as active
+                    activeDistributionIndex = index;
+                    drawWidget();
+                    
+                    // Update the color dropdown and mass input if they exist
+                    if (options.onChange) {
+                        options.onChange(distributions);
+                    }
+                }
+            });
+        }
+    }
+
     // Add event listeners
     canvas.addEventListener('pointerdown', handlePointerDown);
     canvas.addEventListener('pointermove', handlePointerMove);
     canvas.addEventListener('pointerup', handlePointerUp);
     canvas.addEventListener('pointerleave', handlePointerUp);
+    canvas.addEventListener('click', handleCanvasClick);
 
     // Prevent context menu
     canvas.addEventListener('contextmenu', e => e.preventDefault());

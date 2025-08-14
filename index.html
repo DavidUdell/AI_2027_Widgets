@@ -204,7 +204,8 @@
             <strong>Instructions:</strong> Create multiple sub-probability
             distributions by selecting a color, setting its total probability
             value, and drawing in the widget. Each color represents a different
-            sub-probability distribution.
+            sub-probability distribution. The active distribution (highlighted in the legend) 
+            is drawn on top, while other distributions are shown in the background with reduced opacity.
         </div>
         
         <!-- Distribution Controls -->
@@ -415,6 +416,15 @@
                 }
             }
 
+            function updateColorSelect() {
+                const activeIndex = widget.getActiveDistributionIndex();
+                if (activeIndex >= 0) {
+                    const distributions = widget.getDistributions();
+                    const activeColor = distributions[activeIndex].color;
+                    colorSelect.value = activeColor;
+                }
+            }
+
 
 
             // Handle color dropdown changes
@@ -475,11 +485,15 @@
             // Set up callback to update comparisons widget when distributions change
             widget.setOnChange((distributions) => {
                 comparisonsWidget.updateDistributions(distributions);
+                // Update the UI controls to reflect the active distribution
+                updateMassInput();
+                updateColorSelect();
             });
 
             // Initialize
             validateSubMassInput();
             updateMassInput();
+            updateColorSelect();
         });
     </script>
 </body>
