@@ -536,10 +536,8 @@ export function createMultiDistributionWidget(containerId, options) {
             activeDistributionIndex = newIndex;
             // Set new distribution as visible by default
             visibilityState[newIndex] = true;
-            drawWidget();
-            if (options.onChange) {
-                options.onChange(distributions);
-            }
+            // Trigger renormalization when active distribution changes
+            performRenormalization();
         },
         removeDistribution: (index) => {
             distributions.splice(index, 1);
@@ -560,10 +558,8 @@ export function createMultiDistributionWidget(containerId, options) {
             if (activeDistributionIndex >= distributions.length) {
                 activeDistributionIndex = distributions.length - 1;
             }
-            drawWidget();
-            if (options.onChange) {
-                options.onChange(distributions);
-            }
+            // Trigger renormalization if active distribution changed
+            performRenormalization();
         },
         clearAllDistributions: () => {
             distributions = [];
@@ -578,14 +574,16 @@ export function createMultiDistributionWidget(containerId, options) {
         setActiveDistribution: (index) => {
             if (index >= 0 && index < distributions.length) {
                 activeDistributionIndex = index;
-                drawWidget();
+                // Trigger renormalization when active distribution changes
+                performRenormalization();
             }
         },
         setActiveDistributionByColor: (color) => {
             const index = distributions.findIndex(dist => dist.color === color);
             if (index !== -1) {
                 activeDistributionIndex = index;
-                drawWidget();
+                // Trigger renormalization when active distribution changes
+                performRenormalization();
             }
         },
 
