@@ -119,11 +119,9 @@ export function createBayesianComparisonsWidget(containerId, options) {
 
     // Initial message
     const initialMessage = document.createElement('div');
-    initialMessage.textContent = 'Select two predictions and a ground truth distribution to see the Bayesian comparison results.';
     initialMessage.style.color = '#6c757d';
     initialMessage.style.fontSize = '16px';
     initialMessage.style.textAlign = 'center';
-    resultsSection.appendChild(initialMessage);
 
     controlsSection.appendChild(selectionControls);
     mainContainer.appendChild(controlsSection);
