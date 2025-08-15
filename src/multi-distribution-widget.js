@@ -295,6 +295,14 @@ export function createMultiDistributionWidget(containerId, options) {
         const colorScheme = colorSchemes[distribution.color];
         if (!colorScheme) return;
 
+        // Save the current context state
+        ctx.save();
+        
+        // Set clipping path to the inner border (plot area)
+        ctx.beginPath();
+        ctx.rect(padding, padding, plotWidth, plotHeight);
+        ctx.clip();
+
         // Create gradient for the fill with reduced opacity for background distributions
         const gradient = ctx.createLinearGradient(padding, padding, padding, options.height - padding);
         if (isActive) {
@@ -352,6 +360,9 @@ export function createMultiDistributionWidget(containerId, options) {
             }
         }
         ctx.stroke();
+        
+        // Restore the context state (removes clipping)
+        ctx.restore();
     }
 
 
