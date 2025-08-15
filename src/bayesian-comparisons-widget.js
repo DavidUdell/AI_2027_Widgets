@@ -129,27 +129,20 @@ export function createBayesianComparisonsWidget(containerId, options) {
     selectionControls.appendChild(selectionTitle);
     selectionControls.appendChild(dropdownsContainer);
 
-    // Create results section
+    // Create results section inside the selection controls box
     const resultsSection = document.createElement('div');
-    resultsSection.style.marginTop = '20px';
-    resultsSection.style.padding = '20px';
+    resultsSection.style.marginTop = '15px';
+    resultsSection.style.padding = '0px';
     resultsSection.style.backgroundColor = '#f8f9fa';
-    resultsSection.style.borderRadius = '8px';
+    resultsSection.style.borderRadius = '6px';
     resultsSection.style.border = '1px solid #e9ecef';
-    resultsSection.style.minHeight = '200px';
-    resultsSection.style.display = 'flex';
-    resultsSection.style.alignItems = 'center';
-    resultsSection.style.justifyContent = 'center';
-
-    // Initial message
-    const initialMessage = document.createElement('div');
-    initialMessage.style.color = '#6c757d';
-    initialMessage.style.fontSize = '16px';
-    initialMessage.style.textAlign = 'center';
+    resultsSection.style.minHeight = '0px';
+    resultsSection.style.display = 'none';
+    resultsSection.style.width = '100%';
 
     controlsSection.appendChild(selectionControls);
+    selectionControls.appendChild(resultsSection);
     mainContainer.appendChild(controlsSection);
-    mainContainer.appendChild(resultsSection);
 
     // Color schemes for visual indicators
     const colorSchemes = {
@@ -222,17 +215,16 @@ export function createBayesianComparisonsWidget(containerId, options) {
 
         // Check if all selections are made
         if (pred1Index === -1 || pred2Index === -1 || truthIndex === -1) {
-            const message = document.createElement('div');
-            message.textContent = 'Please select two predictions and a ground truth distribution.';
-            message.style.color = '#6c757d';
-            message.style.fontSize = '16px';
-            message.style.textAlign = 'center';
-            resultsSection.appendChild(message);
+            resultsSection.style.display = 'none';
             return;
         }
 
         // Check for duplicate selections
         if (pred1Index === pred2Index || pred1Index === truthIndex || pred2Index === truthIndex) {
+            resultsSection.style.display = 'flex';
+            resultsSection.style.alignItems = 'center';
+            resultsSection.style.justifyContent = 'center';
+            resultsSection.style.padding = '15px';
             const message = document.createElement('div');
             message.textContent = 'Please select three different distributions.';
             message.style.color = '#dc3545';
@@ -254,230 +246,47 @@ export function createBayesianComparisonsWidget(containerId, options) {
             truth.values, truth.mass
         );
 
-        // Create results display
+        // Show results section
+        resultsSection.style.display = 'block';
+        resultsSection.style.padding = '15px';
+        
+        // Create minimalistic results display
         const resultsContainer = document.createElement('div');
-        resultsContainer.style.width = '100%';
-        resultsContainer.style.maxWidth = '600px';
+        resultsContainer.style.fontSize = '14px';
+        resultsContainer.style.lineHeight = '1.4';
 
-        // Title
-        const title = document.createElement('h3');
-        title.textContent = 'Bayesian Comparison Results';
-        title.style.color = '#2c3e50';
-        title.style.marginBottom = '20px';
-        title.style.textAlign = 'center';
-        title.style.borderBottom = '2px solid #3498db';
-        title.style.paddingBottom = '10px';
-        resultsContainer.appendChild(title);
-
-        // Results table
-        const table = document.createElement('table');
-        table.style.width = '100%';
-        table.style.borderCollapse = 'collapse';
-        table.style.marginBottom = '20px';
-
-        // Table header
-        const thead = document.createElement('thead');
-        const headerRow = document.createElement('tr');
-        headerRow.style.backgroundColor = '#f8f9fa';
-        headerRow.style.borderBottom = '2px solid #dee2e6';
-
-        const headers = ['', 'Prediction 1', 'Prediction 2'];
-        headers.forEach(headerText => {
-            const th = document.createElement('th');
-            th.textContent = headerText;
-            th.style.padding = '12px 8px';
-            th.style.textAlign = 'center';
-            th.style.fontWeight = 'bold';
-            th.style.color = '#495057';
-            headerRow.appendChild(th);
-        });
-        thead.appendChild(headerRow);
-        table.appendChild(thead);
-
-        // Table body
-        const tbody = document.createElement('tbody');
-
-        // Distribution row
-        const distRow = document.createElement('tr');
-        distRow.style.borderBottom = '1px solid #dee2e6';
-
-        const distLabel = document.createElement('td');
-        distLabel.textContent = 'Distribution';
-        distLabel.style.padding = '12px 8px';
-        distLabel.style.fontWeight = 'bold';
-        distLabel.style.color = '#495057';
-        distRow.appendChild(distLabel);
-
-        const pred1Dist = document.createElement('td');
-        pred1Dist.textContent = pred1.color.charAt(0).toUpperCase() + pred1.color.slice(1);
-        pred1Dist.style.padding = '12px 8px';
-        pred1Dist.style.textAlign = 'center';
-        pred1Dist.style.color = colorSchemes[pred1.color];
-        pred1Dist.style.fontWeight = 'bold';
-        distRow.appendChild(pred1Dist);
-
-        const pred2Dist = document.createElement('td');
-        pred2Dist.textContent = pred2.color.charAt(0).toUpperCase() + pred2.color.slice(1);
-        pred2Dist.style.padding = '12px 8px';
-        pred2Dist.style.textAlign = 'center';
-        pred2Dist.style.color = colorSchemes[pred2.color];
-        pred2Dist.style.fontWeight = 'bold';
-        distRow.appendChild(pred2Dist);
-
-        tbody.appendChild(distRow);
-
-        // Mass row
-        const massRow = document.createElement('tr');
-        massRow.style.borderBottom = '1px solid #dee2e6';
-
-        const massLabel = document.createElement('td');
-        massLabel.textContent = 'Total Mass';
-        massLabel.style.padding = '12px 8px';
-        massLabel.style.fontWeight = 'bold';
-        massLabel.style.color = '#495057';
-        massRow.appendChild(massLabel);
-
-        const pred1Mass = document.createElement('td');
-        pred1Mass.textContent = `${pred1.mass}%`;
-        pred1Mass.style.padding = '12px 8px';
-        pred1Mass.style.textAlign = 'center';
-        massRow.appendChild(pred1Mass);
-
-        const pred2Mass = document.createElement('td');
-        pred2Mass.textContent = `${pred2.mass}%`;
-        pred2Mass.style.padding = '12px 8px';
-        pred2Mass.style.textAlign = 'center';
-        massRow.appendChild(pred2Mass);
-
-        tbody.appendChild(massRow);
-
-        // Log Score row
-        const scoreRow = document.createElement('tr');
-        scoreRow.style.borderBottom = '1px solid #dee2e6';
-
-        const scoreLabel = document.createElement('td');
-        scoreLabel.textContent = 'Log Score';
-        scoreLabel.style.padding = '12px 8px';
-        scoreLabel.style.fontWeight = 'bold';
-        scoreLabel.style.color = '#495057';
-        scoreRow.appendChild(scoreLabel);
-
-        const pred1Score = document.createElement('td');
-        pred1Score.textContent = formatLogScore(comparison.prediction1.logScore);
-        pred1Score.style.padding = '12px 8px';
-        pred1Score.style.textAlign = 'center';
-        pred1Score.style.fontFamily = 'monospace';
-        scoreRow.appendChild(pred1Score);
-
-        const pred2Score = document.createElement('td');
-        pred2Score.textContent = formatLogScore(comparison.prediction2.logScore);
-        pred2Score.style.padding = '12px 8px';
-        pred2Score.style.textAlign = 'center';
-        pred2Score.style.fontFamily = 'monospace';
-        scoreRow.appendChild(pred2Score);
-
-        tbody.appendChild(scoreRow);
-
-        table.appendChild(tbody);
-        resultsContainer.appendChild(table);
-
-        // Winner section
-        const winnerSection = document.createElement('div');
-        winnerSection.style.textAlign = 'center';
-        winnerSection.style.marginBottom = '20px';
-
-        let winnerText, winnerColor;
+        // Winner
+        let winnerText;
         if (comparison.winning === 'prediction1') {
             winnerText = `Winner: ${pred1.color.charAt(0).toUpperCase() + pred1.color.slice(1)}`;
-            winnerColor = colorSchemes[pred1.color];
         } else if (comparison.winning === 'prediction2') {
             winnerText = `Winner: ${pred2.color.charAt(0).toUpperCase() + pred2.color.slice(1)}`;
-            winnerColor = colorSchemes[pred2.color];
         } else {
             winnerText = 'Tie';
-            winnerColor = '#6c757d';
         }
 
-        const winnerLabel = document.createElement('div');
-        winnerLabel.textContent = winnerText;
-        winnerLabel.style.fontSize = '18px';
-        winnerLabel.style.fontWeight = 'bold';
-        winnerLabel.style.color = winnerColor;
-        winnerLabel.style.padding = '10px';
-        winnerLabel.style.border = `2px solid ${winnerColor}`;
-        winnerLabel.style.borderRadius = '6px';
-        winnerLabel.style.display = 'inline-block';
-        winnerSection.appendChild(winnerLabel);
+        const winnerDiv = document.createElement('div');
+        winnerDiv.textContent = winnerText;
+        winnerDiv.style.fontWeight = 'bold';
+        winnerDiv.style.marginBottom = '8px';
+        resultsContainer.appendChild(winnerDiv);
 
-        resultsContainer.appendChild(winnerSection);
+        // Scores
+        const scoresDiv = document.createElement('div');
+        scoresDiv.textContent = `${pred1.color.charAt(0).toUpperCase() + pred1.color.slice(1)}: ${formatLogScore(comparison.prediction1.logScore)} | ${pred2.color.charAt(0).toUpperCase() + pred2.color.slice(1)}: ${formatLogScore(comparison.prediction2.logScore)}`;
+        scoresDiv.style.fontFamily = 'monospace';
+        scoresDiv.style.marginBottom = '8px';
+        resultsContainer.appendChild(scoresDiv);
 
-        // Additional metrics
+        // Gap and factor if available
         if (comparison.gap !== null && comparison.factor !== null) {
-            const metricsSection = document.createElement('div');
-            metricsSection.style.display = 'flex';
-            metricsSection.style.justifyContent = 'space-around';
-            metricsSection.style.flexWrap = 'wrap';
-            metricsSection.style.gap = '20px';
-
-            // Gap metric
-            const gapContainer = document.createElement('div');
-            gapContainer.style.textAlign = 'center';
-            
-            const gapLabel = document.createElement('div');
-            gapLabel.textContent = 'Score Gap';
-            gapLabel.style.fontSize = '14px';
-            gapLabel.style.color = '#6c757d';
-            gapLabel.style.marginBottom = '5px';
-            
-            const gapValue = document.createElement('div');
-            gapValue.textContent = formatLogScore(comparison.gap);
-            gapValue.style.fontSize = '16px';
-            gapValue.style.fontWeight = 'bold';
-            gapValue.style.fontFamily = 'monospace';
-            gapValue.style.color = '#495057';
-            
-            gapContainer.appendChild(gapLabel);
-            gapContainer.appendChild(gapValue);
-            metricsSection.appendChild(gapContainer);
-
-            // Factor metric
-            const factorContainer = document.createElement('div');
-            factorContainer.style.textAlign = 'center';
-            
-            const factorLabel = document.createElement('div');
-            factorLabel.textContent = 'Likelihood Factor';
-            factorLabel.style.fontSize = '14px';
-            factorLabel.style.color = '#6c757d';
-            factorLabel.style.marginBottom = '5px';
-            
-            const factorValue = document.createElement('div');
-            factorValue.textContent = formatFactor(comparison.factor);
-            factorValue.style.fontSize = '16px';
-            factorValue.style.fontWeight = 'bold';
-            factorValue.style.fontFamily = 'monospace';
-            factorValue.style.color = '#495057';
-            
-            factorContainer.appendChild(factorLabel);
-            factorContainer.appendChild(factorValue);
-            metricsSection.appendChild(factorContainer);
-
-            resultsContainer.appendChild(metricsSection);
+            const metricsDiv = document.createElement('div');
+            metricsDiv.textContent = `Gap: ${formatLogScore(comparison.gap)} | Factor: ${formatFactor(comparison.factor)}`;
+            metricsDiv.style.fontFamily = 'monospace';
+            metricsDiv.style.fontSize = '12px';
+            metricsDiv.style.color = '#666';
+            resultsContainer.appendChild(metricsDiv);
         }
-
-        // Ground truth info
-        const truthInfo = document.createElement('div');
-        truthInfo.style.marginTop = '20px';
-        truthInfo.style.padding = '15px';
-        truthInfo.style.backgroundColor = '#e3f2fd';
-        truthInfo.style.borderRadius = '6px';
-        truthInfo.style.borderLeft = '4px solid #2196f3';
-        
-        const truthText = document.createElement('div');
-        truthText.innerHTML = `<strong>Ground Truth:</strong> ${truth.color.charAt(0).toUpperCase() + truth.color.slice(1)} distribution (${truth.mass}% total mass)`;
-        truthText.style.color = '#1565c0';
-        truthInfo.appendChild(truthText);
-        
-        resultsContainer.appendChild(truthInfo);
 
         resultsSection.appendChild(resultsContainer);
     }
