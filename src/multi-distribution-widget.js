@@ -1,6 +1,13 @@
 /**
  * AI 2027 - Multi-Distribution Interactive Widget
  * Allows users to create multiple sub-probability distributions with different colors and masses
+ * 
+ * Features:
+ * - Interactive drawing of probability distributions
+ * - Multiple distributions with different colors
+ * - Background distribution renormalization relative to active distribution on blur
+ * - Visibility controls for each distribution
+ * - Constant mass assumption across all distributions in the interactive widget
  */
 
 /**
@@ -49,6 +56,8 @@ export function createMultiDistributionWidget(containerId, options) {
     let isDrawing = false;
     let lastX = 0;
     let lastY = 0;
+    
+
 
     // Grid and styling constants
     const padding = 80;
@@ -423,7 +432,57 @@ export function createMultiDistributionWidget(containerId, options) {
     }
 
     function handlePointerUp() {
+        if (isDrawing) {
+            // Trigger renormalization when drawing ends
+            performRenormalization();
+        }
         isDrawing = false;
+    }
+
+    /**
+     * Renormalize background distributions relative to active distribution
+     * 
+     * This function implements the constant mass assumption: all distributions in the interactive
+     * widget should have the same total mass as the active distribution. When the user finishes
+     * drawing, all visible background distributions are scaled to match the active distribution's
+     * total mass, allowing for fair comparison while maintaining their relative shapes.
+     */
+    function performRenormalization() {
+        if (activeDistributionIndex === -1 || activeDistributionIndex >= distributions.length) {
+            return;
+        }
+
+        const activeDistribution = distributions[activeDistributionIndex];
+        const activeTotalMass = activeDistribution.values.reduce((sum, val) => sum + val, 0);
+        
+        if (activeTotalMass <= 0) {
+            return; // No active mass to normalize against
+        }
+
+        // Renormalize all background distributions relative to the active distribution
+        distributions.forEach((distribution, index) => {
+            if (index !== activeDistributionIndex && visibilityState[index]) {
+                const distributionTotalMass = distribution.values.reduce((sum, val) => sum + val, 0);
+                
+                if (distributionTotalMass > 0) {
+                    // Calculate the scaling factor to match the active distribution's total mass
+                    const scalingFactor = activeTotalMass / distributionTotalMass;
+                    
+                    // Apply the scaling factor to all values in this distribution
+                    for (let i = 0; i < distribution.values.length; i++) {
+                        distribution.values[i] *= scalingFactor;
+                    }
+                }
+            }
+        });
+
+        // Redraw the widget to reflect the changes
+        drawWidget();
+        
+        // Notify any change listeners
+        if (options.onChange) {
+            options.onChange(distributions);
+        }
     }
 
 
@@ -436,6 +495,8 @@ export function createMultiDistributionWidget(containerId, options) {
 
     // Prevent context menu
     canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+
 
     // Initialize all distributions
     const colors = ['blue', 'green', 'red', 'purple', 'orange', 'yellow'];
@@ -556,6 +617,9 @@ export function createMultiDistributionWidget(containerId, options) {
         setVisibilityState: (newVisibilityState) => {
             Object.assign(visibilityState, newVisibilityState);
             drawWidget();
+        },
+        renormalizeBackgroundDistributions: () => {
+            performRenormalization();
         }
     };
 }
