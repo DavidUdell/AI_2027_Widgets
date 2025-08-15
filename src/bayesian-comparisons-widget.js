@@ -35,11 +35,32 @@ export function createBayesianComparisonsWidget(containerId, options) {
     // Create selection controls
     const selectionControls = document.createElement('div');
     selectionControls.style.display = 'flex';
-    selectionControls.style.justifyContent = 'center';
+    selectionControls.style.flexDirection = 'column';
     selectionControls.style.alignItems = 'center';
-    selectionControls.style.gap = '20px';
-    selectionControls.style.flexWrap = 'wrap';
+    selectionControls.style.gap = '15px';
     selectionControls.style.marginBottom = '15px';
+    selectionControls.style.padding = '20px';
+    selectionControls.style.border = '3px solid #2c3e50';
+    selectionControls.style.borderRadius = '8px';
+    selectionControls.style.backgroundColor = '#f8f9fa';
+    selectionControls.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
+    
+    // Add title for the selection box
+    const selectionTitle = document.createElement('div');
+    selectionTitle.textContent = 'Bayesian Comparison Calculator';
+    selectionTitle.style.fontWeight = 'bold';
+    selectionTitle.style.fontSize = '16px';
+    selectionTitle.style.color = '#2c3e50';
+    selectionTitle.style.marginBottom = '10px';
+    selectionTitle.style.textAlign = 'center';
+    
+    // Create dropdowns container
+    const dropdownsContainer = document.createElement('div');
+    dropdownsContainer.style.display = 'flex';
+    dropdownsContainer.style.justifyContent = 'center';
+    dropdownsContainer.style.alignItems = 'center';
+    dropdownsContainer.style.gap = '20px';
+    dropdownsContainer.style.flexWrap = 'wrap';
 
     // Prediction 1 selection
     const pred1Container = document.createElement('div');
@@ -101,9 +122,12 @@ export function createBayesianComparisonsWidget(containerId, options) {
     truthContainer.appendChild(truthLabel);
     truthContainer.appendChild(truthSelect);
 
-    selectionControls.appendChild(pred1Container);
-    selectionControls.appendChild(pred2Container);
-    selectionControls.appendChild(truthContainer);
+    dropdownsContainer.appendChild(pred1Container);
+    dropdownsContainer.appendChild(pred2Container);
+    dropdownsContainer.appendChild(truthContainer);
+    
+    selectionControls.appendChild(selectionTitle);
+    selectionControls.appendChild(dropdownsContainer);
 
     // Create results section
     const resultsSection = document.createElement('div');
