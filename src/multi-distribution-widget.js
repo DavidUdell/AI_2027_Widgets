@@ -152,39 +152,49 @@ export function createMultiDistributionWidget(containerId, options) {
         ctx.rect(padding, padding, plotWidth, plotHeight);
         ctx.stroke();
 
-        // Draw vertical guideline at the maximum active distribution value
+        // Draw vertical guideline at the median of the active distribution
         if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length) {
             const activeDist = distributions[activeDistributionIndex];
-            const maxDistributionValue = Math.max(...activeDist.values);
-            if (maxDistributionValue > 0) {
-                // Find the quarter with maximum probability and draw vertical guideline
-                const maxIndex = activeDist.values.indexOf(maxDistributionValue);
-                if (maxIndex !== -1) {
-                    const maxX = dataToCanvas(maxIndex, 0).x;
-
-                    // Draw vertical guideline
-                    ctx.strokeStyle = '#6c757d';
-                    ctx.lineWidth = 1;
-                    ctx.setLineDash([5, 5]); // Dashed line
-                    ctx.beginPath();
-                    ctx.moveTo(maxX, padding);
-                    ctx.lineTo(maxX, options.height - padding);
-                    ctx.stroke();
-                    ctx.setLineDash([]); // Reset to solid lines
-
-                    // Get quarter name
-                    let quarterName;
-                    const year = options.startYear + Math.floor(maxIndex / 4);
-                    const quarter = (maxIndex % 4) + 1;
-                    quarterName = `Q${quarter} ${year}`;
-
-                    // Draw top quarter name on top
-                    ctx.fillStyle = '#495057';
-                    ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'bottom';
-                    ctx.fillText(quarterName, maxX, padding - 10);
+            const totalMass = activeDist.values.reduce((sum, val) => sum + val, 0);
+            
+            if (totalMass > 0) {
+                // Calculate the median (point where cumulative probability reaches 50% of total mass)
+                const targetMass = totalMass / 2;
+                let cumulativeMass = 0;
+                let medianIndex = 0;
+                
+                for (let i = 0; i < activeDist.values.length; i++) {
+                    cumulativeMass += activeDist.values[i];
+                    if (cumulativeMass >= targetMass) {
+                        medianIndex = i;
+                        break;
+                    }
                 }
+                
+                const medianX = dataToCanvas(medianIndex, 0).x;
+
+                // Draw vertical guideline
+                ctx.strokeStyle = '#6c757d';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([5, 5]); // Dashed line
+                ctx.beginPath();
+                ctx.moveTo(medianX, padding);
+                ctx.lineTo(medianX, options.height - padding);
+                ctx.stroke();
+                ctx.setLineDash([]); // Reset to solid lines
+
+                // Get quarter name
+                let quarterName;
+                const year = options.startYear + Math.floor(medianIndex / 4);
+                const quarter = (medianIndex % 4) + 1;
+                quarterName = `Q${quarter} ${year}`;
+
+                // Draw median quarter name on top
+                ctx.fillStyle = '#495057';
+                ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(quarterName, medianX, padding - 10);
             }
         }
 

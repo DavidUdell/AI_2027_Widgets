@@ -173,33 +173,46 @@ export function createDistributionWidget(containerId, options) {
             ctx.textBaseline = 'middle';
             ctx.fillText(formatPercentage(maxNormalizedValue), padding - 10, maxY);
 
-            // Find the quarter with maximum probability and draw vertical guideline
-            const maxIndex = distribution.indexOf(maxDistributionValue);
-            if (maxIndex !== -1) {
-                const maxX = dataToCanvas(maxIndex, 0).x;
+            // Find the quarter with median probability and draw vertical guideline
+            const distributionTotalMass = distribution.reduce((sum, val) => sum + val, 0);
+            if (distributionTotalMass > 0) {
+                // Calculate the median (point where cumulative probability reaches 50% of total mass)
+                const targetMass = distributionTotalMass / 2;
+                let cumulativeMass = 0;
+                let medianIndex = 0;
+                
+                for (let i = 0; i < distribution.length; i++) {
+                    cumulativeMass += distribution[i];
+                    if (cumulativeMass >= targetMass) {
+                        medianIndex = i;
+                        break;
+                    }
+                }
+                
+                const medianX = dataToCanvas(medianIndex, 0).x;
 
                 // Draw vertical guideline
                 ctx.strokeStyle = '#6c757d';
                 ctx.lineWidth = 1;
                 ctx.setLineDash([5, 5]); // Dashed line - same as horizontal
                 ctx.beginPath();
-                ctx.moveTo(maxX, padding);
-                ctx.lineTo(maxX, options.height - padding);
+                ctx.moveTo(medianX, padding);
+                ctx.lineTo(medianX, options.height - padding);
                 ctx.stroke();
                 ctx.setLineDash([]); // Reset to solid lines
 
                 // Get quarter name
                 let quarterName;
-                const year = options.startYear + Math.floor(maxIndex / 4);
-                const quarter = (maxIndex % 4) + 1;
+                const year = options.startYear + Math.floor(medianIndex / 4);
+                const quarter = (medianIndex % 4) + 1;
                 quarterName = `Q${quarter} ${year}`;
 
-                // Draw top quarter name on top
+                // Draw median quarter name on top
                 ctx.fillStyle = '#495057';
                 ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'bottom';
-                ctx.fillText(quarterName, maxX, padding - 10);
+                ctx.fillText(quarterName, medianX, padding - 10);
             }
         }
 
