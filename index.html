@@ -402,7 +402,7 @@
                     const toggle = document.createElement('div');
                     toggle.className = 'visibility-toggle';
                     toggle.innerHTML = `
-                        <input type="checkbox" id="toggle-${distribution.color}" checked>
+                        <input type="checkbox" id="toggle-${distribution.color}">
                         <div class="color-box" style="background-color: ${colorSchemes[distribution.color]}"></div>
                         <span class="label">${distribution.color.charAt(0).toUpperCase() + distribution.color.slice(1)}</span>
                     `;
@@ -416,9 +416,10 @@
                         checkbox.disabled = true;
                         widget.setDistributionVisibility(index, true);
                     } else {
-                        // Background distributions can be toggled
-                        checkbox.checked = widget.getDistributionVisibility(index);
+                        // Background distributions start hidden by default
+                        checkbox.checked = false;
                         checkbox.disabled = false;
+                        widget.setDistributionVisibility(index, false);
                     }
                     
                     // Add event listener
@@ -448,7 +449,7 @@
                         } else {
                             // Background distributions can be toggled
                             checkbox.disabled = false;
-                            // Don't change the checked state if it's already set
+                            // Don't change the checked state if it's already been manually set
                             if (!checkbox.hasAttribute('data-initialized')) {
                                 checkbox.checked = widget.getDistributionVisibility(index);
                                 checkbox.setAttribute('data-initialized', 'true');
