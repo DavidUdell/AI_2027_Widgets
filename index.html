@@ -158,7 +158,36 @@
             color: #28a745;
         }
 
+        /* Visibility toggle styles */
+        .visibility-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
 
+        .visibility-toggle input[type="checkbox"] {
+            margin: 0;
+            cursor: pointer;
+            accent-color: #495057;
+        }
+
+        .visibility-toggle input[type="checkbox"]:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .visibility-toggle .color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            border: 1px solid #ccc;
+        }
+
+        .visibility-toggle .label {
+            font-size: 12px;
+            font-weight: 500;
+            color: #495057;
+        }
 
         /* Button hover effects */
         #add-distribution:hover {
@@ -204,8 +233,7 @@
             <strong>Instructions:</strong> Shape a sub-probability distribution
             by selecting a color and drawing in the widget. The active
             distribution is drawn on top, while other distributions are shown
-            in the background. The active distribution's maximum probability
-            quarter is indicated.
+            in the background. The active distribution's median quarter is indicated.
         </div>
 
         <!-- Distribution Controls -->
@@ -228,6 +256,13 @@
                     </select>
                 </div>
                 
+                <!-- Visibility Toggles -->
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-weight: bold;">Show/Hide:</span>
+                    <div id="visibility-toggles" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                        <!-- Checkboxes will be added here dynamically -->
+                    </div>
+                </div>
 
             </div>
         </div>
@@ -344,14 +379,87 @@
 
             // Multi-distribution widget controls
             const colorSelect = document.getElementById('distribution-color');
-            
+            const visibilityTogglesContainer = document.getElementById('visibility-toggles');
+
+            // Color schemes for visibility toggles
+            const colorSchemes = {
+                blue: '#007bff',
+                green: '#28a745',
+                red: '#dc3545',
+                purple: '#6f42c1',
+                orange: '#fd7e14',
+                yellow: '#ffc107'
+            };
+
+            // Create visibility toggles
+            function createVisibilityToggles() {
+                visibilityTogglesContainer.innerHTML = '';
+                const distributions = widget.getDistributions();
+                const activeIndex = widget.getActiveDistributionIndex();
+                
+                distributions.forEach((distribution, index) => {
+                    const toggle = document.createElement('div');
+                    toggle.className = 'visibility-toggle';
+                    toggle.innerHTML = `
+                        <input type="checkbox" id="toggle-${distribution.color}">
+                        <div class="color-box" style="background-color: ${colorSchemes[distribution.color]}"></div>
+                        <span class="label">${distribution.color.charAt(0).toUpperCase() + distribution.color.slice(1)}</span>
+                    `;
+                    
+                    const checkbox = toggle.querySelector('input[type="checkbox"]');
+                    
+                    // Handle active distribution logic
+                    if (index === activeIndex) {
+                        // Active distribution should always be visible and disabled
+                        checkbox.checked = true;
+                        checkbox.disabled = true;
+                        widget.setDistributionVisibility(index, true);
+                    } else {
+                        // Background distributions start hidden by default
+                        checkbox.checked = false;
+                        checkbox.disabled = false;
+                        widget.setDistributionVisibility(index, false);
+                    }
+                    
+                    // Add event listener
+                    checkbox.addEventListener('change', () => {
+                        widget.setDistributionVisibility(index, checkbox.checked);
+                    });
+                    
+                    visibilityTogglesContainer.appendChild(toggle);
+                });
+            }
 
 
+
+            // Update visibility toggles when active distribution changes
+            function updateVisibilityToggles() {
+                const distributions = widget.getDistributions();
+                const activeIndex = widget.getActiveDistributionIndex();
+                
+                distributions.forEach((distribution, index) => {
+                    const checkbox = document.getElementById(`toggle-${distribution.color}`);
+                    if (checkbox) {
+                        if (index === activeIndex) {
+                            // Active distribution should always be visible and disabled
+                            checkbox.checked = true;
+                            checkbox.disabled = true;
+                            widget.setDistributionVisibility(index, true);
+                        } else {
+                            // Background distributions can be toggled
+                            checkbox.disabled = false;
+                            // Don't change the checked state if it's already been manually set
+                            if (!checkbox.hasAttribute('data-initialized')) {
+                                checkbox.checked = widget.getDistributionVisibility(index);
+                                checkbox.setAttribute('data-initialized', 'true');
+                            }
+                        }
+                    }
+                });
+            }
 
             // Debounce function to avoid excessive updates
             let debounceTimer;
-
-
 
             function updateColorSelect() {
                 const activeIndex = widget.getActiveDistributionIndex();
@@ -368,19 +476,21 @@
             colorSelect.addEventListener('change', () => {
                 const color = colorSelect.value;
                 widget.setActiveDistributionByColor(color);
+                updateVisibilityToggles();
             });
-
-
 
             // Set up callback to update comparisons widget when distributions change
             widget.setOnChange((distributions) => {
                 comparisonsWidget.updateDistributions(distributions);
                 // Update the UI controls to reflect the active distribution
                 updateColorSelect();
+                updateVisibilityToggles();
             });
 
             // Initialize
+            createVisibilityToggles();
             updateColorSelect();
+            updateVisibilityToggles();
         });
     </script>
 </body>

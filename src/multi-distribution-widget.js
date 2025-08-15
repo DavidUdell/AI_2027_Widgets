@@ -42,6 +42,9 @@ export function createMultiDistributionWidget(containerId, options) {
     let distributions = [];
     let activeDistributionIndex = 0; // Start with blue
 
+    // Track visibility state for each distribution
+    const visibilityState = {};
+
     // Drawing state
     let isDrawing = false;
     let lastX = 0;
@@ -94,6 +97,16 @@ export function createMultiDistributionWidget(containerId, options) {
     };
 
     /**
+     * Initialize visibility state for distributions
+     */
+    function initializeVisibilityState() {
+        distributions.forEach((distribution, index) => {
+            // Default all distributions to visible
+            visibilityState[index] = true;
+        });
+    }
+
+    /**
      * Convert canvas coordinates to period index and probability
      */
     function canvasToData(x, y) {
@@ -139,39 +152,49 @@ export function createMultiDistributionWidget(containerId, options) {
         ctx.rect(padding, padding, plotWidth, plotHeight);
         ctx.stroke();
 
-        // Draw vertical guideline at the maximum active distribution value
+        // Draw vertical guideline at the median of the active distribution
         if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length) {
             const activeDist = distributions[activeDistributionIndex];
-            const maxDistributionValue = Math.max(...activeDist.values);
-            if (maxDistributionValue > 0) {
-                // Find the quarter with maximum probability and draw vertical guideline
-                const maxIndex = activeDist.values.indexOf(maxDistributionValue);
-                if (maxIndex !== -1) {
-                    const maxX = dataToCanvas(maxIndex, 0).x;
-
-                    // Draw vertical guideline
-                    ctx.strokeStyle = '#6c757d';
-                    ctx.lineWidth = 1;
-                    ctx.setLineDash([5, 5]); // Dashed line
-                    ctx.beginPath();
-                    ctx.moveTo(maxX, padding);
-                    ctx.lineTo(maxX, options.height - padding);
-                    ctx.stroke();
-                    ctx.setLineDash([]); // Reset to solid lines
-
-                    // Get quarter name
-                    let quarterName;
-                    const year = options.startYear + Math.floor(maxIndex / 4);
-                    const quarter = (maxIndex % 4) + 1;
-                    quarterName = `Q${quarter} ${year}`;
-
-                    // Draw top quarter name on top
-                    ctx.fillStyle = '#495057';
-                    ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'bottom';
-                    ctx.fillText(quarterName, maxX, padding - 10);
+            const totalMass = activeDist.values.reduce((sum, val) => sum + val, 0);
+            
+            if (totalMass > 0) {
+                // Calculate the median (point where cumulative probability reaches 50% of total mass)
+                const targetMass = totalMass / 2;
+                let cumulativeMass = 0;
+                let medianIndex = 0;
+                
+                for (let i = 0; i < activeDist.values.length; i++) {
+                    cumulativeMass += activeDist.values[i];
+                    if (cumulativeMass >= targetMass) {
+                        medianIndex = i;
+                        break;
+                    }
                 }
+                
+                const medianX = dataToCanvas(medianIndex, 0).x;
+
+                // Draw vertical guideline
+                ctx.strokeStyle = '#6c757d';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([5, 5]); // Dashed line
+                ctx.beginPath();
+                ctx.moveTo(medianX, padding);
+                ctx.lineTo(medianX, options.height - padding);
+                ctx.stroke();
+                ctx.setLineDash([]); // Reset to solid lines
+
+                // Get quarter name
+                let quarterName;
+                const year = options.startYear + Math.floor(medianIndex / 4);
+                const quarter = (medianIndex % 4) + 1;
+                quarterName = `Q${quarter} ${year}`;
+
+                // Draw median quarter name on top
+                ctx.fillStyle = '#495057';
+                ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(quarterName, medianX, padding - 10);
             }
         }
 
@@ -241,15 +264,16 @@ export function createMultiDistributionWidget(containerId, options) {
             return;
         }
 
-        // Draw all non-active distributions in the background first
+        // Draw all non-active distributions in the background first (only if visible)
         distributions.forEach((distribution, index) => {
-            if (index !== activeDistributionIndex) {
+            if (index !== activeDistributionIndex && visibilityState[index]) {
                 drawSingleDistribution(distribution, false);
             }
         });
 
-        // Draw the active distribution on top
-        if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length) {
+        // Draw the active distribution on top (only if visible)
+        if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length && 
+            visibilityState[activeDistributionIndex]) {
             const activeDist = distributions[activeDistributionIndex];
             drawSingleDistribution(activeDist, true);
         }
@@ -419,10 +443,13 @@ export function createMultiDistributionWidget(containerId, options) {
         const initialValues = Array(numPeriods).fill(0).map((_, i) => 0.2 + (0.8 * i / (numPeriods - 1)));
         distributions.push({
             color: color,
-            mass: 50, // Default mass of 50%
+            mass: 100, // Default total percentage
             values: initialValues
         });
     });
+
+    // Initialize visibility state
+    initializeVisibilityState();
 
     // Append canvas to container
     container.appendChild(canvas);
@@ -444,7 +471,10 @@ export function createMultiDistributionWidget(containerId, options) {
                 values: initialValues
             };
             distributions.push(newDistribution);
-            activeDistributionIndex = distributions.length - 1;
+            const newIndex = distributions.length - 1;
+            activeDistributionIndex = newIndex;
+            // Set new distribution as visible by default
+            visibilityState[newIndex] = true;
             drawWidget();
             if (options.onChange) {
                 options.onChange(distributions);
@@ -452,6 +482,20 @@ export function createMultiDistributionWidget(containerId, options) {
         },
         removeDistribution: (index) => {
             distributions.splice(index, 1);
+            // Remove visibility state for this index and reindex the rest
+            delete visibilityState[index];
+            // Reindex visibility state for remaining distributions
+            const newVisibilityState = {};
+            Object.keys(visibilityState).forEach(oldIndex => {
+                const oldIndexNum = parseInt(oldIndex);
+                if (oldIndexNum > index) {
+                    newVisibilityState[oldIndexNum - 1] = visibilityState[oldIndexNum];
+                } else {
+                    newVisibilityState[oldIndexNum] = visibilityState[oldIndexNum];
+                }
+            });
+            Object.assign(visibilityState, newVisibilityState);
+            
             if (activeDistributionIndex >= distributions.length) {
                 activeDistributionIndex = distributions.length - 1;
             }
@@ -463,6 +507,8 @@ export function createMultiDistributionWidget(containerId, options) {
         clearAllDistributions: () => {
             distributions = [];
             activeDistributionIndex = -1;
+            // Clear visibility state
+            Object.keys(visibilityState).forEach(key => delete visibilityState[key]);
             drawWidget();
             if (options.onChange) {
                 options.onChange(distributions);
@@ -488,6 +534,28 @@ export function createMultiDistributionWidget(containerId, options) {
         getTotalMass: getTotalMass,
         setOnChange: (callback) => {
             options.onChange = callback;
+        },
+        setDistributionVisibility: (index, visible) => {
+            if (visibilityState.hasOwnProperty(index)) {
+                visibilityState[index] = visible;
+                drawWidget();
+            }
+        },
+        getDistributionVisibility: (index) => {
+            return visibilityState[index] || false;
+        },
+        toggleDistributionVisibility: (index) => {
+            if (visibilityState.hasOwnProperty(index)) {
+                visibilityState[index] = !visibilityState[index];
+                drawWidget();
+            }
+        },
+        getVisibilityState: () => {
+            return { ...visibilityState };
+        },
+        setVisibilityState: (newVisibilityState) => {
+            Object.assign(visibilityState, newVisibilityState);
+            drawWidget();
         }
     };
 }
