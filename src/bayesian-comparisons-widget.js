@@ -47,7 +47,7 @@ export function createBayesianComparisonsWidget(containerId, options) {
     
     // Add title for the selection box
     const selectionTitle = document.createElement('div');
-    selectionTitle.textContent = 'Bayesian Comparison Calculator';
+    selectionTitle.textContent = 'Calculator';
     selectionTitle.style.fontWeight = 'bold';
     selectionTitle.style.fontSize = '16px';
     selectionTitle.style.color = '#2c3e50';
