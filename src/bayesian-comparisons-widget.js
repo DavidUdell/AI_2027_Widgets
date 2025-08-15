@@ -177,6 +177,16 @@ export function createBayesianComparisonsWidget(containerId, options) {
             pred2Select.appendChild(option.cloneNode(true));
             truthSelect.appendChild(option.cloneNode(true));
         });
+
+        // Set default selections to first distribution
+        if (options.distributions.length > 0) {
+            pred1Select.value = '0';
+            pred2Select.value = '0';
+            truthSelect.value = '0';
+            
+            // Trigger initial results calculation
+            updateResults();
+        }
     }
 
     /**
@@ -219,20 +229,7 @@ export function createBayesianComparisonsWidget(containerId, options) {
             return;
         }
 
-        // Check for duplicate selections
-        if (pred1Index === pred2Index || pred1Index === truthIndex || pred2Index === truthIndex) {
-            resultsSection.style.display = 'flex';
-            resultsSection.style.alignItems = 'center';
-            resultsSection.style.justifyContent = 'center';
-            resultsSection.style.padding = '15px';
-            const message = document.createElement('div');
-            message.textContent = 'Please select three different distributions.';
-            message.style.color = '#dc3545';
-            message.style.fontSize = '16px';
-            message.style.textAlign = 'center';
-            resultsSection.appendChild(message);
-            return;
-        }
+
 
         // Get selected distributions
         const pred1 = options.distributions[pred1Index];
