@@ -171,6 +171,11 @@
             accent-color: #495057;
         }
 
+        .visibility-toggle input[type="checkbox"]:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
         .visibility-toggle .color-box {
             width: 12px;
             height: 12px;
@@ -391,6 +396,7 @@
             function createVisibilityToggles() {
                 visibilityTogglesContainer.innerHTML = '';
                 const distributions = widget.getDistributions();
+                const activeIndex = widget.getActiveDistributionIndex();
                 
                 distributions.forEach((distribution, index) => {
                     const toggle = document.createElement('div');
@@ -402,7 +408,18 @@
                     `;
                     
                     const checkbox = toggle.querySelector('input[type="checkbox"]');
-                    checkbox.checked = widget.getDistributionVisibility(index);
+                    
+                    // Handle active distribution logic
+                    if (index === activeIndex) {
+                        // Active distribution should always be visible and disabled
+                        checkbox.checked = true;
+                        checkbox.disabled = true;
+                        widget.setDistributionVisibility(index, true);
+                    } else {
+                        // Background distributions can be toggled
+                        checkbox.checked = widget.getDistributionVisibility(index);
+                        checkbox.disabled = false;
+                    }
                     
                     // Add event listener
                     checkbox.addEventListener('change', () => {
@@ -414,6 +431,32 @@
             }
 
 
+
+            // Update visibility toggles when active distribution changes
+            function updateVisibilityToggles() {
+                const distributions = widget.getDistributions();
+                const activeIndex = widget.getActiveDistributionIndex();
+                
+                distributions.forEach((distribution, index) => {
+                    const checkbox = document.getElementById(`toggle-${distribution.color}`);
+                    if (checkbox) {
+                        if (index === activeIndex) {
+                            // Active distribution should always be visible and disabled
+                            checkbox.checked = true;
+                            checkbox.disabled = true;
+                            widget.setDistributionVisibility(index, true);
+                        } else {
+                            // Background distributions can be toggled
+                            checkbox.disabled = false;
+                            // Don't change the checked state if it's already set
+                            if (!checkbox.hasAttribute('data-initialized')) {
+                                checkbox.checked = widget.getDistributionVisibility(index);
+                                checkbox.setAttribute('data-initialized', 'true');
+                            }
+                        }
+                    }
+                });
+            }
 
             // Debounce function to avoid excessive updates
             let debounceTimer;
@@ -433,6 +476,7 @@
             colorSelect.addEventListener('change', () => {
                 const color = colorSelect.value;
                 widget.setActiveDistributionByColor(color);
+                updateVisibilityToggles();
             });
 
             // Set up callback to update comparisons widget when distributions change
@@ -440,11 +484,13 @@
                 comparisonsWidget.updateDistributions(distributions);
                 // Update the UI controls to reflect the active distribution
                 updateColorSelect();
+                updateVisibilityToggles();
             });
 
             // Initialize
             createVisibilityToggles();
             updateColorSelect();
+            updateVisibilityToggles();
         });
     </script>
 </body>
