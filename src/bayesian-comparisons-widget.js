@@ -69,7 +69,7 @@ export function createBayesianComparisonsWidget(containerId, options) {
     pred1Container.style.gap = '8px';
     
     const pred1Label = document.createElement('label');
-    pred1Label.textContent = 'Prediction 1:';
+    pred1Label.textContent = 'Model A:';
     pred1Label.style.fontWeight = 'bold';
     pred1Label.style.color = '#2c3e50';
     
@@ -89,7 +89,7 @@ export function createBayesianComparisonsWidget(containerId, options) {
     pred2Container.style.gap = '8px';
     
     const pred2Label = document.createElement('label');
-    pred2Label.textContent = 'Prediction 2:';
+    pred2Label.textContent = 'Model B:';
     pred2Label.style.fontWeight = 'bold';
     pred2Label.style.color = '#2c3e50';
     
@@ -196,7 +196,7 @@ export function createBayesianComparisonsWidget(containerId, options) {
         if (!Number.isFinite(score)) {
             return '∞';
         }
-        return score.toFixed(4);
+        return score.toFixed(2);
     }
 
     /**
@@ -207,7 +207,7 @@ export function createBayesianComparisonsWidget(containerId, options) {
             return 'N/A';
         }
         if (factor < 1.01) {
-            return factor.toFixed(4);
+            return factor.toFixed(3);
         }
         return factor.toFixed(2);
     }
@@ -275,10 +275,10 @@ export function createBayesianComparisonsWidget(containerId, options) {
         scoresDiv.style.marginBottom = '8px';
         resultsContainer.appendChild(scoresDiv);
 
-        // Gap and factor if available
-        if (comparison.gap !== null && comparison.factor !== null) {
+        // Perplexity ratio if available
+        if (comparison.factor !== null) {
             const metricsDiv = document.createElement('div');
-            metricsDiv.textContent = `Gap: ${formatLogScore(comparison.gap)} | Factor: ${formatFactor(comparison.factor)}`;
+            metricsDiv.textContent = `Perplexity Ratio: ${formatFactor(comparison.factor)} (lower favors Model A)`;
             metricsDiv.style.fontFamily = 'monospace';
             metricsDiv.style.fontSize = '12px';
             metricsDiv.style.color = '#666';
