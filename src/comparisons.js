@@ -302,6 +302,23 @@ export function createComparisonsWidget(containerId, options) {
             }
         });
 
+        // Apply additional scaling to ensure the highest peak fits within the plot area
+        // The plot area has a height of plotHeight, and we want to use all available space
+        const maxAllowedPeak = 1.0; // Allow peaks up to 100% of the plot height
+        const maxScaledPeak = Math.max(...Object.values(scalingFactors).map((factor, index) => {
+            if (!visibilityState[index]) return 0;
+            const distribution = options.distributions[index];
+            const maxValue = Math.max(...distribution.values);
+            return maxValue * factor;
+        }));
+
+        if (maxScaledPeak > maxAllowedPeak) {
+            const scaleDownFactor = maxAllowedPeak / maxScaledPeak;
+            Object.keys(scalingFactors).forEach(index => {
+                scalingFactors[index] *= scaleDownFactor;
+            });
+        }
+
         return scalingFactors;
     }
 
