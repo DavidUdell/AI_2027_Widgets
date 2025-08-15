@@ -228,12 +228,13 @@
     </p>
 
     <div class="widget-container">
-        <h2>Your AGI Timelines</h2>
+        <h2>AGI Timelines</h2>
         <div class="instructions">
-            <strong>Instructions:</strong> Shape a sub-probability distribution
-            by selecting a color and drawing in the widget. The active
-            distribution is drawn on top, while other distributions are shown
-            in the background. The active distribution's median quarter is indicated.
+            <strong>Instructions:</strong> Sketch a probability distribution by
+            selecting it from the dropdown and drawing with the mouse. Toggle
+            the visibility of other distributions in the background with their
+            checkboxes. The dotted line indicates the median quarter of the
+            current distribution.
         </div>
 
         <!-- Distribution Controls -->
@@ -243,7 +244,7 @@
                 <!-- Color Selection -->
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <label for="distribution-color" style="font-weight:
-                    bold;">Select Distribution:</label>
+                    bold;">Current:</label>
                     <select id="distribution-color" style="padding: 4px 8px;
                     border: 1px solid #ccc; border-radius: 4px; font-size:
                     14px;">
@@ -258,8 +259,9 @@
                 
                 <!-- Visibility Toggles -->
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-weight: bold;">Show/Hide:</span>
-                    <div id="visibility-toggles" style="display: flex; gap: 16px; flex-wrap: wrap;">
+                    <span style="font-weight: bold;">Show:</span>
+                    <div id="visibility-toggles" style="display: flex; gap:
+                    16px; flex-wrap: wrap;">
                         <!-- Checkboxes will be added here dynamically -->
                     </div>
                 </div>
@@ -277,9 +279,9 @@
         <h2>Distribution Comparisons</h2>
         <div class="instructions">
             <strong>Instructions:</strong> This view displays all your
-            distributions together for comparison. Set the total probability of
-            each distribution in its input box. Distributions are automatically
-            scaled relative to one another.
+            distributions together for comparison. Modify the total probability
+            of each distribution in its input box. Toggle the visibility of
+            each distribution with its checkbox.
         </div>
         
 
@@ -410,7 +412,8 @@
                     
                     // Handle active distribution logic
                     if (index === activeIndex) {
-                        // Active distribution should always be visible and disabled
+                        // Active distribution should always be visible and
+                        // disabled
                         checkbox.checked = true;
                         checkbox.disabled = true;
                         widget.setDistributionVisibility(index, true);
@@ -441,14 +444,16 @@
                     const checkbox = document.getElementById(`toggle-${distribution.color}`);
                     if (checkbox) {
                         if (index === activeIndex) {
-                            // Active distribution should always be visible and disabled
+                            // Active distribution should always be visible and
+                            // disabled
                             checkbox.checked = true;
                             checkbox.disabled = true;
                             widget.setDistributionVisibility(index, true);
                         } else {
                             // Background distributions can be toggled
                             checkbox.disabled = false;
-                            // Don't change the checked state if it's already been manually set
+                            // Don't change the checked state if it's already
+                            // been manually set
                             if (!checkbox.hasAttribute('data-initialized')) {
                                 checkbox.checked = widget.getDistributionVisibility(index);
                                 checkbox.setAttribute('data-initialized', 'true');
@@ -477,9 +482,19 @@
                 const color = colorSelect.value;
                 widget.setActiveDistributionByColor(color);
                 updateVisibilityToggles();
+                
+                // Make the selected distribution visible in the comparisons
+                // widget (preserving visibility of previously selected
+                // distributions)
+                const distributions = widget.getDistributions();
+                const selectedIndex = distributions.findIndex(dist => dist.color === color);
+                if (selectedIndex !== -1) {
+                    comparisonsWidget.setDistributionVisibility(selectedIndex, true);
+                }
             });
 
-            // Set up callback to update comparisons widget when distributions change
+            // Set up callback to update comparisons widget when distributions
+            // change
             widget.setOnChange((distributions) => {
                 comparisonsWidget.updateDistributions(distributions);
                 // Update the UI controls to reflect the active distribution
@@ -491,6 +506,13 @@
             createVisibilityToggles();
             updateColorSelect();
             updateVisibilityToggles();
+            
+            // Make the initial active distribution visible in the comparisons
+            // widget
+            const initialActiveIndex = widget.getActiveDistributionIndex();
+            if (initialActiveIndex !== -1) {
+                comparisonsWidget.setDistributionVisibility(initialActiveIndex, true);
+            }
         });
     </script>
 </body>

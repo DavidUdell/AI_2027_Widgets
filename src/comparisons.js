@@ -114,8 +114,8 @@ export function createComparisonsWidget(containerId, options) {
         if (!options.distributions) return;
         
         options.distributions.forEach((distribution, index) => {
-            // Default all distributions to visible
-            visibilityState[index] = true;
+            // Default all distributions to hidden
+            visibilityState[index] = false;
         });
     }
 
@@ -301,6 +301,23 @@ export function createComparisonsWidget(containerId, options) {
                 scalingFactors[index] = (sum > 0 && mass > 0 && refRatio > 0) ? (mass / sum) / refRatio : 0;
             }
         });
+
+        // Apply additional scaling to ensure the highest peak fits within the plot area
+        // The plot area has a height of plotHeight, and we want to use all available space
+        const maxAllowedPeak = 1.0; // Allow peaks up to 100% of the plot height
+        const maxScaledPeak = Math.max(...Object.entries(scalingFactors).map(([index, factor]) => {
+            if (!visibilityState[parseInt(index)]) return 0;
+            const distribution = options.distributions[parseInt(index)];
+            const maxValue = Math.max(...distribution.values);
+            return maxValue * factor;
+        }));
+
+        if (maxScaledPeak > maxAllowedPeak) {
+            const scaleDownFactor = maxAllowedPeak / maxScaledPeak;
+            Object.keys(scalingFactors).forEach(index => {
+                scalingFactors[index] *= scaleDownFactor;
+            });
+        }
 
         return scalingFactors;
     }
@@ -676,8 +693,15 @@ export function createComparisonsWidget(containerId, options) {
     return {
         updateDistributions: (newDistributions) => {
             options.distributions = newDistributions;
-            // Reset visibility state for new distributions
-            initializeVisibilityState();
+            // Preserve existing visibility state instead of resetting
+            // Only initialize new distributions that don't have visibility state yet
+            if (newDistributions) {
+                newDistributions.forEach((distribution, index) => {
+                    if (!visibilityState.hasOwnProperty(index)) {
+                        visibilityState[index] = false; // Default new distributions to hidden
+                    }
+                });
+            }
             // Update input values
             if (newDistributions) {
                 newDistributions.forEach(distribution => {
