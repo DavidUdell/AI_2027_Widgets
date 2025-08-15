@@ -150,18 +150,7 @@ export function createBayesianComparisonsWidget(containerId, options) {
         pred2Select.innerHTML = '';
         truthSelect.innerHTML = '';
 
-        // Add default option
-        const defaultOption = document.createElement('option');
-        defaultOption.value = '';
-        defaultOption.textContent = '-- Select --';
-        defaultOption.disabled = true;
-        defaultOption.selected = true;
-
-        pred1Select.appendChild(defaultOption.cloneNode(true));
-        pred2Select.appendChild(defaultOption.cloneNode(true));
-        truthSelect.appendChild(defaultOption.cloneNode(true));
-
-        // Add distribution options
+        // Add distribution options (no default disabled option)
         options.distributions.forEach((distribution, index) => {
             const option = document.createElement('option');
             option.value = index.toString();
@@ -200,15 +189,15 @@ export function createBayesianComparisonsWidget(containerId, options) {
      * Update comparison results
      */
     function updateResults() {
-        const pred1Index = parseInt(pred1Select.value);
-        const pred2Index = parseInt(pred2Select.value);
-        const truthIndex = parseInt(truthSelect.value);
+        const pred1Index = pred1Select.value ? parseInt(pred1Select.value) : -1;
+        const pred2Index = pred2Select.value ? parseInt(pred2Select.value) : -1;
+        const truthIndex = truthSelect.value ? parseInt(truthSelect.value) : -1;
 
         // Clear results section
         resultsSection.innerHTML = '';
 
         // Check if all selections are made
-        if (isNaN(pred1Index) || isNaN(pred2Index) || isNaN(truthIndex)) {
+        if (pred1Index === -1 || pred2Index === -1 || truthIndex === -1) {
             const message = document.createElement('div');
             message.textContent = 'Please select two predictions and a ground truth distribution.';
             message.style.color = '#6c757d';
