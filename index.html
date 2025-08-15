@@ -477,6 +477,14 @@
                 const color = colorSelect.value;
                 widget.setActiveDistributionByColor(color);
                 updateVisibilityToggles();
+                
+                // Make the selected distribution visible in the comparisons widget
+                // (preserving visibility of previously selected distributions)
+                const distributions = widget.getDistributions();
+                const selectedIndex = distributions.findIndex(dist => dist.color === color);
+                if (selectedIndex !== -1) {
+                    comparisonsWidget.setDistributionVisibility(selectedIndex, true);
+                }
             });
 
             // Set up callback to update comparisons widget when distributions change
@@ -491,6 +499,12 @@
             createVisibilityToggles();
             updateColorSelect();
             updateVisibilityToggles();
+            
+            // Make the initial active distribution visible in the comparisons widget
+            const initialActiveIndex = widget.getActiveDistributionIndex();
+            if (initialActiveIndex !== -1) {
+                comparisonsWidget.setDistributionVisibility(initialActiveIndex, true);
+            }
         });
     </script>
 </body>

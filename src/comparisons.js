@@ -114,8 +114,8 @@ export function createComparisonsWidget(containerId, options) {
         if (!options.distributions) return;
         
         options.distributions.forEach((distribution, index) => {
-            // Default all distributions to visible
-            visibilityState[index] = true;
+            // Default all distributions to hidden
+            visibilityState[index] = false;
         });
     }
 
@@ -693,8 +693,15 @@ export function createComparisonsWidget(containerId, options) {
     return {
         updateDistributions: (newDistributions) => {
             options.distributions = newDistributions;
-            // Reset visibility state for new distributions
-            initializeVisibilityState();
+            // Preserve existing visibility state instead of resetting
+            // Only initialize new distributions that don't have visibility state yet
+            if (newDistributions) {
+                newDistributions.forEach((distribution, index) => {
+                    if (!visibilityState.hasOwnProperty(index)) {
+                        visibilityState[index] = false; // Default new distributions to hidden
+                    }
+                });
+            }
             // Update input values
             if (newDistributions) {
                 newDistributions.forEach(distribution => {
