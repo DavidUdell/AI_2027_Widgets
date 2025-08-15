@@ -162,23 +162,13 @@
         .visibility-toggle {
             display: flex;
             align-items: center;
-            gap: 4px;
-            padding: 4px 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            background: white;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .visibility-toggle:hover {
-            border-color: #007bff;
-            background: #f8f9fa;
+            gap: 6px;
         }
 
         .visibility-toggle input[type="checkbox"] {
             margin: 0;
             cursor: pointer;
+            accent-color: #495057;
         }
 
         .visibility-toggle .color-box {
@@ -192,11 +182,6 @@
             font-size: 12px;
             font-weight: 500;
             color: #495057;
-        }
-
-        .visibility-toggle.active {
-            border-color: #007bff;
-            background: #e3f2fd;
         }
 
         /* Button hover effects */
@@ -270,7 +255,7 @@
                 <!-- Visibility Toggles -->
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <span style="font-weight: bold;">Show/Hide:</span>
-                    <div id="visibility-toggles" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <div id="visibility-toggles" style="display: flex; gap: 16px; flex-wrap: wrap;">
                         <!-- Checkboxes will be added here dynamically -->
                     </div>
                 </div>
@@ -422,28 +407,13 @@
                     // Add event listener
                     checkbox.addEventListener('change', () => {
                         widget.setDistributionVisibility(index, checkbox.checked);
-                        updateToggleStyles();
                     });
                     
                     visibilityTogglesContainer.appendChild(toggle);
                 });
-                
-                updateToggleStyles();
             }
 
-            // Update toggle styles based on active distribution
-            function updateToggleStyles() {
-                const activeIndex = widget.getActiveDistributionIndex();
-                const toggles = visibilityTogglesContainer.querySelectorAll('.visibility-toggle');
-                
-                toggles.forEach((toggle, index) => {
-                    if (index === activeIndex) {
-                        toggle.classList.add('active');
-                    } else {
-                        toggle.classList.remove('active');
-                    }
-                });
-            }
+
 
             // Debounce function to avoid excessive updates
             let debounceTimer;
@@ -463,7 +433,6 @@
             colorSelect.addEventListener('change', () => {
                 const color = colorSelect.value;
                 widget.setActiveDistributionByColor(color);
-                updateToggleStyles();
             });
 
             // Set up callback to update comparisons widget when distributions change
@@ -471,7 +440,6 @@
                 comparisonsWidget.updateDistributions(distributions);
                 // Update the UI controls to reflect the active distribution
                 updateColorSelect();
-                updateToggleStyles();
             });
 
             // Initialize
