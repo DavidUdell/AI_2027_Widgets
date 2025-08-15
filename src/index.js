@@ -462,3 +462,6 @@ export { createMultiDistributionWidget } from './multi-distribution-widget.js';
 
 // Export comparisons widget
 export { createComparisonsWidget } from './comparisons.js';
+
+// Export Bayesian comparisons widget
+export { createBayesianComparisonsWidget } from './bayesian-comparisons-widget.js';
