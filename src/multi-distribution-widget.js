@@ -419,7 +419,7 @@ export function createMultiDistributionWidget(containerId, options) {
         const initialValues = Array(numPeriods).fill(0).map((_, i) => 0.2 + (0.8 * i / (numPeriods - 1)));
         distributions.push({
             color: color,
-            mass: 50, // Default mass of 50%
+            mass: 100, // Default total percentage
             values: initialValues
         });
     });
