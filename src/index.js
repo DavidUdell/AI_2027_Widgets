@@ -216,12 +216,12 @@ export function createDistributionWidget(containerId, options) {
             }
         }
 
-        // Draw the hardcoded 0% label at the bottom left
+        // Draw the hardcoded ε% label at the bottom left
         ctx.fillStyle = '#495057';
         ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
-        ctx.fillText('0%', padding - 10, options.height - padding);
+        ctx.fillText('ε%', padding - 10, options.height - padding);
     }
 
     /**
