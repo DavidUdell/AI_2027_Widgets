@@ -185,9 +185,18 @@ export function createComparisonsWidget(containerId, options) {
         }));
 
         if (maxScaledPeak > maxAllowedPeak) {
+            // Scale down if the highest peak exceeds the plot area
             const scaleDownFactor = maxAllowedPeak / maxScaledPeak;
             Object.keys(scalingFactors).forEach(index => {
                 scalingFactors[index] *= scaleDownFactor;
+            });
+        } else if (maxScaledPeak > 0 && maxScaledPeak < maxAllowedPeak) {
+            // Scale up if the highest peak is below the plot area top
+            // Scale to exactly reach the top of the plot area (100%)
+            const targetPeak = 1.0;
+            const scaleUpFactor = targetPeak / maxScaledPeak;
+            Object.keys(scalingFactors).forEach(index => {
+                scalingFactors[index] *= scaleUpFactor;
             });
         }
 
