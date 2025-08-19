@@ -92,12 +92,15 @@ export function createDistributionWidget(containerId, options) {
     /**
      * Convert canvas coordinates to period index and probability
      */
+    // Epsilon value for floor probability (1/10,000)% = 0.000001
+    const FLOOR_PROBABILITY_EPSILON = 0.000001;
+
     function canvasToData(x, y) {
         const periodIndex = Math.round((x - padding) / periodStep);
         const clampedPeriodIndex = Math.max(0, Math.min(numPeriods - 1, periodIndex));
 
         const probability = 1 - ((y - padding) / plotHeight);
-        const clampedProbability = Math.max(0, Math.min(1, probability));
+        const clampedProbability = Math.max(FLOOR_PROBABILITY_EPSILON, Math.min(1, probability));
 
         return { periodIndex: clampedPeriodIndex, probability: clampedProbability };
     }
