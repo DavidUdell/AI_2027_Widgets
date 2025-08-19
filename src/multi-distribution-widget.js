@@ -264,12 +264,31 @@ export function createMultiDistributionWidget(containerId, options) {
             }
         }
 
-        // Draw the hardcoded ε% label at the bottom left
-        ctx.fillStyle = '#495057';
-        ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('ε%', padding - 10, options.height - padding);
+        // Draw the ε% label at the bottom left, but hide it when horizontal guideline is at visual floor
+        const isAtVisualFloor = activeDistributionIndex >= 0 && 
+                               activeDistributionIndex < distributions.length && 
+                               distributions[activeDistributionIndex].values.reduce((sum, val) => sum + val, 0) > 0;
+        
+        if (isAtVisualFloor) {
+            const activeDist = distributions[activeDistributionIndex];
+            const maxValue = Math.max(...activeDist.values);
+            const isGuidelineAtFloor = Math.abs(maxValue - FLOOR_PROBABILITY_EPSILON) < 1e-10;
+            
+            if (!isGuidelineAtFloor) {
+                ctx.fillStyle = '#495057';
+                ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('ε%', padding - 10, options.height - padding);
+            }
+        } else {
+            // Show epsilon label when no active distribution or no mass
+            ctx.fillStyle = '#495057';
+            ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('ε%', padding - 10, options.height - padding);
+        }
     }
 
     /**
