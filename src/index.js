@@ -92,12 +92,15 @@ export function createDistributionWidget(containerId, options) {
     /**
      * Convert canvas coordinates to period index and probability
      */
+    // Epsilon value for floor probability (1/10,000)% = 0.000001
+    const FLOOR_PROBABILITY_EPSILON = 0.000001;
+
     function canvasToData(x, y) {
         const periodIndex = Math.round((x - padding) / periodStep);
         const clampedPeriodIndex = Math.max(0, Math.min(numPeriods - 1, periodIndex));
 
         const probability = 1 - ((y - padding) / plotHeight);
-        const clampedProbability = Math.max(0, Math.min(1, probability));
+        const clampedProbability = Math.max(FLOOR_PROBABILITY_EPSILON, Math.min(1, probability));
 
         return { periodIndex: clampedPeriodIndex, probability: clampedProbability };
     }
@@ -216,12 +219,12 @@ export function createDistributionWidget(containerId, options) {
             }
         }
 
-        // Draw the hardcoded 0% label at the bottom left
+        // Draw the hardcoded ε% label at the bottom left
         ctx.fillStyle = '#495057';
         ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
-        ctx.fillText('0%', padding - 10, options.height - padding);
+        ctx.fillText('ε%', padding - 10, options.height - padding);
     }
 
     /**
@@ -244,7 +247,20 @@ export function createDistributionWidget(containerId, options) {
                 x = padding + i * 4 * periodStep;
             }
             const year = options.startYear + i;
-            ctx.fillText(year.toString(), x, options.height - padding / 2 - 18);
+            
+            if (i === numYears - 1) {
+                // Multi-line label for the rightmost bin
+                const lines = [">2039", "or never"];
+                const lineHeight = 14;
+                const baseY = options.height - padding / 2 - 18; // Align with other labels
+                
+                lines.forEach((line, lineIndex) => {
+                    ctx.fillText(line, x, baseY + lineIndex * lineHeight);
+                });
+            } else {
+                // Single line for other years
+                ctx.fillText(year.toString(), x, options.height - padding / 2 - 18);
+            }
         }
 
         // X-axis title

@@ -4,20 +4,20 @@
 
 import { describe, test, expect } from 'vitest';
 import {
-    calculateLogScore,
+    calculateKLDivergence,
     comparePredictions
 } from '../src/bayesian.js';
 
 describe('Bayesian scoring', () => {
     // Proper distributions
-    test('should return ln(2) for identical distributions', () => {
+    test('should return 0 for identical distributions', () => {
         const prediction = [0.5, 0.5];
         const groundTruth = [0.5, 0.5];
         const predProb = 100;
         const truthProb = 100;
 
-        const logScore = calculateLogScore(prediction, predProb, groundTruth, truthProb);
-        expect(logScore).toBeCloseTo(Math.log(2), 5);
+        const klDivergence = calculateKLDivergence(prediction, predProb, groundTruth, truthProb);
+        expect(klDivergence).toBeCloseTo(0, 5);
     });
 
     test('should return a positive score for differing distributions', () => {
@@ -26,8 +26,8 @@ describe('Bayesian scoring', () => {
         const predProb = 100;
         const truthProb = 100;
 
-        const logScore = calculateLogScore(prediction, predProb, groundTruth, truthProb);
-        expect(logScore).toBeGreaterThan(0);
+        const klDivergence = calculateKLDivergence(prediction, predProb, groundTruth, truthProb);
+        expect(klDivergence).toBeGreaterThan(0);
     });
 
     test('should return 0 for identical point-mass distributions', () => {
@@ -36,41 +36,40 @@ describe('Bayesian scoring', () => {
         const predProb = 100;
         const truthProb = 100;
 
-        const logScore = calculateLogScore(prediction, predProb, groundTruth, truthProb);
-        expect(logScore).toBeCloseTo(0, 5);
+        const klDivergence = calculateKLDivergence(prediction, predProb, groundTruth, truthProb);
+        expect(klDivergence).toBeCloseTo(0, 5);
     });
 
-    // Sub-probability distributions
-    test('should handle sub-probability distributions with different masses', () => {
-        const prediction = [0.2, 0.4, 0.6, 0.8];
-        const groundTruth = [0.1, 0.2, 0.3, 0.4];
-        const predProb = 30;
-        const truthProb = 40;
-
-        const logScore = calculateLogScore(prediction, predProb, groundTruth, truthProb);
-        expect(Number.isFinite(logScore)).toBe(true);
-        expect(logScore).toBeGreaterThan(0);
-    });
-
-    test('should handle sub-probability distribution with the correct shape but different mass', () => {
-        const prediction = [0.2, 0.4, 0.6, 0.8];
-        const groundTruth = [0.2, 0.4, 0.6, 0.8];
-        const predProb = 50;
-        const truthProb = 25;
-
-        const logScore = calculateLogScore(prediction, predProb, groundTruth, truthProb);
-        expect(Number.isFinite(logScore)).toBe(true);
-        expect(logScore).toBeGreaterThan(0);
-    });
-
-    test('should return infinity for predictions with zero mass where ground truth has mass', () => {
-        const prediction = [0, 1, 1];
-        const groundTruth = [1, 1, 1];
-        const predProb = 0;
+    // Probability distributions with different shapes
+    test('should handle distributions with different shapes', () => {
+        const prediction = [0.1, 0.2, 0.3, 0.4];
+        const groundTruth = [0.4, 0.3, 0.2, 0.1];
+        const predProb = 100;
         const truthProb = 100;
 
-        const logScore = calculateLogScore(prediction, predProb, groundTruth, truthProb);
-        expect(logScore).toBe(Infinity);
+        const klDivergence = calculateKLDivergence(prediction, predProb, groundTruth, truthProb);
+        expect(Number.isFinite(klDivergence)).toBe(true);
+        expect(klDivergence).toBeGreaterThan(0);
+    });
+
+    test('should return 0 for identical distributions with different absolute values', () => {
+        const prediction = [0.2, 0.4, 0.6, 0.8];
+        const groundTruth = [0.2, 0.4, 0.6, 0.8];
+        const predProb = 100;
+        const truthProb = 100;
+
+        const klDivergence = calculateKLDivergence(prediction, predProb, groundTruth, truthProb);
+        expect(klDivergence).toBeCloseTo(0, 5);
+    });
+
+    test('should return infinity for predictions with zero probability where ground truth has probability', () => {
+        const prediction = [0, 1, 1];
+        const groundTruth = [1, 1, 1];
+        const predProb = 100;
+        const truthProb = 100;
+
+        const klDivergence = calculateKLDivergence(prediction, predProb, groundTruth, truthProb);
+        expect(klDivergence).toBe(Infinity);
     });
 
     test('should handle ground truth with all zeros gracefully', () => {
@@ -79,9 +78,9 @@ describe('Bayesian scoring', () => {
         const predProb = 100;
         const truthProb = 100;
 
-        const logScore = calculateLogScore(prediction, predProb, groundTruth, truthProb);
-        expect(logScore).toBeGreaterThan(0);
-        expect(Number.isFinite(logScore)).toBe(true);
+        const klDivergence = calculateKLDivergence(prediction, predProb, groundTruth, truthProb);
+        expect(klDivergence).toBeCloseTo(0, 5); // KL divergence is 0 when truth has no mass
+        expect(Number.isFinite(klDivergence)).toBe(true);
     });
 
     test('should throw error for different length distributions', () => {
@@ -90,25 +89,7 @@ describe('Bayesian scoring', () => {
         const predProb = 100;
         const truthProb = 100;
 
-        expect(() => calculateLogScore(prediction, predProb, groundTruth, truthProb)).toThrow('Distributions must have the same shape');
-    });
-
-    test('should throw error for prediction mass exceeding 1', () => {
-        const prediction = [0.5, 0.5];
-        const groundTruth = [0.5, 0.5];
-        const predProb = 150;
-        const truthProb = 100;
-
-        expect(() => calculateLogScore(prediction, predProb, groundTruth, truthProb)).toThrow('Prediction mass cannot exceed 1');
-    });
-
-    test('should throw error for negative prediction mass', () => {
-        const prediction = [0.5, 0.5];
-        const groundTruth = [0.5, 0.5];
-        const predProb = -10;
-        const truthProb = 100;
-
-        expect(() => calculateLogScore(prediction, predProb, groundTruth, truthProb)).toThrow('Prediction mass cannot be negative');
+        expect(() => calculateKLDivergence(prediction, predProb, groundTruth, truthProb)).toThrow('Distributions must have the same shape');
     });
 
     test('should work with very small values', () => {
@@ -117,19 +98,20 @@ describe('Bayesian scoring', () => {
         const predProb = 100;
         const truthProb = 100;
 
-        const logScore = calculateLogScore(prediction, predProb, groundTruth, truthProb);
-        expect(Number.isFinite(logScore)).toBe(true);
-        expect(logScore).toBeGreaterThanOrEqual(0);
+        const klDivergence = calculateKLDivergence(prediction, predProb, groundTruth, truthProb);
+        expect(Number.isFinite(klDivergence)).toBe(true);
+        expect(klDivergence).toBeGreaterThanOrEqual(0);
     });
 
-    test('should handle sub-probability distribution with different shapes and masses', () => {
+    test('should handle distributions with different shapes', () => {
         const prediction = [0.3, 0.4, 0.2];
         const groundTruth = [0.2, 0.3, 0.1];
-        const predProb = 60;
-        const truthProb = 40;
+        const predProb = 100;
+        const truthProb = 100;
 
-        const logScore = calculateLogScore(prediction, predProb, groundTruth, truthProb);
-        expect(Number.isFinite(logScore)).toBe(true);
+        const klDivergence = calculateKLDivergence(prediction, predProb, groundTruth, truthProb);
+        expect(Number.isFinite(klDivergence)).toBe(true);
+        expect(klDivergence).toBeGreaterThan(0);
     });
 
     test('should identify better prediction correctly', () => {
@@ -143,7 +125,7 @@ describe('Bayesian scoring', () => {
         const result = comparePredictions(goodPrediction, predProb1, badPrediction, predProb2, groundTruth, truthProb);
 
         expect(result.winning).toBe('prediction1');
-        expect(result.prediction1.logScore).toBeLessThan(result.prediction2.logScore);
+        expect(result.prediction1.klDivergence).toBeLessThan(result.prediction2.klDivergence);
     });
 
     test('should handle equal predictions', () => {
@@ -156,7 +138,7 @@ describe('Bayesian scoring', () => {
 
         const result = comparePredictions(prediction1, predProb1, prediction2, predProb2, groundTruth, truthProb);
 
-        expect(result.prediction1.logScore).toBeCloseTo(result.prediction2.logScore, 5);
+        expect(result.prediction1.klDivergence).toBeCloseTo(result.prediction2.klDivergence, 5);
         expect(result.winning).toBe('tie');
     });
 
@@ -176,17 +158,17 @@ describe('Bayesian scoring', () => {
         expect(result).toHaveProperty('gap');
         expect(result).toHaveProperty('factor');
 
-        expect(result.prediction1).toHaveProperty('logScore');
-        expect(result.prediction2).toHaveProperty('logScore');
+        expect(result.prediction1).toHaveProperty('klDivergence');
+        expect(result.prediction2).toHaveProperty('klDivergence');
     });
 
-    test('should score sub-probability distributions correctly', () => {
+    test('should score probability distributions correctly', () => {
         const prediction1 = [0.4, 0.4, 0.6, 0.8];
         const prediction2 = [0.8, 0.6, 0.4, 0.2];
         const groundTruth = [0.1, 0.2, 0.3, 0.4];
-        const predProb1 = 50;
-        const predProb2 = 10;
-        const truthProb = 85;
+        const predProb1 = 100;
+        const predProb2 = 100;
+        const truthProb = 100;
 
         const result = comparePredictions(prediction1, predProb1, prediction2, predProb2, groundTruth, truthProb);
 

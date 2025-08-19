@@ -118,12 +118,15 @@ export function createMultiDistributionWidget(containerId, options) {
     /**
      * Convert canvas coordinates to period index and probability
      */
+    // Epsilon value for floor probability (1/10,000)% = 0.000001
+    const FLOOR_PROBABILITY_EPSILON = 0.000001;
+
     function canvasToData(x, y) {
         const periodIndex = Math.round((x - padding) / periodStep);
         const clampedPeriodIndex = Math.max(0, Math.min(numPeriods - 1, periodIndex));
 
         const probability = 1 - ((y - padding) / plotHeight);
-        const clampedProbability = Math.max(0, Math.min(1, probability));
+        const clampedProbability = Math.max(FLOOR_PROBABILITY_EPSILON, Math.min(1, probability));
 
         return { periodIndex: clampedPeriodIndex, probability: clampedProbability };
     }
@@ -151,6 +154,17 @@ export function createMultiDistributionWidget(containerId, options) {
     }
 
     /**
+     * Calculate the normalized peak value for a distribution
+     */
+    function calculateNormalizedPeak(distribution) {
+        const totalMass = distribution.mass;
+        const distributionSum = distribution.values.reduce((sum, prob) => sum + prob, 0);
+        const normalizationFactor = distributionSum > 0 ? totalMass / (distributionSum * 100) : 0;
+        const originalMaxValue = Math.max(...distribution.values);
+        return originalMaxValue * normalizationFactor * 100;
+    }
+
+    /**
      * Draw static gridlines
      */
     function drawGrid() {
@@ -160,6 +174,49 @@ export function createMultiDistributionWidget(containerId, options) {
         ctx.beginPath();
         ctx.rect(padding, padding, plotWidth, plotHeight);
         ctx.stroke();
+
+        // Draw horizontal percentage guideline for the active distribution
+        if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length) {
+            const activeDist = distributions[activeDistributionIndex];
+            const totalMass = activeDist.values.reduce((sum, val) => sum + val, 0);
+            
+            if (totalMass > 0) {
+                // Calculate the normalized peak value
+                const normalizedPeak = calculateNormalizedPeak(activeDist);
+                
+                if (normalizedPeak > 0) {
+                    // Find the maximum value in the distribution
+                    const maxValue = Math.max(...activeDist.values);
+                    const maxY = dataToCanvas(0, maxValue).y;
+                    
+                    // Draw horizontal guideline in gray
+                    ctx.strokeStyle = '#6c757d';
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([5, 5]); // Dashed line
+                    ctx.beginPath();
+                    ctx.moveTo(padding, maxY);
+                    ctx.lineTo(widgetWidth - padding, maxY);
+                    ctx.stroke();
+                    ctx.setLineDash([]); // Reset to solid lines
+
+                    // Format the percentage value
+                    const formatPercentage = (value) => {
+                        if (value < 10) {
+                            return value.toFixed(2) + '%';
+                        } else {
+                            return Math.round(value) + '%';
+                        }
+                    };
+
+                    // Draw the percentage label on the left
+                    ctx.fillStyle = '#495057';
+                    ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+                    ctx.textAlign = 'right';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(formatPercentage(normalizedPeak), padding - 10, maxY);
+                }
+            }
+        }
 
         // Draw vertical guideline at the median of the active distribution
         if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length) {
@@ -207,12 +264,31 @@ export function createMultiDistributionWidget(containerId, options) {
             }
         }
 
-        // Draw the hardcoded 0% label at the bottom left
-        ctx.fillStyle = '#495057';
-        ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('0%', padding - 10, options.height - padding);
+        // Draw the ε% label at the bottom left, but hide it when horizontal guideline is at visual floor
+        const isAtVisualFloor = activeDistributionIndex >= 0 && 
+                               activeDistributionIndex < distributions.length && 
+                               distributions[activeDistributionIndex].values.reduce((sum, val) => sum + val, 0) > 0;
+        
+        if (isAtVisualFloor) {
+            const activeDist = distributions[activeDistributionIndex];
+            const maxValue = Math.max(...activeDist.values);
+            const isGuidelineAtFloor = Math.abs(maxValue - FLOOR_PROBABILITY_EPSILON) < 1e-10;
+            
+            if (!isGuidelineAtFloor) {
+                ctx.fillStyle = '#495057';
+                ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('ε%', padding - 10, options.height - padding);
+            }
+        } else {
+            // Show epsilon label when no active distribution or no mass
+            ctx.fillStyle = '#495057';
+            ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('ε%', padding - 10, options.height - padding);
+        }
     }
 
     /**
@@ -235,7 +311,20 @@ export function createMultiDistributionWidget(containerId, options) {
                 x = padding + i * 4 * periodStep;
             }
             const year = options.startYear + i;
-            ctx.fillText(year.toString(), x, options.height - padding / 2 - 18);
+            
+            if (i === numYears - 1) {
+                // Multi-line label for the rightmost bin
+                const lines = [">2039", "or never"];
+                const lineHeight = 14;
+                const baseY = options.height - padding / 2 - 18; // Align with other labels
+                
+                lines.forEach((line, lineIndex) => {
+                    ctx.fillText(line, x, baseY + lineIndex * lineHeight);
+                });
+            } else {
+                // Single line for other years
+                ctx.fillText(year.toString(), x, options.height - padding / 2 - 18);
+            }
         }
 
         // X-axis title

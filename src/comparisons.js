@@ -55,8 +55,7 @@ export function createComparisonsWidget(containerId, options) {
     // Track visibility state for each distribution
     const visibilityState = {};
     
-    // Store legend input elements
-    const legendInputs = {};
+
 
     // Color schemes for different distributions
     const colorSchemes = {
@@ -119,134 +118,7 @@ export function createComparisonsWidget(containerId, options) {
         });
     }
 
-    /**
-     * Create legend input elements
-     */
-    function createLegendInputs() {
-        if (!options.distributions) return;
 
-        const legendStartY = 14;
-        const legendItemHeight = 25;
-        const legendItemSpacing = 5;
-        const colorBoxSize = 15;
-        const checkboxSize = 12;
-        const textMargin = 10;
-        const itemsPerRow = 3;
-        const rowSpacing = 10;
-
-        // Calculate legend dimensions
-        const maxTextWidth = Math.max(...options.distributions.map(dist => {
-            const text = `${dist.color.charAt(0).toUpperCase() + dist.color.slice(1)}: `;
-            ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
-            return ctx.measureText(text).width;
-        }));
-
-        const itemWidth = maxTextWidth + colorBoxSize + checkboxSize + textMargin * 2 + 50; // Extra space for input
-        const totalLegendWidth = itemWidth * itemsPerRow + (itemsPerRow - 1) * 40;
-        const legendX = (widgetWidth - totalLegendWidth) / 2;
-
-        options.distributions.forEach((distribution, index) => {
-            const row = Math.floor(index / itemsPerRow);
-            const col = index % itemsPerRow;
-            const x = legendX + col * (itemWidth + 40);
-            const y = legendStartY + row * (legendItemHeight + rowSpacing);
-
-            // Create input element
-            const input = document.createElement('input');
-            input.type = 'text';
-            input.value = distribution.mass.toString();
-            input.placeholder = '0-100';
-            input.style.position = 'absolute';
-            input.style.left = (x + checkboxSize + textMargin + colorBoxSize + textMargin + maxTextWidth + 5) + 'px';
-            input.style.top = (y + 2) + 'px';
-            input.style.width = '40px';
-            input.style.height = '20px';
-            input.style.border = '1px solid #ccc';
-            input.style.borderRadius = '3px';
-            input.style.fontSize = '12px';
-            input.style.textAlign = 'center';
-            input.style.fontFamily = '-apple-system, BlinkMacSystemFont, sans-serif';
-            input.style.zIndex = '10';
-
-            // Add % symbol after input
-            const percentSpan = document.createElement('span');
-            percentSpan.textContent = '%';
-            percentSpan.style.position = 'absolute';
-            percentSpan.style.left = (x + checkboxSize + textMargin + colorBoxSize + textMargin + maxTextWidth + 55) + 'px';
-            percentSpan.style.top = (y + 4) + 'px';
-            percentSpan.style.fontSize = '12px';
-            percentSpan.style.fontFamily = '-apple-system, BlinkMacSystemFont, sans-serif';
-            percentSpan.style.color = '#495057';
-            percentSpan.style.zIndex = '10';
-
-            // Add event listeners
-            input.addEventListener('input', (e) => {
-                const value = e.target.value.trim();
-                // Only allow digits
-                if (/^\d*$/.test(value)) {
-                    const mass = parseInt(value) || 0;
-                    // Actively clamp to 0-100 range
-                    const clampedMass = Math.max(0, Math.min(100, mass));
-                    if (clampedMass !== mass) {
-                        // If value was clamped, update the input field
-                        e.target.value = clampedMass.toString();
-                    }
-                    distribution.mass = clampedMass;
-                    drawWidget();
-                    if (options.onChange) {
-                        options.onChange(options.distributions);
-                    }
-                } else {
-                    // Revert to previous valid value if invalid input
-                    e.target.value = distribution.mass.toString();
-                }
-            });
-
-            input.addEventListener('blur', (e) => {
-                const value = e.target.value.trim();
-                if (value === '') {
-                    input.value = '0';
-                    distribution.mass = 0;
-                } else {
-                    const mass = parseInt(value) || 0;
-                    const clampedMass = Math.max(0, Math.min(100, mass));
-                    input.value = clampedMass.toString();
-                    distribution.mass = clampedMass;
-                }
-                drawWidget();
-                if (options.onChange) {
-                    options.onChange(options.distributions);
-                }
-            });
-
-            input.addEventListener('keydown', (e) => {
-                // Allow: backspace, delete, tab, escape, enter, and navigation keys
-                if ([8, 9, 27, 13, 46, 37, 38, 39, 40].includes(e.keyCode)) {
-                    return;
-                }
-
-                // Allow digits only
-                if (e.keyCode >= 48 && e.keyCode <= 57) {
-                    return;
-                }
-
-                // Allow numpad digits
-                if (e.keyCode >= 96 && e.keyCode <= 105) {
-                    return;
-                }
-
-                // Prevent other keys
-                e.preventDefault();
-            });
-
-            // Store references
-            legendInputs[distribution.color] = input;
-
-            // Add to wrapper
-            wrapper.appendChild(input);
-            wrapper.appendChild(percentSpan);
-        });
-    }
 
     /**
      * Calculate the normalized peak value for a distribution
@@ -313,9 +185,18 @@ export function createComparisonsWidget(containerId, options) {
         }));
 
         if (maxScaledPeak > maxAllowedPeak) {
+            // Scale down if the highest peak exceeds the plot area
             const scaleDownFactor = maxAllowedPeak / maxScaledPeak;
             Object.keys(scalingFactors).forEach(index => {
                 scalingFactors[index] *= scaleDownFactor;
+            });
+        } else if (maxScaledPeak > 0 && maxScaledPeak < maxAllowedPeak) {
+            // Scale up if the highest peak is below the plot area top
+            // Scale to exactly reach the top of the plot area (100%)
+            const targetPeak = 1.0;
+            const scaleUpFactor = targetPeak / maxScaledPeak;
+            Object.keys(scalingFactors).forEach(index => {
+                scalingFactors[index] *= scaleUpFactor;
             });
         }
 
@@ -428,12 +309,12 @@ export function createComparisonsWidget(containerId, options) {
             });
         }
 
-        // Draw the hardcoded 0% label at the bottom left
+        // Draw the hardcoded ε% label at the bottom left
         ctx.fillStyle = '#495057';
         ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
-        ctx.fillText('0%', padding - 10, options.height - padding);
+        ctx.fillText('ε%', padding - 10, options.height - padding);
     }
 
     /**
@@ -456,7 +337,20 @@ export function createComparisonsWidget(containerId, options) {
                 x = padding + i * 4 * periodStep;
             }
             const year = options.startYear + i;
-            ctx.fillText(year.toString(), x, options.height - padding / 2 - 18);
+            
+            if (i === numYears - 1) {
+                // Multi-line label for the rightmost bin
+                const lines = [">2039", "or never"];
+                const lineHeight = 14;
+                const baseY = options.height - padding / 2 - 18; // Align with other labels
+                
+                lines.forEach((line, lineIndex) => {
+                    ctx.fillText(line, x, baseY + lineIndex * lineHeight);
+                });
+            } else {
+                // Single line for other years
+                ctx.fillText(year.toString(), x, options.height - padding / 2 - 18);
+            }
         }
 
         // X-axis title
@@ -582,7 +476,7 @@ export function createComparisonsWidget(containerId, options) {
             return ctx.measureText(text).width;
         }));
 
-        const itemWidth = maxTextWidth + colorBoxSize + checkboxSize + textMargin * 2 + 50; // Extra space for input
+        const itemWidth = maxTextWidth + colorBoxSize + checkboxSize + textMargin * 2;
         const totalLegendWidth = itemWidth * itemsPerRow + (itemsPerRow - 1) * 40; // 40px spacing between columns
         const legendX = (widgetWidth - totalLegendWidth) / 2;
 
@@ -621,7 +515,7 @@ export function createComparisonsWidget(containerId, options) {
             ctx.textBaseline = 'middle';
             
             // Draw color name
-            const colorName = `${distribution.color.charAt(0).toUpperCase() + distribution.color.slice(1)}: `;
+            const colorName = `${distribution.color.charAt(0).toUpperCase() + distribution.color.slice(1)}`;
             ctx.fillText(colorName, x + checkboxSize + textMargin + colorBoxSize + textMargin, y + colorBoxSize / 2 + 2);
         });
     }
@@ -639,6 +533,7 @@ export function createComparisonsWidget(containerId, options) {
             const legendStartY = 14;
             const legendItemHeight = 25;
             const checkboxSize = 12;
+            const colorBoxSize = 15;
             const textMargin = 10;
             const itemsPerRow = 3;
             const rowSpacing = 10;
@@ -650,7 +545,7 @@ export function createComparisonsWidget(containerId, options) {
                 return ctx.measureText(text).width;
             }));
 
-            const itemWidth = maxTextWidth + 15 + checkboxSize + textMargin * 2 + 50; // Extra space for input
+            const itemWidth = maxTextWidth + colorBoxSize + checkboxSize + textMargin * 2;
             const totalLegendWidth = itemWidth * itemsPerRow + (itemsPerRow - 1) * 40;
             const legendX = (widgetWidth - totalLegendWidth) / 2;
 
@@ -684,9 +579,8 @@ export function createComparisonsWidget(containerId, options) {
     // Append wrapper to container
     container.appendChild(wrapper);
 
-    // Initialize visibility state and create legend inputs
+    // Initialize visibility state
     initializeVisibilityState();
-    createLegendInputs();
     drawWidget();
 
     // Return methods for external control
@@ -702,14 +596,7 @@ export function createComparisonsWidget(containerId, options) {
                     }
                 });
             }
-            // Update input values
-            if (newDistributions) {
-                newDistributions.forEach(distribution => {
-                    if (legendInputs[distribution.color]) {
-                        legendInputs[distribution.color].value = distribution.mass.toString();
-                    }
-                });
-            }
+
             drawWidget();
         },
         redraw: () => {

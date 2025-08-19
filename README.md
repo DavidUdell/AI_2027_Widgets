@@ -125,30 +125,29 @@ widget.setOnChange((distribution) => {
 
 ## Bayesian Analysis Module
 
-The project includes a Bayesian analysis module that implements proper log
-score calculation for comparing sub-probability distributions. That is, this
-scoring rule is specifically designed for evaluating predictions where the
-total probability mass may be less than 100%.
+The project includes a Bayesian analysis module that implements KL divergence
+calculation for comparing probability distributions. Since masses are pinned to
+unity (100%), the scoring rule simplifies to standard KL divergence.
 
-### Log Score Formula
+### KL Divergence Formula
 
-The log score is calculated using
+The KL divergence is calculated using
 
 ```
-Score = truthMass * H(Q_truth, P_prediction) - truthMass * log(predMass) - (1 - truthMass) * log(1 - predMass)
+Score = D_KL(Q_truth || P_prediction) = Σ q_i * log(q_i / p_i)
 ```
 
 where
-- `truthMass` and `predMass` are the total probability masses (as fractions)
-- `H(Q_truth, P_prediction)` is the cross-entropy between the normalized ground
-  truth and prediction distributions
+- `q_i` are the normalized probability values from the ground truth distribution
+- `p_i` are the normalized probability values from the prediction distribution
+- The sum is taken over all bins where `q_i > 0`
 
-Lower scores indicate better predictions.
+Lower scores indicate better predictions (closer to ground truth).
 
 ### Usage Example
 
 ```javascript
-import { comparePredictions, calculateLogScore } from './src/index.js';
+import { comparePredictions, calculateKLDivergence } from './src/index.js';
 
 const prediction1 = [0.4, 0.3, 0.2, 0.1];
 const prediction2 = [0.1, 0.2, 0.3, 0.4];
@@ -159,14 +158,14 @@ const truthProb = 85;  // 85% total mass
 
 const result = comparePredictions(prediction1, predProb1, prediction2, predProb2, groundTruth, truthProb);
 console.log('Winner:', result.winning); // 'prediction1'
-console.log('Log score difference:', result.gap); // Positive number
+console.log('KL divergence difference:', result.gap); // Positive number
 console.log('Bayes factor:', result.factor); // How much better the winner is
 ```
 
 ### Available Functions
 
-- `calculateLogScore(prediction, predProb, groundTruth, truthProb)` - Calculate
-  log score
+- `calculateKLDivergence(prediction, predProb, groundTruth, truthProb)` - Calculate
+  KL divergence
 - `comparePredictions(pred1, predProb1, pred2, predProb2, groundTruth,
   truthProb)` - Compare two predictions
 

@@ -1,24 +1,20 @@
 /**
  * Bayesian Analysis Module
- * Log score calculation for comparing sub-probability distributions
+ * KL divergence calculation for comparing probability distributions
  */
 
 /**
- * Calculate log score for a prediction distribution against ground truth distribution
- * Score = truthMass * H( Q_truth, P_prediction ) - truthMass * log(predMass) - (1 - truthMass) * log(1 - predMass)
+ * Calculate KL divergence for a prediction distribution against ground truth distribution
+ * Score = D_KL(Q_truth || P_prediction) = Σ q_i * log(q_i / p_i)
  * Lower scores are better (closer to ground truth)
  *
- * @param {Array<number>} prediction - Predicted sub-probability distribution
- * @param {Array<number>} truth - Ground truth sub-probability distribution
- * @returns {number} Log score (lower is better)
+ * @param {Array<number>} prediction - Predicted probability distribution
+ * @param {Array<number>} truth - Ground truth probability distribution
+ * @returns {number} KL divergence (lower is better)
  */
 
-export function calculateLogScore(prediction, predProb, truth, truthProb) {
+export function calculateKLDivergence(prediction, predProb, truth, truthProb) {
     const tolerance = 1e-12;
-    const onePlusTol = 1 + tolerance;
-
-    const predMass = predProb / 100;
-    const truthMass = truthProb / 100;
 
     // Catch distribution element errors
     if (prediction.length !== truth.length) {
@@ -34,78 +30,52 @@ export function calculateLogScore(prediction, predProb, truth, truthProb) {
         throw new Error('Distributions cannot contain negative values');
     }
 
-    // Catch total mass errors
-    if (predMass > onePlusTol) {
-        throw new Error('Prediction mass cannot exceed 1, but was ' + predMass);
-    }
-    if (truthMass > onePlusTol) {
-        throw new Error('Ground truth mass cannot exceed 1, but was ' + truthMass);
-    }
-    if (predMass <= -tolerance) {
-        throw new Error('Prediction mass cannot be negative, but was ' + predMass);
-    }
-    if (truthMass <= -tolerance) {
-        throw new Error('Ground truth mass cannot be negative, but was ' + truthMass);
-    }
-
-    // You put nothing on the event that might have occured
-    if (predMass <= tolerance && truthMass > tolerance) return Infinity;
-    // You bet everything on an event that might not have happened
-    if ((1 - predMass) <= tolerance && (1 - truthMass) > tolerance) return Infinity;
-
-    // Normalize arrays--these are the behind-the-scenes vector values, not the
-    // labeled probability mass values.
-    let Q;
-    let P;
+    // Normalize arrays to probability distributions
+    let Q, P;
     const predDenominator = prediction.reduce((sum, v) => sum + v, 0);
     const truthDenominator = truth.reduce((sum, v) => sum + v, 0);
-    if (predMass > tolerance && predDenominator < tolerance) {
-        // Zero vector with mass becomes uniform sub-probability distribution
+    
+    if (predDenominator < tolerance) {
+        // Zero vector becomes uniform distribution
         P = prediction.map(v => 1 / prediction.length);
-    }
-    else {
+    } else {
         // Normalize vector
         P = prediction.map(v => v / predDenominator);    
     }
+    
     if (truthDenominator < tolerance) {
-        // Zero vector with mass
+        // Zero vector becomes uniform distribution
         Q = truth.map(v => 1 / truth.length);
-    }
-    else {
+    } else {
         // Normalize vector
         Q = truth.map(v => v / truthDenominator);
     }
 
-    // H( Q_truth, P_prediction )
-    let crossEntropy = 0;
-    if (truthMass > tolerance) {
-        for (let i = 0; i < Q.length; i++) {
-            const q = Q[i], p = P[i];
+    // Calculate KL divergence D_KL(Q || P) = Σ q_i * log(q_i / p_i)
+    let klDivergence = 0;
+    for (let i = 0; i < Q.length; i++) {
+        const q = Q[i], p = P[i];
 
-            if (q <= 0) continue;
-            if (!(p > 0)) return Infinity;
-            crossEntropy += -q * Math.log(p);
-        }
+        if (q <= 0) continue; // Skip zero probability events in truth
+        if (!(p > 0)) return Infinity; // Prediction assigns zero to event that occurred
+        
+        klDivergence += q * Math.log(q / p);
     }
 
-    const conditionalScore = truthMass > tolerance ? truthMass * crossEntropy : 0;
-    const eventTerm = truthMass > tolerance ? truthMass * Math.log(predMass) : 0;
-    const noEventTerm = (1 - truthMass) > tolerance ? (1 - truthMass) * Math.log(1 - predMass) : 0;
-
-    return conditionalScore - eventTerm - noEventTerm;
+    return klDivergence;
 }
 
 /**
- * Compare two predictions against ground truth using log scores
- * @param {Array<number>} prediction1 - First sub-probability distribution
- * @param {Array<number>} prediction2 - Second sub-probability distribution
- * @param {Array<number>} truth - Ground truth sub-probability distribution
+ * Compare two predictions against ground truth using KL divergence
+ * @param {Array<number>} prediction1 - First probability distribution
+ * @param {Array<number>} prediction2 - Second probability distribution
+ * @param {Array<number>} truth - Ground truth probability distribution
  * @returns {Object} Comparison results
  */
 
 export function comparePredictions(prediction1, predProb1, prediction2, predProb2, truth, truthProb) {
-    const first = calculateLogScore(prediction1, predProb1, truth, truthProb);
-    const second = calculateLogScore(prediction2, predProb2, truth, truthProb);
+    const first = calculateKLDivergence(prediction1, predProb1, truth, truthProb);
+    const second = calculateKLDivergence(prediction2, predProb2, truth, truthProb);
     const tolerance = 1e-10;
 
     let winning = 'tie';
@@ -130,8 +100,8 @@ export function comparePredictions(prediction1, predProb1, prediction2, predProb
     }
 
     return {
-        prediction1: { logScore: first },
-        prediction2: { logScore: second },
+        prediction1: { klDivergence: first },
+        prediction2: { klDivergence: second },
         winning: winning,
         gap: gap,
         factor: factor,

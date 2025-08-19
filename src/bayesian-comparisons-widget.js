@@ -1,12 +1,12 @@
 /**
  * AI 2027 - Bayesian Comparisons Widget
- * Allows users to select two distributions to compare against a ground truth distribution
+ * KL Divergence Calculator - shows all distributions' KL divergence against a ground truth
  */
 
-import { comparePredictions } from './bayesian.js';
+import { calculateKLDivergence } from './bayesian.js';
 
 /**
- * Creates a Bayesian comparison widget for evaluating predictions against ground truth
+ * Creates a KL Divergence Calculator widget that shows all distributions' scores against a ground truth
  * @param {string} containerId - The ID of the HTML element to insert the widget into
  * @param {Object} options - Widget configuration options
  * @param {number} options.width - Widget width in pixels
@@ -51,91 +51,43 @@ export function createBayesianComparisonsWidget(containerId, options) {
     selectionTitle.style.fontWeight = 'bold';
     selectionTitle.style.fontSize = '16px';
     selectionTitle.style.color = '#2c3e50';
-    selectionTitle.style.marginBottom = '10px';
+    selectionTitle.style.marginBottom = '15px';
     selectionTitle.style.textAlign = 'center';
     
-    // Create dropdowns container
-    const dropdownsContainer = document.createElement('div');
-    dropdownsContainer.style.display = 'flex';
-    dropdownsContainer.style.justifyContent = 'center';
-    dropdownsContainer.style.alignItems = 'center';
-    dropdownsContainer.style.gap = '20px';
-    dropdownsContainer.style.flexWrap = 'wrap';
-
-    // Prediction 1 selection
-    const pred1Container = document.createElement('div');
-    pred1Container.style.display = 'flex';
-    pred1Container.style.alignItems = 'center';
-    pred1Container.style.gap = '8px';
-    
-    const pred1Label = document.createElement('label');
-    pred1Label.textContent = 'Model A:';
-    pred1Label.style.fontWeight = 'bold';
-    pred1Label.style.color = '#2c3e50';
-    
-    const pred1Select = document.createElement('select');
-    pred1Select.style.padding = '4px 8px';
-    pred1Select.style.border = '1px solid #ccc';
-    pred1Select.style.borderRadius = '4px';
-    pred1Select.style.fontSize = '14px';
-    
-    pred1Container.appendChild(pred1Label);
-    pred1Container.appendChild(pred1Select);
-
-    // Prediction 2 selection
-    const pred2Container = document.createElement('div');
-    pred2Container.style.display = 'flex';
-    pred2Container.style.alignItems = 'center';
-    pred2Container.style.gap = '8px';
-    
-    const pred2Label = document.createElement('label');
-    pred2Label.textContent = 'Model B:';
-    pred2Label.style.fontWeight = 'bold';
-    pred2Label.style.color = '#2c3e50';
-    
-    const pred2Select = document.createElement('select');
-    pred2Select.style.padding = '4px 8px';
-    pred2Select.style.border = '1px solid #ccc';
-    pred2Select.style.borderRadius = '4px';
-    pred2Select.style.fontSize = '14px';
-    
-    pred2Container.appendChild(pred2Label);
-    pred2Container.appendChild(pred2Select);
-
-    // Ground Truth selection
+    // Create ground truth selection container
     const truthContainer = document.createElement('div');
     truthContainer.style.display = 'flex';
+    truthContainer.style.justifyContent = 'center';
     truthContainer.style.alignItems = 'center';
-    truthContainer.style.gap = '8px';
+    truthContainer.style.gap = '12px';
+    truthContainer.style.marginBottom = '15px';
     
     const truthLabel = document.createElement('label');
-    truthLabel.textContent = 'Ground Truth:';
+    truthLabel.textContent = 'Ground Truth Distribution:';
     truthLabel.style.fontWeight = 'bold';
     truthLabel.style.color = '#2c3e50';
+    truthLabel.style.fontSize = '14px';
     
     const truthSelect = document.createElement('select');
     truthSelect.style.padding = '4px 8px';
     truthSelect.style.border = '1px solid #ccc';
     truthSelect.style.borderRadius = '4px';
     truthSelect.style.fontSize = '14px';
+    truthSelect.style.fontWeight = 'normal';
     
     truthContainer.appendChild(truthLabel);
     truthContainer.appendChild(truthSelect);
-
-    dropdownsContainer.appendChild(pred1Container);
-    dropdownsContainer.appendChild(pred2Container);
-    dropdownsContainer.appendChild(truthContainer);
     
     selectionControls.appendChild(selectionTitle);
-    selectionControls.appendChild(dropdownsContainer);
+    selectionControls.appendChild(truthContainer);
 
     // Create results section inside the selection controls box
     const resultsSection = document.createElement('div');
     resultsSection.style.marginTop = '15px';
     resultsSection.style.padding = '0px';
-    resultsSection.style.backgroundColor = '#f8f9fa';
-    resultsSection.style.borderRadius = '6px';
-    resultsSection.style.border = '1px solid #e9ecef';
+    resultsSection.style.backgroundColor = 'transparent';
+    resultsSection.style.borderRadius = '0px';
+    resultsSection.style.border = 'none';
     resultsSection.style.minHeight = '0px';
     resultsSection.style.display = 'none';
     resultsSection.style.width = '100%';
@@ -163,25 +115,19 @@ export function createBayesianComparisonsWidget(containerId, options) {
         }
 
         // Clear existing options
-        pred1Select.innerHTML = '';
-        pred2Select.innerHTML = '';
         truthSelect.innerHTML = '';
 
-        // Add distribution options (no default disabled option)
+        // Add distribution options
         options.distributions.forEach((distribution, index) => {
             const option = document.createElement('option');
             option.value = index.toString();
             option.textContent = `${distribution.color.charAt(0).toUpperCase() + distribution.color.slice(1)}`;
             
-            pred1Select.appendChild(option.cloneNode(true));
-            pred2Select.appendChild(option.cloneNode(true));
-            truthSelect.appendChild(option.cloneNode(true));
+            truthSelect.appendChild(option);
         });
 
-        // Set default selections to first distribution
+        // Set default selection to first distribution
         if (options.distributions.length > 0) {
-            pred1Select.value = '0';
-            pred2Select.value = '0';
             truthSelect.value = '0';
             
             // Trigger initial results calculation
@@ -190,9 +136,9 @@ export function createBayesianComparisonsWidget(containerId, options) {
     }
 
     /**
-     * Format log score for display
+     * Format KL divergence for display
      */
-    function formatLogScore(score) {
+    function formatKLDivergence(score) {
         if (!Number.isFinite(score)) {
             return '∞';
         }
@@ -213,84 +159,86 @@ export function createBayesianComparisonsWidget(containerId, options) {
     }
 
     /**
-     * Update comparison results
+     * Update KL divergence results for all distributions
      */
     function updateResults() {
-        const pred1Index = pred1Select.value ? parseInt(pred1Select.value) : -1;
-        const pred2Index = pred2Select.value ? parseInt(pred2Select.value) : -1;
         const truthIndex = truthSelect.value ? parseInt(truthSelect.value) : -1;
 
         // Clear results section
         resultsSection.innerHTML = '';
 
-        // Check if all selections are made
-        if (pred1Index === -1 || pred2Index === -1 || truthIndex === -1) {
+        // Check if ground truth is selected
+        if (truthIndex === -1 || !options.distributions || options.distributions.length === 0) {
             resultsSection.style.display = 'none';
             return;
         }
 
-
-
-        // Get selected distributions
-        const pred1 = options.distributions[pred1Index];
-        const pred2 = options.distributions[pred2Index];
+        // Get selected ground truth
         const truth = options.distributions[truthIndex];
 
-        // Perform comparison
-        const comparison = comparePredictions(
-            pred1.values, pred1.mass,
-            pred2.values, pred2.mass,
-            truth.values, truth.mass
-        );
+        // Calculate KL divergence for all distributions
+        const klScores = options.distributions.map((distribution, index) => {
+            const klDivergence = calculateKLDivergence(
+                distribution.values, distribution.mass,
+                truth.values, truth.mass
+            );
+            return {
+                index,
+                distribution,
+                klDivergence
+            };
+        });
+
+        // Sort by KL divergence (best scores first)
+        klScores.sort((a, b) => a.klDivergence - b.klDivergence);
 
         // Show results section
         resultsSection.style.display = 'block';
         resultsSection.style.padding = '15px';
         
-        // Create minimalistic results display
+        // Create results display
         const resultsContainer = document.createElement('div');
         resultsContainer.style.fontSize = '14px';
-        resultsContainer.style.lineHeight = '1.4';
+        resultsContainer.style.lineHeight = '1.6';
 
-        // Winner
-        let winnerText;
-        if (comparison.winning === 'prediction1') {
-            winnerText = `Winner: ${pred1.color.charAt(0).toUpperCase() + pred1.color.slice(1)}`;
-        } else if (comparison.winning === 'prediction2') {
-            winnerText = `Winner: ${pred2.color.charAt(0).toUpperCase() + pred2.color.slice(1)}`;
-        } else {
-            winnerText = 'Tie';
-        }
+        // Title
+        const titleDiv = document.createElement('div');
+        titleDiv.textContent = `KL Divergence vs. Ground Truth`;
+        titleDiv.style.fontWeight = 'bold';
+        titleDiv.style.marginBottom = '8px';
+        titleDiv.style.textAlign = 'center';
+        titleDiv.style.color = '#2c3e50';
+        resultsContainer.appendChild(titleDiv);
 
-        const winnerDiv = document.createElement('div');
-        winnerDiv.textContent = winnerText;
-        winnerDiv.style.fontWeight = 'bold';
-        winnerDiv.style.marginBottom = '8px';
-        resultsContainer.appendChild(winnerDiv);
+        // Create minimalistic display
+        klScores.forEach((score) => {
+            const scoreRow = document.createElement('div');
+            scoreRow.style.display = 'flex';
+            scoreRow.style.justifyContent = 'space-between';
+            scoreRow.style.alignItems = 'center';
+            scoreRow.style.padding = '4px 0';
+            scoreRow.style.fontFamily = 'monospace';
+            scoreRow.style.fontSize = '13px';
 
-        // Scores
-        const scoresDiv = document.createElement('div');
-        scoresDiv.textContent = `${pred1.color.charAt(0).toUpperCase() + pred1.color.slice(1)}: ${formatLogScore(comparison.prediction1.logScore)} | ${pred2.color.charAt(0).toUpperCase() + pred2.color.slice(1)}: ${formatLogScore(comparison.prediction2.logScore)}`;
-        scoresDiv.style.fontFamily = 'monospace';
-        scoresDiv.style.marginBottom = '8px';
-        resultsContainer.appendChild(scoresDiv);
+            // Distribution name
+            const nameDiv = document.createElement('span');
+            nameDiv.textContent = score.distribution.color.charAt(0).toUpperCase() + score.distribution.color.slice(1);
 
-        // Perplexity ratio if available
-        if (comparison.factor !== null) {
-            const metricsDiv = document.createElement('div');
-            metricsDiv.textContent = `Perplexity Ratio: ${formatFactor(comparison.factor)} (lower favors Model A)`;
-            metricsDiv.style.fontFamily = 'monospace';
-            metricsDiv.style.fontSize = '12px';
-            metricsDiv.style.color = '#666';
-            resultsContainer.appendChild(metricsDiv);
-        }
+            // KL divergence score
+            const scoreDiv = document.createElement('span');
+            scoreDiv.textContent = formatKLDivergence(score.klDivergence);
+
+            scoreRow.appendChild(nameDiv);
+            scoreRow.appendChild(scoreDiv);
+            resultsContainer.appendChild(scoreRow);
+        });
+
+
 
         resultsSection.appendChild(resultsContainer);
     }
 
-    // Add event listeners
-    pred1Select.addEventListener('change', updateResults);
-    pred2Select.addEventListener('change', updateResults);
+    // Add event listener
     truthSelect.addEventListener('change', updateResults);
 
     // Append to container
