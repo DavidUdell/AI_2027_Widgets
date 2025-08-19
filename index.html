@@ -233,8 +233,8 @@
             <strong>Instructions:</strong> Sketch a probability distribution by
             selecting it from the dropdown and drawing with the mouse. Toggle
             the visibility of other distributions in the background with their
-            checkboxes. The dotted line indicates the median quarter of the
-            current distribution.
+            checkboxes. The vertical dotted line indicates the median quarter
+            of the current distribution.
         </div>
 
         <!-- Distribution Controls -->
@@ -278,16 +278,20 @@
     <div class="widget-container">
         <h2>Distribution Comparisons</h2>
         <div class="instructions">
-            <strong>Instructions:</strong> This view displays all your
-            distributions together for comparison. Modify the total probability
-            of each distribution in its input box. Toggle the visibility of
-            each distribution with its checkbox. In the Calculator, select two
-            predictive and one ground truth distributions to score them.
+            <strong>Instructions:</strong> Toggle the visibility of each
+            distribution with its checkbox.
         </div>
-        
         <div id="comparisons-widget"></div>
         
-        <div style="margin-top: 40px;">
+        <div style="margin-top: 30px;">
+            <div class="instructions">
+                <strong>Instructions:</strong> Select a ground truth
+                distribution in the dropdown. The KL divergence of each
+                distribution with respect to the ground truth distribution is
+                shown. KL divergence is a measure of how much two distributions
+                on the same event space differ. Lower values indicate closer
+                agreement; 0 indicates identical distributions.
+            </div>
             <div id="bayesian-comparisons-widget"></div>
         </div>
     </div>
