@@ -190,9 +190,9 @@ export function createBayesianComparisonsWidget(containerId, options) {
     }
 
     /**
-     * Format log score for display
+     * Format KL divergence for display
      */
-    function formatLogScore(score) {
+    function formatKLDivergence(score) {
         if (!Number.isFinite(score)) {
             return '∞';
         }
@@ -270,7 +270,7 @@ export function createBayesianComparisonsWidget(containerId, options) {
 
         // Scores
         const scoresDiv = document.createElement('div');
-        scoresDiv.textContent = `${pred1.color.charAt(0).toUpperCase() + pred1.color.slice(1)}: ${formatLogScore(comparison.prediction1.logScore)} | ${pred2.color.charAt(0).toUpperCase() + pred2.color.slice(1)}: ${formatLogScore(comparison.prediction2.logScore)}`;
+        scoresDiv.textContent = `${pred1.color.charAt(0).toUpperCase() + pred1.color.slice(1)}: ${formatKLDivergence(comparison.prediction1.klDivergence)} | ${pred2.color.charAt(0).toUpperCase() + pred2.color.slice(1)}: ${formatKLDivergence(comparison.prediction2.klDivergence)}`;
         scoresDiv.style.fontFamily = 'monospace';
         scoresDiv.style.marginBottom = '8px';
         resultsContainer.appendChild(scoresDiv);
