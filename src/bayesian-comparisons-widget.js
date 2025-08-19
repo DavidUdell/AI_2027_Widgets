@@ -69,12 +69,11 @@ export function createBayesianComparisonsWidget(containerId, options) {
     truthLabel.style.fontSize = '14px';
     
     const truthSelect = document.createElement('select');
-    truthSelect.style.padding = '6px 12px';
-    truthSelect.style.border = '2px solid #2c3e50';
-    truthSelect.style.borderRadius = '6px';
+    truthSelect.style.padding = '4px 8px';
+    truthSelect.style.border = '1px solid #ccc';
+    truthSelect.style.borderRadius = '4px';
     truthSelect.style.fontSize = '14px';
-    truthSelect.style.backgroundColor = 'white';
-    truthSelect.style.fontWeight = 'bold';
+    truthSelect.style.fontWeight = 'normal';
     
     truthContainer.appendChild(truthLabel);
     truthContainer.appendChild(truthSelect);
