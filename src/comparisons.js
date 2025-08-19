@@ -456,7 +456,20 @@ export function createComparisonsWidget(containerId, options) {
                 x = padding + i * 4 * periodStep;
             }
             const year = options.startYear + i;
-            ctx.fillText(year.toString(), x, options.height - padding / 2 - 18);
+            
+            if (i === numYears - 1) {
+                // Multi-line label for the rightmost bin
+                const lines = [">2039", "or never"];
+                const lineHeight = 14;
+                const baseY = options.height - padding / 2 - 18; // Align with other labels
+                
+                lines.forEach((line, lineIndex) => {
+                    ctx.fillText(line, x, baseY + lineIndex * lineHeight);
+                });
+            } else {
+                // Single line for other years
+                ctx.fillText(year.toString(), x, options.height - padding / 2 - 18);
+            }
         }
 
         // X-axis title
