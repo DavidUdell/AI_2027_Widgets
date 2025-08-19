@@ -47,7 +47,7 @@ export function createBayesianComparisonsWidget(containerId, options) {
     
     // Add title for the selection box
     const selectionTitle = document.createElement('div');
-    selectionTitle.textContent = 'KL Divergence Calculator';
+    selectionTitle.textContent = 'Calculator';
     selectionTitle.style.fontWeight = 'bold';
     selectionTitle.style.fontSize = '16px';
     selectionTitle.style.color = '#2c3e50';
@@ -63,7 +63,7 @@ export function createBayesianComparisonsWidget(containerId, options) {
     truthContainer.style.marginBottom = '15px';
     
     const truthLabel = document.createElement('label');
-    truthLabel.textContent = 'Ground Truth:';
+    truthLabel.textContent = 'Ground Truth Distribution:';
     truthLabel.style.fontWeight = 'bold';
     truthLabel.style.color = '#2c3e50';
     truthLabel.style.fontSize = '14px';
@@ -204,7 +204,7 @@ export function createBayesianComparisonsWidget(containerId, options) {
 
         // Title
         const titleDiv = document.createElement('div');
-        titleDiv.textContent = `KL Divergence vs ${truth.color.charAt(0).toUpperCase() + truth.color.slice(1)}`;
+        titleDiv.textContent = `KL Divergence vs. Ground Truth`;
         titleDiv.style.fontWeight = 'bold';
         titleDiv.style.marginBottom = '8px';
         titleDiv.style.textAlign = 'center';
