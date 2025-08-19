@@ -533,18 +533,19 @@ export function createComparisonsWidget(containerId, options) {
             const legendStartY = 14;
             const legendItemHeight = 25;
             const checkboxSize = 12;
+            const colorBoxSize = 15;
             const textMargin = 10;
             const itemsPerRow = 3;
             const rowSpacing = 10;
 
             // Calculate legend dimensions (same as in drawLegend)
             const maxTextWidth = Math.max(...options.distributions.map(dist => {
-                const text = `${dist.color.charAt(0).toUpperCase() + dist.color.slice(1)}`;
+                const text = `${dist.color.charAt(0).toUpperCase() + dist.color.slice(1)}: `;
                 ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
                 return ctx.measureText(text).width;
             }));
 
-            const itemWidth = maxTextWidth + 15 + checkboxSize + textMargin * 2;
+            const itemWidth = maxTextWidth + colorBoxSize + checkboxSize + textMargin * 2;
             const totalLegendWidth = itemWidth * itemsPerRow + (itemsPerRow - 1) * 40;
             const legendX = (widgetWidth - totalLegendWidth) / 2;
 
