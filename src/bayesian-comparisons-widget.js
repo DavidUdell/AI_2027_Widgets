@@ -86,9 +86,9 @@ export function createBayesianComparisonsWidget(containerId, options) {
     const resultsSection = document.createElement('div');
     resultsSection.style.marginTop = '15px';
     resultsSection.style.padding = '0px';
-    resultsSection.style.backgroundColor = '#f8f9fa';
-    resultsSection.style.borderRadius = '6px';
-    resultsSection.style.border = '1px solid #e9ecef';
+    resultsSection.style.backgroundColor = 'transparent';
+    resultsSection.style.borderRadius = '0px';
+    resultsSection.style.border = 'none';
     resultsSection.style.minHeight = '0px';
     resultsSection.style.display = 'none';
     resultsSection.style.width = '100%';
