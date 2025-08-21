@@ -3,10 +3,7 @@
  */
 
 import { describe, test, expect } from 'vitest';
-import {
-    calculateKLDivergence,
-    comparePredictions
-} from '../src/KL-divergence.js';
+import { calculateKLDivergence } from '../src/KL-divergence.js';
 
 describe('KL divergence', () => {
     test('should return 0 for identical uniform distributions', () => {
