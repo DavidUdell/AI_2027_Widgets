@@ -1,5 +1,5 @@
 /**
- * AI 2027 - Distribution Comparisons Module
+ * AI 2027 - Comparisons Widget
  * Displays all distributions together in a non-interactive format for comparison
  */
 

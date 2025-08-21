@@ -1,17 +1,17 @@
 /**
- * AI 2027 - Multi-Distribution Interactive Widget
- * Allows users to create multiple sub-probability distributions with different colors and masses
+ * AI 2027 - Interactive Widget
+ * Allows users to create multiple probability distributions with different colors
  * 
  * Features:
  * - Interactive drawing of probability distributions
  * - Multiple distributions with different colors
- * - Background distribution renormalization relative to active distribution on blur
+ * - Background distribution renormalization relative to active distribution on
+ *   mouse up
  * - Visibility controls for each distribution
- * - Constant mass assumption across all distributions in the interactive widget
  */
 
 /**
- * Creates an interactive canvas widget for drawing multiple sub-probability distributions
+ * Creates an interactive canvas widget for drawing multiple probability distributions
  * @param {string} containerId - The ID of the HTML element to insert the widget into
  * @param {Object} options - Widget configuration options
  * @param {number} options.width - Widget width in pixels
@@ -21,7 +21,7 @@
  * @param {Function} [options.onChange] - Callback function called when distributions change
  */
 
-export function createMultiDistributionWidget(containerId, options) {
+export function createInteractiveWidget(containerId, options) {
     const container = document.getElementById(containerId);
     if (!container) {
         console.error(`Container with ID '${containerId}' not found`);

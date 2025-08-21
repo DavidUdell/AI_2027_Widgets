@@ -1,9 +1,9 @@
 /**
- * AI 2027 - Bayesian Comparisons Widget
+ * AI 2027 - Calculator Widget
  * KL Divergence Calculator - shows all distributions' KL divergence against a ground truth
  */
 
-import { calculateKLDivergence } from './bayesian.js';
+import { calculateKLDivergence } from './KL-divergence.js';
 
 /**
  * Creates a KL Divergence Calculator widget that shows all distributions' scores against a ground truth
@@ -15,7 +15,7 @@ import { calculateKLDivergence } from './bayesian.js';
  * @param {number} options.endYear - Ending year for the distribution
  * @param {Array<Object>} options.distributions - Array of distribution objects with color, mass, and values
  */
-export function createBayesianComparisonsWidget(containerId, options) {
+export function createCalculatorWidget(containerId, options) {
     const container = document.getElementById(containerId);
     if (!container) {
         console.error(`Container with ID '${containerId}' not found`);

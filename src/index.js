@@ -1,5 +1,5 @@
 /**
- * AI 2027 - Interactive Distribution Drawing Widget
+ * AI 2027 - Widgets Module
  * Allows users to draw sub-probability distributions over years/quarters
  */ 
 
@@ -486,14 +486,11 @@ export function createDistributionWidget(containerId, options) {
     };
 }
 
-// Export Bayesian analysis functions
-export * from './bayesian.js';
-
-// Export multi-distribution widget
-export { createMultiDistributionWidget } from './multi-distribution-widget.js';
+// Export interactive widget
+export { createInteractiveWidget } from './interactive-widget.js';
 
 // Export comparisons widget
-export { createComparisonsWidget } from './comparisons.js';
+export { createComparisonsWidget } from './comparisons-widget.js';
 
-// Export Bayesian comparisons widget
-export { createBayesianComparisonsWidget } from './bayesian-comparisons-widget.js';
+// Export calculator widget
+export { createCalculatorWidget } from './calculator-widget.js';

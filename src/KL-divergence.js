@@ -1,5 +1,5 @@
 /**
- * Bayesian Analysis Module
+ * KL Divergence Module
  * KL divergence calculation for comparing probability distributions
  */
 
@@ -63,47 +63,4 @@ export function calculateKLDivergence(prediction, truth) {
     }
 
     return klDivergence;
-}
-
-/**
- * Compare two predictions against ground truth using KL divergence
- * @param {Array<number>} prediction1 - First probability distribution
- * @param {Array<number>} prediction2 - Second probability distribution
- * @param {Array<number>} truth - Ground truth probability distribution
- * @returns {Object} Comparison results
- */
-
-export function comparePredictions(prediction1, prediction2, truth) {
-    const first = calculateKLDivergence(prediction1, truth);
-    const second = calculateKLDivergence(prediction2, truth);
-    const tolerance = 1e-10;
-
-    let winning = 'tie';
-    if (Number.isFinite(first) && Number.isFinite(second)) {
-        if (Math.abs(first - second) > tolerance) {
-            winning = first < second ? 'prediction1' : 'prediction2';
-        }
-    }
-    // Smaller scores are better
-    else if (Number.isFinite(first) && !Number.isFinite(second)) {
-        winning = 'prediction1';
-    }
-    else if (!Number.isFinite(first) && Number.isFinite(second)) {
-        winning = 'prediction2';
-    }
-    // else if both infinitely bad or very close, tie
-
-    let gap = null, factor = null;
-    if (Number.isFinite(first) && Number.isFinite(second)) {
-        gap = second - first;
-        factor = Math.exp(gap);
-    }
-
-    return {
-        prediction1: { klDivergence: first },
-        prediction2: { klDivergence: second },
-        winning: winning,
-        gap: gap,
-        factor: factor,
-    };
 }
