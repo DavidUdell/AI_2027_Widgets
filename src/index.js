@@ -13,7 +13,6 @@
  * @param {number} options.endYear - Ending year for the distribution
  * @param {Array<number>} [options.initialDistribution] - Initial probability values [0,1] for each time period
  * @param {Function} [options.onChange] - Callback function called when distribution changes
- * @param {number} [options.totalMass] - Total mass to display (as percentage, default calculated from distribution)
  * @param {string} [options.color] - Color theme for the widget ('blue', 'green', or 'red')
  * @param {boolean} [options.interactive] - Whether the widget is interactive (default: true)
  */
@@ -186,11 +185,7 @@ export function createDistributionWidget(containerId, options) {
             ctx.setLineDash([]); // Reset to solid lines
 
             // Calculate and display the normalized value at this height
-            const totalMass = options.totalMass !== undefined ? options.totalMass : 
-                distribution.reduce((sum, prob) => sum + prob, 0) * 100;
-            const distributionSum = distribution.reduce((sum, prob) => sum + prob, 0);
-            const normalizationFactor = distributionSum > 0 ? totalMass / (distributionSum * 100) : 0;
-            const maxNormalizedValue = maxDistributionValue * normalizationFactor * 100;
+            const maxNormalizedValue = maxDistributionValue * 100;
 
             // Format the percentage value
             const formatPercentage = (value) => {
@@ -341,10 +336,8 @@ export function createDistributionWidget(containerId, options) {
         ctx.closePath();
         ctx.fill();
 
-        // Use provided total mass or calculate from distribution
-        const totalPercentage = options.totalMass !== undefined ? 
-            Math.round(options.totalMass) : 
-            Math.round(distribution.reduce((sum, prob) => sum + prob, 0) * 100);
+        // Calculate from distribution
+        const totalPercentage = Math.round(distribution.reduce((sum, prob) => sum + prob, 0) * 100);
 
         // Determine if the center point is under the shaded region
         const centerX = widgetWidth / 2;
@@ -468,16 +461,8 @@ export function createDistributionWidget(containerId, options) {
     // Return methods for external control
     return {
         getDistribution: () => [...distribution],
-        getTotalMass: () => options.totalMass,
         setDistribution: (newDistribution) => {
             distribution = [...newDistribution];
-            drawWidget();
-            if (options.onChange) {
-                options.onChange(distribution);
-            }
-        },
-        setTotalMass: (totalMass) => {
-            options.totalMass = totalMass;
             drawWidget();
             if (options.onChange) {
                 options.onChange(distribution);
@@ -499,12 +484,6 @@ export function createDistributionWidget(containerId, options) {
             window.removeEventListener('resize', resizeHandler);
         }
     };
-}
-
-// Legacy function for backward compatibility
-export function createWidget(containerId, options) {
-    console.warn('createWidget is deprecated. Use createDistributionWidget instead.');
-    return createDistributionWidget(containerId, options);
 }
 
 // Export Bayesian analysis functions
