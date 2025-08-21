@@ -252,18 +252,40 @@ export function createMultiDistributionWidget(containerId, options) {
                 ctx.stroke();
                 ctx.setLineDash([]); // Reset to solid lines
 
-                // Get quarter name
-                let quarterName;
+                // Get quarter name components
                 const year = options.startYear + Math.floor(medianIndex / 4);
                 const quarter = (medianIndex % 4) + 1;
-                quarterName = `Q${quarter} '${year.toString().slice(-2)}`;
+                const yearDigits = year.toString().slice(-2);
 
                 // Draw median quarter name on top with distribution color
                 ctx.fillStyle = colorScheme.stroke;
                 ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'bottom';
-                ctx.fillText(quarterName, medianX, padding - 10);
+                
+                // Draw year line with proper alignment
+                const yearLineY = padding - 10;
+                const quarterLineY = yearLineY - 14;
+                
+                // Draw apostrophe and year digits separately for better alignment
+                const apostrophe = '\u2019';
+                const yearText = yearDigits;
+                
+                // Measure text for proper centering
+                const apostropheWidth = ctx.measureText(apostrophe).width;
+                const yearWidth = ctx.measureText(yearText).width;
+                const totalYearWidth = apostropheWidth + yearWidth;
+                
+                // Draw apostrophe (left-aligned within the centered group)
+                ctx.textAlign = 'left';
+                ctx.fillText(apostrophe, medianX - totalYearWidth / 2, yearLineY);
+                
+                // Draw year digits (right-aligned within the centered group)
+                ctx.fillText(yearText, medianX + totalYearWidth / 2 - yearWidth, yearLineY);
+                
+                // Draw quarter line
+                ctx.textAlign = 'center';
+                ctx.fillText(`Q${quarter}`, medianX, quarterLineY);
             }
         });
 
