@@ -11,7 +11,6 @@ interface, specifically designed for AGI timeline predictions.
 - **Quarter-based visualization** - Show probability trends over quarters until
   2040
 - **Real-time updates** - See changes as you draw
-- **Responsive design** - Widgets adapt to their container size
 - **Bayesian scoring** - Compare predictions using proper log score metrics
 
 ## Quick Start
@@ -30,17 +29,8 @@ The widget provides an interactive canvas where users can:
 
 - **Click and drag** to draw probability curves
 - **See real-time updates** as they draw
-- **View probability values** on the Y-axis (0-100%)
+- **View probability scale** on the Y-axis (0-100%)
 - **See quarters** on the X-axis (Q1 2026 through Q1 2040)
-- **Get smooth interpolation** between drawn points
-- **Set total probability mass** independently of the distribution shape
-
-The widget automatically handles:
-- Coordinate conversion between canvas and data space
-- Smooth drawing with interpolation
-- Grid and axis labeling with quarter/year markers
-- Touch and mouse input
-- Dynamic total mass display
 
 ### Create Basic Interactive Widget
 
@@ -126,11 +116,10 @@ widget.destroy();
    });
    ```
 
-## Bayesian Analysis Module
+## Comparisons Widget
 
-The project includes a Bayesian analysis module that implements KL divergence
-calculation for comparing probability distributions. Since masses are pinned to
-unity (100%), the scoring rule simplifies to standard KL divergence.
+The project includes a Comparisons module that implements KL divergence
+calculation for comparing probability distributions.
 
 ### KL Divergence Formula
 
@@ -141,7 +130,8 @@ Score = D_KL(Q_truth || P_prediction) = Σ q_i * log(q_i / p_i)
 ```
 
 where
-- `q_i` are the normalized probability values from the ground truth distribution
+- `q_i` are the normalized probability values from the ground truth
+  distribution
 - `p_i` are the normalized probability values from the prediction distribution
 - The sum is taken over all bins where `q_i > 0`
 
@@ -167,8 +157,8 @@ console.log('Bayes factor:', result.factor); // How much better the winner is
 
 ### Available Functions
 
-- `calculateKLDivergence(prediction, predProb, groundTruth, truthProb)` - Calculate
-  KL divergence
+- `calculateKLDivergence(prediction, predProb, groundTruth, truthProb)` -
+  Calculate KL divergence
 - `comparePredictions(pred1, predProb1, pred2, predProb2, groundTruth,
   truthProb)` - Compare two predictions
 
