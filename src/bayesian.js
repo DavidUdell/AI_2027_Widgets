@@ -13,7 +13,7 @@
  * @returns {number} KL divergence (lower is better)
  */
 
-export function calculateKLDivergence(prediction, predProb, truth, truthProb) {
+export function calculateKLDivergence(prediction, truth) {
     const tolerance = 1e-12;
 
     // Catch distribution element errors
@@ -73,9 +73,9 @@ export function calculateKLDivergence(prediction, predProb, truth, truthProb) {
  * @returns {Object} Comparison results
  */
 
-export function comparePredictions(prediction1, predProb1, prediction2, predProb2, truth, truthProb) {
-    const first = calculateKLDivergence(prediction1, predProb1, truth, truthProb);
-    const second = calculateKLDivergence(prediction2, predProb2, truth, truthProb);
+export function comparePredictions(prediction1, prediction2, truth) {
+    const first = calculateKLDivergence(prediction1, truth);
+    const second = calculateKLDivergence(prediction2, truth);
     const tolerance = 1e-10;
 
     let winning = 'tie';

@@ -179,8 +179,7 @@ export function createBayesianComparisonsWidget(containerId, options) {
         // Calculate KL divergence for all distributions
         const klScores = options.distributions.map((distribution, index) => {
             const klDivergence = calculateKLDivergence(
-                distribution.values, distribution.mass,
-                truth.values, truth.mass
+                distribution.values, truth.values
             );
             return {
                 index,
