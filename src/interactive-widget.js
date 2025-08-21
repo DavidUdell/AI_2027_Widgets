@@ -1,17 +1,17 @@
 /**
- * AI 2027 - Multi-Distribution Interactive Widget
- * Allows users to create multiple sub-probability distributions with different colors and masses
+ * AI 2027 - Interactive Widget
+ * Allows users to create multiple probability distributions with different colors
  * 
  * Features:
  * - Interactive drawing of probability distributions
  * - Multiple distributions with different colors
- * - Background distribution renormalization relative to active distribution on blur
+ * - Background distribution renormalization relative to active distribution on
+ *   mouse up
  * - Visibility controls for each distribution
- * - Constant mass assumption across all distributions in the interactive widget
  */
 
 /**
- * Creates an interactive canvas widget for drawing multiple sub-probability distributions
+ * Creates an interactive canvas widget for drawing multiple probability distributions
  * @param {string} containerId - The ID of the HTML element to insert the widget into
  * @param {Object} options - Widget configuration options
  * @param {number} options.width - Widget width in pixels
@@ -21,7 +21,7 @@
  * @param {Function} [options.onChange] - Callback function called when distributions change
  */
 
-export function createMultiDistributionWidget(containerId, options) {
+export function createInteractiveWidget(containerId, options) {
     const container = document.getElementById(containerId);
     if (!container) {
         console.error(`Container with ID '${containerId}' not found`);
@@ -59,11 +59,43 @@ export function createMultiDistributionWidget(containerId, options) {
     
 
 
-    // Grid and styling constants
-    const padding = 80;
-    const plotWidth = widgetWidth - 2 * padding;
-    const plotHeight = options.height - 2 * padding;
-    const periodStep = plotWidth / (numPeriods - 1);
+    // Grid and styling constants - these will be recalculated on resize
+    let padding = 80;
+    let plotWidth = widgetWidth - 2 * padding;
+    let plotHeight = options.height - 2 * padding;
+    let periodStep = plotWidth / (numPeriods - 1);
+
+    /**
+     * Update widget dimensions and recalculate layout constants
+     */
+    function updateDimensions() {
+        const containerRect = container.getBoundingClientRect();
+        const newWidth = containerRect.width - 20; // Account for padding
+        
+        if (newWidth !== widgetWidth) {
+            widgetWidth = newWidth;
+            canvas.width = widgetWidth;
+            
+            // Recalculate layout constants
+            padding = 80;
+            plotWidth = widgetWidth - 2 * padding;
+            plotHeight = options.height - 2 * padding;
+            periodStep = plotWidth / (numPeriods - 1);
+            
+            // Redraw with new dimensions
+            drawWidget();
+        }
+    }
+
+    // Set up resize observer for responsive behavior
+    const resizeObserver = new ResizeObserver(() => {
+        updateDimensions();
+    });
+    resizeObserver.observe(container);
+
+    // Also listen for window resize events as a fallback
+    const resizeHandler = () => updateDimensions();
+    window.addEventListener('resize', resizeHandler);
 
     // Color schemes for different distributions
     const colorSchemes = {
@@ -218,10 +250,12 @@ export function createMultiDistributionWidget(containerId, options) {
             }
         }
 
-        // Draw vertical guideline at the median of the active distribution
-        if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length) {
-            const activeDist = distributions[activeDistributionIndex];
-            const totalMass = activeDist.values.reduce((sum, val) => sum + val, 0);
+        // Draw vertical guidelines at the median of all visible distributions
+        distributions.forEach((distribution, index) => {
+            // Skip if distribution is hidden
+            if (!visibilityState[index]) return;
+            
+            const totalMass = distribution.values.reduce((sum, val) => sum + val, 0);
             
             if (totalMass > 0) {
                 // Calculate the median (point where cumulative probability reaches 50% of total mass)
@@ -229,8 +263,8 @@ export function createMultiDistributionWidget(containerId, options) {
                 let cumulativeMass = 0;
                 let medianIndex = 0;
                 
-                for (let i = 0; i < activeDist.values.length; i++) {
-                    cumulativeMass += activeDist.values[i];
+                for (let i = 0; i < distribution.values.length; i++) {
+                    cumulativeMass += distribution.values[i];
                     if (cumulativeMass >= targetMass) {
                         medianIndex = i;
                         break;
@@ -238,9 +272,10 @@ export function createMultiDistributionWidget(containerId, options) {
                 }
                 
                 const medianX = dataToCanvas(medianIndex, 0).x;
+                const colorScheme = colorSchemes[distribution.color];
 
-                // Draw vertical guideline
-                ctx.strokeStyle = '#6c757d';
+                // Draw vertical guideline with distribution color
+                ctx.strokeStyle = colorScheme.stroke;
                 ctx.lineWidth = 1;
                 ctx.setLineDash([5, 5]); // Dashed line
                 ctx.beginPath();
@@ -249,20 +284,42 @@ export function createMultiDistributionWidget(containerId, options) {
                 ctx.stroke();
                 ctx.setLineDash([]); // Reset to solid lines
 
-                // Get quarter name
-                let quarterName;
+                // Get quarter name components
                 const year = options.startYear + Math.floor(medianIndex / 4);
                 const quarter = (medianIndex % 4) + 1;
-                quarterName = `Q${quarter} ${year}`;
+                const yearDigits = year.toString().slice(-2);
 
-                // Draw median quarter name on top
-                ctx.fillStyle = '#495057';
+                // Draw median quarter name on top with distribution color
+                ctx.fillStyle = colorScheme.stroke;
                 ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'bottom';
-                ctx.fillText(quarterName, medianX, padding - 10);
+                
+                // Draw year line with proper alignment
+                const yearLineY = padding - 10;
+                const quarterLineY = yearLineY - 14;
+                
+                // Draw apostrophe and year digits separately for better alignment
+                const apostrophe = '\u2019';
+                const yearText = yearDigits;
+                
+                // Measure text for proper centering
+                const apostropheWidth = ctx.measureText(apostrophe).width;
+                const yearWidth = ctx.measureText(yearText).width;
+                const totalYearWidth = apostropheWidth + yearWidth;
+                
+                // Draw apostrophe (left-aligned within the centered group)
+                ctx.textAlign = 'left';
+                ctx.fillText(apostrophe, medianX - totalYearWidth / 2, yearLineY);
+                
+                // Draw year digits (right-aligned within the centered group)
+                ctx.fillText(yearText, medianX + totalYearWidth / 2 - yearWidth, yearLineY);
+                
+                // Draw quarter line
+                ctx.textAlign = 'center';
+                ctx.fillText(`Q${quarter}`, medianX, quarterLineY);
             }
-        }
+        });
 
         // Draw the ε% label at the bottom left, but hide it when horizontal guideline is at visual floor
         const isAtVisualFloor = activeDistributionIndex >= 0 && 
@@ -718,6 +775,11 @@ export function createMultiDistributionWidget(containerId, options) {
         },
         renormalizeBackgroundDistributions: () => {
             performRenormalization();
+        },
+        destroy: () => {
+            // Clean up resize observer and event listeners
+            resizeObserver.disconnect();
+            window.removeEventListener('resize', resizeHandler);
         }
     };
 }

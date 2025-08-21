@@ -1,5 +1,5 @@
 /**
- * AI 2027 - Distribution Comparisons Module
+ * AI 2027 - Comparisons Widget
  * Displays all distributions together in a non-interactive format for comparison
  */
 
@@ -46,11 +46,43 @@ export function createComparisonsWidget(containerId, options) {
     const numYears = options.endYear - options.startYear + 1;
     const numPeriods = (numYears - 1) * 4 + 1;
 
-    // Grid and styling constants
-    const padding = 80;
-    const plotWidth = widgetWidth - 2 * padding;
-    const plotHeight = options.height - 2 * padding;
-    const periodStep = plotWidth / (numPeriods - 1);
+    // Grid and styling constants - these will be recalculated on resize
+    let padding = 80;
+    let plotWidth = widgetWidth - 2 * padding;
+    let plotHeight = options.height - 2 * padding;
+    let periodStep = plotWidth / (numPeriods - 1);
+
+    /**
+     * Update widget dimensions and recalculate layout constants
+     */
+    function updateDimensions() {
+        const containerRect = container.getBoundingClientRect();
+        const newWidth = containerRect.width - 20; // Account for padding
+        
+        if (newWidth !== widgetWidth) {
+            widgetWidth = newWidth;
+            canvas.width = widgetWidth;
+            
+            // Recalculate layout constants
+            padding = 80;
+            plotWidth = widgetWidth - 2 * padding;
+            plotHeight = options.height - 2 * padding;
+            periodStep = plotWidth / (numPeriods - 1);
+            
+            // Redraw with new dimensions
+            drawWidget();
+        }
+    }
+
+    // Set up resize observer for responsive behavior
+    const resizeObserver = new ResizeObserver(() => {
+        updateDimensions();
+    });
+    resizeObserver.observe(container);
+
+    // Also listen for window resize events as a fallback
+    const resizeHandler = () => updateDimensions();
+    window.addEventListener('resize', resizeHandler);
 
     // Track visibility state for each distribution
     const visibilityState = {};
@@ -214,6 +246,7 @@ export function createComparisonsWidget(containerId, options) {
         drawGrid();
         drawAxisLabels();
         drawAllDistributions();
+        drawMedians();
         drawLegend();
     }
 
@@ -455,39 +488,117 @@ export function createComparisonsWidget(containerId, options) {
     }
 
     /**
+     * Draw vertical guidelines at the median of all visible distributions
+     */
+    function drawMedians() {
+        if (!options.distributions || options.distributions.length === 0) return;
+
+        // Draw median for each visible distribution
+        options.distributions.forEach((distribution, index) => {
+            // Skip if distribution is hidden
+            if (!visibilityState[index]) return;
+            
+            // Skip zero mass distributions
+            if (distribution.mass === 0) return;
+
+            const totalMass = distribution.values.reduce((sum, val) => sum + val, 0);
+            
+            if (totalMass > 0) {
+                // Calculate the median (point where cumulative probability reaches 50% of total mass)
+                const targetMass = totalMass / 2;
+                let cumulativeMass = 0;
+                let medianIndex = 0;
+                
+                for (let i = 0; i < distribution.values.length; i++) {
+                    cumulativeMass += distribution.values[i];
+                    if (cumulativeMass >= targetMass) {
+                        medianIndex = i;
+                        break;
+                    }
+                }
+                
+                const medianX = dataToCanvas(medianIndex, 0).x;
+                const colorScheme = colorSchemes[distribution.color];
+
+                // Draw vertical guideline with distribution color
+                ctx.strokeStyle = colorScheme.stroke;
+                ctx.lineWidth = 1;
+                ctx.setLineDash([5, 5]); // Dashed line
+                ctx.beginPath();
+                ctx.moveTo(medianX, padding);
+                ctx.lineTo(medianX, options.height - padding);
+                ctx.stroke();
+                ctx.setLineDash([]); // Reset to solid lines
+
+                // Get quarter name components
+                const year = options.startYear + Math.floor(medianIndex / 4);
+                const quarter = (medianIndex % 4) + 1;
+                const yearDigits = year.toString().slice(-2);
+
+                // Draw median quarter name on top with distribution color
+                ctx.fillStyle = colorScheme.stroke;
+                ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                
+                // Draw year line with proper alignment
+                const yearLineY = padding - 10;
+                const quarterLineY = yearLineY - 14;
+                
+                // Draw apostrophe and year digits separately for better alignment
+                const apostrophe = '\u2019';
+                const yearText = yearDigits;
+                
+                // Measure text for proper centering
+                const apostropheWidth = ctx.measureText(apostrophe).width;
+                const yearWidth = ctx.measureText(yearText).width;
+                const totalYearWidth = apostropheWidth + yearWidth;
+                
+                // Draw apostrophe (left-aligned within the centered group)
+                ctx.textAlign = 'left';
+                ctx.fillText(apostrophe, medianX - totalYearWidth / 2, yearLineY);
+                
+                // Draw year digits (right-aligned within the centered group)
+                ctx.fillText(yearText, medianX + totalYearWidth / 2 - yearWidth, yearLineY);
+                
+                // Draw quarter line
+                ctx.textAlign = 'center';
+                ctx.fillText(`Q${quarter}`, medianX, quarterLineY);
+            }
+        });
+    }
+
+    /**
      * Draw legend showing all distributions with their masses and checkboxes
      */
     function drawLegend() {
         if (!options.distributions || options.distributions.length === 0) return;
 
         const legendStartY = 14;
-        const legendItemHeight = 25;
-        const legendItemSpacing = 5;
-        const colorBoxSize = 15;
         const checkboxSize = 12;
+        const colorBoxSize = 15;
         const textMargin = 10;
-        const itemsPerRow = 3;
-        const rowSpacing = 10;
+        const itemsPerRow = 6; // Single row of 6 items
+        const itemSpacing = 14; // Tight spacing between items
 
         // Calculate legend dimensions
         const maxTextWidth = Math.max(...options.distributions.map(dist => {
-            const text = `${dist.color.charAt(0).toUpperCase() + dist.color.slice(1)}: `;
+            const text = `${dist.color.charAt(0).toUpperCase() + dist.color.slice(1)}`;
             ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
             return ctx.measureText(text).width;
         }));
 
         const itemWidth = maxTextWidth + colorBoxSize + checkboxSize + textMargin * 2;
-        const totalLegendWidth = itemWidth * itemsPerRow + (itemsPerRow - 1) * 40; // 40px spacing between columns
+        const totalLegendWidth = itemWidth * itemsPerRow + (itemsPerRow - 1) * itemSpacing;
         const legendX = (widgetWidth - totalLegendWidth) / 2;
 
         options.distributions.forEach((distribution, index) => {
             const colorScheme = colorSchemes[distribution.color];
             if (!colorScheme) return;
 
-            const row = Math.floor(index / itemsPerRow);
             const col = index % itemsPerRow;
-            const x = legendX + col * (itemWidth + 40); // 40px spacing between columns
-            const y = legendStartY + row * (legendItemHeight + rowSpacing);
+            const x = legendX + col * (itemWidth + itemSpacing);
+            const y = legendStartY;
 
             // Draw checkbox
             const checkboxX = x;
@@ -529,32 +640,30 @@ export function createComparisonsWidget(containerId, options) {
         const y = e.clientY - rect.top;
 
         // Check if click is in legend area
-        if (y < 80) { // Legend area is roughly in the top 80px
+        if (y < 50) { // Legend area is now only in the top 50px (single row)
             const legendStartY = 14;
-            const legendItemHeight = 25;
             const checkboxSize = 12;
             const colorBoxSize = 15;
             const textMargin = 10;
-            const itemsPerRow = 3;
-            const rowSpacing = 10;
+            const itemsPerRow = 6; // Single row of 6 items
+            const itemSpacing = 14; // Tight spacing between items
 
             // Calculate legend dimensions (same as in drawLegend)
             const maxTextWidth = Math.max(...options.distributions.map(dist => {
-                const text = `${dist.color.charAt(0).toUpperCase() + dist.color.slice(1)}: `;
+                const text = `${dist.color.charAt(0).toUpperCase() + dist.color.slice(1)}`;
                 ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
                 return ctx.measureText(text).width;
             }));
 
             const itemWidth = maxTextWidth + colorBoxSize + checkboxSize + textMargin * 2;
-            const totalLegendWidth = itemWidth * itemsPerRow + (itemsPerRow - 1) * 40;
+            const totalLegendWidth = itemWidth * itemsPerRow + (itemsPerRow - 1) * itemSpacing;
             const legendX = (widgetWidth - totalLegendWidth) / 2;
 
             // Check each checkbox area
             options.distributions.forEach((distribution, index) => {
-                const row = Math.floor(index / itemsPerRow);
                 const col = index % itemsPerRow;
-                const itemX = legendX + col * (itemWidth + 40);
-                const itemY = legendStartY + row * (legendItemHeight + rowSpacing);
+                const itemX = legendX + col * (itemWidth + itemSpacing);
+                const itemY = legendStartY;
 
                 const checkboxX = itemX;
                 const checkboxY = itemY + 2;
@@ -610,6 +719,11 @@ export function createComparisonsWidget(containerId, options) {
         },
         getDistributionVisibility: (index) => {
             return visibilityState[index] || false;
+        },
+        destroy: () => {
+            // Clean up resize observer and event listeners
+            resizeObserver.disconnect();
+            window.removeEventListener('resize', resizeHandler);
         }
     };
 }
