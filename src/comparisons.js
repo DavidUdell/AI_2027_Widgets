@@ -522,12 +522,11 @@ export function createComparisonsWidget(containerId, options) {
 
         const legendStartY = 14;
         const legendItemHeight = 25;
-        const legendItemSpacing = 5;
         const colorBoxSize = 15;
         const checkboxSize = 12;
         const textMargin = 10;
-        const itemsPerRow = 3;
-        const rowSpacing = 10;
+        const itemsPerRow = 6; // Single row of 6 items
+        const itemSpacing = 20; // Reduced spacing between items
 
         // Calculate legend dimensions
         const maxTextWidth = Math.max(...options.distributions.map(dist => {
@@ -537,17 +536,16 @@ export function createComparisonsWidget(containerId, options) {
         }));
 
         const itemWidth = maxTextWidth + colorBoxSize + checkboxSize + textMargin * 2;
-        const totalLegendWidth = itemWidth * itemsPerRow + (itemsPerRow - 1) * 40; // 40px spacing between columns
+        const totalLegendWidth = itemWidth * itemsPerRow + (itemsPerRow - 1) * itemSpacing;
         const legendX = (widgetWidth - totalLegendWidth) / 2;
 
         options.distributions.forEach((distribution, index) => {
             const colorScheme = colorSchemes[distribution.color];
             if (!colorScheme) return;
 
-            const row = Math.floor(index / itemsPerRow);
             const col = index % itemsPerRow;
-            const x = legendX + col * (itemWidth + 40); // 40px spacing between columns
-            const y = legendStartY + row * (legendItemHeight + rowSpacing);
+            const x = legendX + col * (itemWidth + itemSpacing);
+            const y = legendStartY;
 
             // Draw checkbox
             const checkboxX = x;
@@ -589,14 +587,13 @@ export function createComparisonsWidget(containerId, options) {
         const y = e.clientY - rect.top;
 
         // Check if click is in legend area
-        if (y < 80) { // Legend area is roughly in the top 80px
+        if (y < 50) { // Legend area is now only in the top 50px (single row)
             const legendStartY = 14;
-            const legendItemHeight = 25;
             const checkboxSize = 12;
             const colorBoxSize = 15;
             const textMargin = 10;
-            const itemsPerRow = 3;
-            const rowSpacing = 10;
+            const itemsPerRow = 6; // Single row of 6 items
+            const itemSpacing = 20; // Reduced spacing between items
 
             // Calculate legend dimensions (same as in drawLegend)
             const maxTextWidth = Math.max(...options.distributions.map(dist => {
@@ -606,15 +603,14 @@ export function createComparisonsWidget(containerId, options) {
             }));
 
             const itemWidth = maxTextWidth + colorBoxSize + checkboxSize + textMargin * 2;
-            const totalLegendWidth = itemWidth * itemsPerRow + (itemsPerRow - 1) * 40;
+            const totalLegendWidth = itemWidth * itemsPerRow + (itemsPerRow - 1) * itemSpacing;
             const legendX = (widgetWidth - totalLegendWidth) / 2;
 
             // Check each checkbox area
             options.distributions.forEach((distribution, index) => {
-                const row = Math.floor(index / itemsPerRow);
                 const col = index % itemsPerRow;
-                const itemX = legendX + col * (itemWidth + 40);
-                const itemY = legendStartY + row * (legendItemHeight + rowSpacing);
+                const itemX = legendX + col * (itemWidth + itemSpacing);
+                const itemY = legendStartY;
 
                 const checkboxX = itemX;
                 const checkboxY = itemY + 2;
