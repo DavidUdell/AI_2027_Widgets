@@ -370,11 +370,6 @@
 
         // Initialize widget when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
-            // Create initial distribution that covers the whole year range
-            // from 20% at start to 100% at end (non-zero y-intercept)
-            const numPeriods = (2040 - 2026) * 4 + 1; // 14 years * 4 quarters + 1 = 57 quarters
-            const initialDistribution = Array(numPeriods).fill(0).map((_, i) => 0.2 + (0.8 * i / (numPeriods - 1)));
-
             // Create multi-distribution widget
             const widget = createMultiDistributionWidget('distribution-widget', {
                 height: 500,
