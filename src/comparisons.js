@@ -575,16 +575,15 @@ export function createComparisonsWidget(containerId, options) {
         if (!options.distributions || options.distributions.length === 0) return;
 
         const legendStartY = 14;
-        const legendItemHeight = 25;
-        const colorBoxSize = 15;
         const checkboxSize = 12;
+        const colorBoxSize = 15;
         const textMargin = 10;
         const itemsPerRow = 6; // Single row of 6 items
-        const itemSpacing = 12; // Tight spacing between items
+        const itemSpacing = 14; // Tight spacing between items
 
         // Calculate legend dimensions
         const maxTextWidth = Math.max(...options.distributions.map(dist => {
-            const text = `${dist.color.charAt(0).toUpperCase() + dist.color.slice(1)}: `;
+            const text = `${dist.color.charAt(0).toUpperCase() + dist.color.slice(1)}`;
             ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
             return ctx.measureText(text).width;
         }));
@@ -647,11 +646,11 @@ export function createComparisonsWidget(containerId, options) {
             const colorBoxSize = 15;
             const textMargin = 10;
             const itemsPerRow = 6; // Single row of 6 items
-            const itemSpacing = 12; // Tight spacing between items
+            const itemSpacing = 14; // Tight spacing between items
 
             // Calculate legend dimensions (same as in drawLegend)
             const maxTextWidth = Math.max(...options.distributions.map(dist => {
-                const text = `${dist.color.charAt(0).toUpperCase() + dist.color.slice(1)}: `;
+                const text = `${dist.color.charAt(0).toUpperCase() + dist.color.slice(1)}`;
                 ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
                 return ctx.measureText(text).width;
             }));
