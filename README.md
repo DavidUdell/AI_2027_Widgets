@@ -100,6 +100,9 @@ widget.reset();
 widget.setOnChange((distribution) => {
     console.log('Distribution updated:', distribution);
 });
+
+// Clean up event listeners and resize observers (call when removing widget)
+widget.destroy();
 ```
 
 ## HTML Integration

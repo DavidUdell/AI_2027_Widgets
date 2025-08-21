@@ -58,11 +58,44 @@ export function createDistributionWidget(containerId, options) {
     let lastX = 0;
     let lastY = 0;
 
-    // Grid and styling constants
-    const padding = 80;
-    const plotWidth = widgetWidth - 2 * padding;
-    const plotHeight = options.height - 2 * padding;
-    const periodStep = plotWidth / (numPeriods - 1);
+    // Grid and styling constants - these will be recalculated on resize
+    let padding = 80;
+    let plotWidth = widgetWidth - 2 * padding;
+    let plotHeight = options.height - 2 * padding;
+    let periodStep = plotWidth / (numPeriods - 1);
+
+    /**
+     * Update widget dimensions and recalculate layout constants
+     */
+    function updateDimensions() {
+        const containerRect = container.getBoundingClientRect();
+        const newWidth = containerRect.width - 20; // Account for padding
+        
+        if (newWidth !== widgetWidth) {
+            widgetWidth = newWidth;
+            canvas.width = widgetWidth;
+            
+            // Recalculate layout constants
+            padding = 80;
+            plotWidth = widgetWidth - 2 * padding;
+            plotHeight = options.height - 2 * padding;
+            periodStep = plotWidth / (numPeriods - 1);
+            
+            // Redraw with new dimensions
+            drawWidget();
+        }
+    }
+
+    // Set up resize observer for responsive behavior
+    const resizeObserver = new ResizeObserver(() => {
+        updateDimensions();
+    });
+    resizeObserver.observe(container);
+
+    // Also listen for window resize events as a fallback
+    window.addEventListener('resize', () => {
+        updateDimensions();
+    });
 
     let colorScheme;
     if (options.color === 'green') {
@@ -460,6 +493,11 @@ export function createDistributionWidget(containerId, options) {
         },
         setOnChange: (callback) => {
             options.onChange = callback;
+        },
+        destroy: () => {
+            // Clean up resize observer and event listeners
+            resizeObserver.disconnect();
+            window.removeEventListener('resize', updateDimensions);
         }
     };
 }

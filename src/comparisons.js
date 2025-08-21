@@ -46,11 +46,44 @@ export function createComparisonsWidget(containerId, options) {
     const numYears = options.endYear - options.startYear + 1;
     const numPeriods = (numYears - 1) * 4 + 1;
 
-    // Grid and styling constants
-    const padding = 80;
-    const plotWidth = widgetWidth - 2 * padding;
-    const plotHeight = options.height - 2 * padding;
-    const periodStep = plotWidth / (numPeriods - 1);
+    // Grid and styling constants - these will be recalculated on resize
+    let padding = 80;
+    let plotWidth = widgetWidth - 2 * padding;
+    let plotHeight = options.height - 2 * padding;
+    let periodStep = plotWidth / (numPeriods - 1);
+
+    /**
+     * Update widget dimensions and recalculate layout constants
+     */
+    function updateDimensions() {
+        const containerRect = container.getBoundingClientRect();
+        const newWidth = containerRect.width - 20; // Account for padding
+        
+        if (newWidth !== widgetWidth) {
+            widgetWidth = newWidth;
+            canvas.width = widgetWidth;
+            
+            // Recalculate layout constants
+            padding = 80;
+            plotWidth = widgetWidth - 2 * padding;
+            plotHeight = options.height - 2 * padding;
+            periodStep = plotWidth / (numPeriods - 1);
+            
+            // Redraw with new dimensions
+            drawWidget();
+        }
+    }
+
+    // Set up resize observer for responsive behavior
+    const resizeObserver = new ResizeObserver(() => {
+        updateDimensions();
+    });
+    resizeObserver.observe(container);
+
+    // Also listen for window resize events as a fallback
+    window.addEventListener('resize', () => {
+        updateDimensions();
+    });
 
     // Track visibility state for each distribution
     const visibilityState = {};
@@ -548,7 +581,7 @@ export function createComparisonsWidget(containerId, options) {
         const checkboxSize = 12;
         const textMargin = 10;
         const itemsPerRow = 6; // Single row of 6 items
-        const itemSpacing = 20; // Reduced spacing between items
+        const itemSpacing = 12; // Tight spacing between items
 
         // Calculate legend dimensions
         const maxTextWidth = Math.max(...options.distributions.map(dist => {
@@ -615,7 +648,7 @@ export function createComparisonsWidget(containerId, options) {
             const colorBoxSize = 15;
             const textMargin = 10;
             const itemsPerRow = 6; // Single row of 6 items
-            const itemSpacing = 20; // Reduced spacing between items
+            const itemSpacing = 12; // Tight spacing between items
 
             // Calculate legend dimensions (same as in drawLegend)
             const maxTextWidth = Math.max(...options.distributions.map(dist => {
@@ -688,6 +721,11 @@ export function createComparisonsWidget(containerId, options) {
         },
         getDistributionVisibility: (index) => {
             return visibilityState[index] || false;
+        },
+        destroy: () => {
+            // Clean up resize observer and event listeners
+            resizeObserver.disconnect();
+            window.removeEventListener('resize', updateDimensions);
         }
     };
 }
