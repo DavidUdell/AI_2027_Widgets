@@ -81,9 +81,8 @@ export function createComparisonsWidget(containerId, options) {
     resizeObserver.observe(container);
 
     // Also listen for window resize events as a fallback
-    window.addEventListener('resize', () => {
-        updateDimensions();
-    });
+    const resizeHandler = () => updateDimensions();
+    window.addEventListener('resize', resizeHandler);
 
     // Track visibility state for each distribution
     const visibilityState = {};
@@ -725,7 +724,7 @@ export function createComparisonsWidget(containerId, options) {
         destroy: () => {
             // Clean up resize observer and event listeners
             resizeObserver.disconnect();
-            window.removeEventListener('resize', updateDimensions);
+            window.removeEventListener('resize', resizeHandler);
         }
     };
 }

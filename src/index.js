@@ -93,9 +93,8 @@ export function createDistributionWidget(containerId, options) {
     resizeObserver.observe(container);
 
     // Also listen for window resize events as a fallback
-    window.addEventListener('resize', () => {
-        updateDimensions();
-    });
+    const resizeHandler = () => updateDimensions();
+    window.addEventListener('resize', resizeHandler);
 
     let colorScheme;
     if (options.color === 'green') {
@@ -497,7 +496,7 @@ export function createDistributionWidget(containerId, options) {
         destroy: () => {
             // Clean up resize observer and event listeners
             resizeObserver.disconnect();
-            window.removeEventListener('resize', updateDimensions);
+            window.removeEventListener('resize', resizeHandler);
         }
     };
 }
