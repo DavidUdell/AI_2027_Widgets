@@ -214,6 +214,7 @@ export function createComparisonsWidget(containerId, options) {
         drawGrid();
         drawAxisLabels();
         drawAllDistributions();
+        drawMedians();
         drawLegend();
     }
 
@@ -451,6 +452,65 @@ export function createComparisonsWidget(containerId, options) {
                 }
             }
             ctx.stroke();
+        });
+    }
+
+    /**
+     * Draw vertical guidelines at the median of all visible distributions
+     */
+    function drawMedians() {
+        if (!options.distributions || options.distributions.length === 0) return;
+
+        // Draw median for each visible distribution
+        options.distributions.forEach((distribution, index) => {
+            // Skip if distribution is hidden
+            if (!visibilityState[index]) return;
+            
+            // Skip zero mass distributions
+            if (distribution.mass === 0) return;
+
+            const totalMass = distribution.values.reduce((sum, val) => sum + val, 0);
+            
+            if (totalMass > 0) {
+                // Calculate the median (point where cumulative probability reaches 50% of total mass)
+                const targetMass = totalMass / 2;
+                let cumulativeMass = 0;
+                let medianIndex = 0;
+                
+                for (let i = 0; i < distribution.values.length; i++) {
+                    cumulativeMass += distribution.values[i];
+                    if (cumulativeMass >= targetMass) {
+                        medianIndex = i;
+                        break;
+                    }
+                }
+                
+                const medianX = dataToCanvas(medianIndex, 0).x;
+                const colorScheme = colorSchemes[distribution.color];
+
+                // Draw vertical guideline with distribution color
+                ctx.strokeStyle = colorScheme.stroke;
+                ctx.lineWidth = 1;
+                ctx.setLineDash([5, 5]); // Dashed line
+                ctx.beginPath();
+                ctx.moveTo(medianX, padding);
+                ctx.lineTo(medianX, options.height - padding);
+                ctx.stroke();
+                ctx.setLineDash([]); // Reset to solid lines
+
+                // Get quarter name
+                let quarterName;
+                const year = options.startYear + Math.floor(medianIndex / 4);
+                const quarter = (medianIndex % 4) + 1;
+                quarterName = `Q${quarter} '${year.toString().slice(-2)}`;
+
+                // Draw median quarter name on top with distribution color
+                ctx.fillStyle = colorScheme.stroke;
+                ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(quarterName, medianX, padding - 10);
+            }
         });
     }
 

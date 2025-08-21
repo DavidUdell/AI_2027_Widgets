@@ -218,10 +218,12 @@ export function createMultiDistributionWidget(containerId, options) {
             }
         }
 
-        // Draw vertical guideline at the median of the active distribution
-        if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length) {
-            const activeDist = distributions[activeDistributionIndex];
-            const totalMass = activeDist.values.reduce((sum, val) => sum + val, 0);
+        // Draw vertical guidelines at the median of all visible distributions
+        distributions.forEach((distribution, index) => {
+            // Skip if distribution is hidden
+            if (!visibilityState[index]) return;
+            
+            const totalMass = distribution.values.reduce((sum, val) => sum + val, 0);
             
             if (totalMass > 0) {
                 // Calculate the median (point where cumulative probability reaches 50% of total mass)
@@ -229,8 +231,8 @@ export function createMultiDistributionWidget(containerId, options) {
                 let cumulativeMass = 0;
                 let medianIndex = 0;
                 
-                for (let i = 0; i < activeDist.values.length; i++) {
-                    cumulativeMass += activeDist.values[i];
+                for (let i = 0; i < distribution.values.length; i++) {
+                    cumulativeMass += distribution.values[i];
                     if (cumulativeMass >= targetMass) {
                         medianIndex = i;
                         break;
@@ -238,9 +240,10 @@ export function createMultiDistributionWidget(containerId, options) {
                 }
                 
                 const medianX = dataToCanvas(medianIndex, 0).x;
+                const colorScheme = colorSchemes[distribution.color];
 
-                // Draw vertical guideline
-                ctx.strokeStyle = '#6c757d';
+                // Draw vertical guideline with distribution color
+                ctx.strokeStyle = colorScheme.stroke;
                 ctx.lineWidth = 1;
                 ctx.setLineDash([5, 5]); // Dashed line
                 ctx.beginPath();
@@ -253,16 +256,16 @@ export function createMultiDistributionWidget(containerId, options) {
                 let quarterName;
                 const year = options.startYear + Math.floor(medianIndex / 4);
                 const quarter = (medianIndex % 4) + 1;
-                quarterName = `Q${quarter} ${year}`;
+                quarterName = `Q${quarter} '${year.toString().slice(-2)}`;
 
-                // Draw median quarter name on top
-                ctx.fillStyle = '#495057';
+                // Draw median quarter name on top with distribution color
+                ctx.fillStyle = colorScheme.stroke;
                 ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'bottom';
                 ctx.fillText(quarterName, medianX, padding - 10);
             }
-        }
+        });
 
         // Draw the ε% label at the bottom left, but hide it when horizontal guideline is at visual floor
         const isAtVisualFloor = activeDistributionIndex >= 0 && 
