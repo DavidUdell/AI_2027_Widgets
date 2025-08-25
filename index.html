@@ -233,9 +233,10 @@
             <strong>Instructions:</strong> Sketch a probability distribution by
             selecting it from the dropdown and drawing with the mouse. Toggle
             the visibility of other distributions in the background with their
-            checkboxes. The vertical dotted line indicates the median quarter
-            of the current distribution. The furthest-right bin represents "AGI
-            is first developed after the year 2039 or never," so you should
+            checkboxes. The vertical dotted lines indicate median distribution
+            quarters. Manually rescale the horizontal dotted percentage line by
+            dragging the percentage. The furthest-right bin represents "AGI is
+            first developed after the year 2039 or never," so you should
             probably place a larger spike at that rightmost edge.
         </div>
 
@@ -279,12 +280,11 @@
         
         <div style="margin-top: 30px;">
             <div class="instructions">
-                <strong>Instructions:</strong> Select a ground truth
-                distribution in the dropdown. The KL divergence of each
-                distribution, with respect to the ground truth distribution, is
+                <strong>Instructions:</strong> The KL divergence of each
+                distribution with respect to a ground truth distribution is
                 shown in the table. KL divergence is a measure of how much two
                 distributions on the same event space differ. Lower values
-                indicate closer agreement, and 0 indicates identical
+                indicate better agreement, with 0 indicating identical
                 distributions. The table is ordered from most to least
                 matching.
             </div>
