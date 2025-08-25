@@ -235,20 +235,12 @@ export function createInteractiveWidget(containerId, options) {
         const labelHeight = 16;
         
         // Check if click is in the label area (left side of the plot)
-        const labelX = padding - 10 - labelWidth;
-        
-        // Include drag handle area
-        const handleSize = 4;
-        const handleX = labelX - handleSize - 4;
+        const labelX = padding - 5 - labelWidth;
         
         return (x >= labelX && 
-                x <= padding - 10 && 
+                x <= padding - 5 && 
                 y >= guidelineY - labelHeight/2 && 
-                y <= guidelineY + labelHeight/2) ||
-               (x >= handleX && 
-                x <= handleX + handleSize && 
-                y >= guidelineY - handleSize/2 && 
-                y <= guidelineY + handleSize/2);
+                y <= guidelineY + labelHeight/2);
     }
 
     /**
@@ -308,7 +300,7 @@ export function createInteractiveWidget(containerId, options) {
                     // Draw the percentage label on the left with interactive styling
                     ctx.fillStyle = isDraggingGuideline ? activeColorScheme.stroke : '#495057';
                     ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
-                    ctx.textAlign = 'right';
+                    ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     
                     // Add background rectangle for better visual feedback
@@ -316,7 +308,7 @@ export function createInteractiveWidget(containerId, options) {
                     const textMetrics = ctx.measureText(labelText);
                     const labelWidth = textMetrics.width + 8;
                     const labelHeight = 16;
-                    const labelX = padding - 10 - labelWidth;
+                    const labelX = padding - 5 - labelWidth;
                     const labelY = currentY - labelHeight/2;
                     
                     // Draw background rectangle with active distribution color when dragging
@@ -338,15 +330,7 @@ export function createInteractiveWidget(containerId, options) {
                     
                     // Draw text
                     ctx.fillStyle = isDraggingGuideline ? activeColorScheme.stroke : '#495057';
-                    ctx.fillText(labelText, padding - 10, currentY);
-                    
-                    // Draw small drag handle indicator
-                    const handleSize = 4;
-                    const handleX = labelX - handleSize - 4;
-                    const handleY = currentY - handleSize/2;
-                    
-                    ctx.fillStyle = isDraggingGuideline ? activeColorScheme.stroke : '#6c757d';
-                    ctx.fillRect(handleX, handleY, handleSize, handleSize);
+                    ctx.fillText(labelText, labelX + labelWidth/2, currentY);
                 }
             }
         }
