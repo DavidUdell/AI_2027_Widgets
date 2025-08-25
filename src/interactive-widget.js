@@ -54,6 +54,7 @@ export function createInteractiveWidget(containerId, options) {
 
     // Store original values for scaling
     let originalValues = {};
+    let userModifiedValues = {}; // Track which distributions have been modified by the user
 
     // Drawing state
     let isDrawing = false;
@@ -213,7 +214,8 @@ export function createInteractiveWidget(containerId, options) {
             const activeDist = distributions[activeDistributionIndex];
             // Use current values to follow the actual peak, not original values
             const maxValue = Math.max(...activeDist.values);
-            guidelineY = dataToCanvas(0, maxValue).y;
+            // Convert probability to canvas Y coordinate
+            guidelineY = padding + (1 - maxValue) * plotHeight;
         }
     }
 
@@ -299,8 +301,8 @@ export function createInteractiveWidget(containerId, options) {
 
                     // Calculate the current percentage based on guideline position
                     const currentProbability = 1 - ((currentY - padding) / plotHeight);
-                    const maxOriginalValue = Math.max(...originalValues[activeDistributionIndex] || activeDist.values);
-                    const currentPercentage = currentProbability * normalizedPeak / maxOriginalValue;
+                    const maxCurrentValue = Math.max(...activeDist.values);
+                    const currentPercentage = currentProbability * normalizedPeak / maxCurrentValue;
                     
                     // Draw the percentage label on the left with interactive styling
                     ctx.fillStyle = isDraggingGuideline ? '#007bff' : '#495057';
@@ -649,8 +651,14 @@ export function createInteractiveWidget(containerId, options) {
         lastX = x;
         lastY = y;
 
+        // Reset manual positioning when user starts drawing (they want guideline to follow peak)
+        guidelineManuallySet = false;
+
         const { periodIndex, probability } = canvasToData(x, y);
         distributions[activeDistributionIndex].values[periodIndex] = probability;
+        
+        // Mark this distribution as user-modified
+        userModifiedValues[activeDistributionIndex] = true;
         
         // Update guideline position to follow the new peak (only if not manually set)
         updateGuidelinePosition();
@@ -685,16 +693,17 @@ export function createInteractiveWidget(containerId, options) {
             // Calculate new scale factor based on guideline position
             if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length) {
                 const activeDist = distributions[activeDistributionIndex];
-                const maxValue = Math.max(...originalValues[activeDistributionIndex] || activeDist.values);
+                const maxValue = Math.max(...activeDist.values);
                 const currentProbability = 1 - ((newY - padding) / plotHeight);
                 guidelineScaleFactor = currentProbability / maxValue;
                 
-                // Apply scaling to all distributions
+                // Apply scaling to all distributions based on their current values
                 distributions.forEach((distribution, index) => {
                     if (visibilityState[index]) {
-                        const origValues = originalValues[index] || distribution.values;
+                        // Use current values for scaling (preserve user's work)
+                        const currentValues = [...distribution.values];
                         for (let i = 0; i < distribution.values.length; i++) {
-                            distribution.values[i] = origValues[i] * guidelineScaleFactor;
+                            distribution.values[i] = currentValues[i] * guidelineScaleFactor;
                         }
                     }
                 });
@@ -724,6 +733,8 @@ export function createInteractiveWidget(containerId, options) {
 
                 const { periodIndex, probability } = canvasToData(interpX, interpY);
                 distributions[activeDistributionIndex].values[periodIndex] = probability;
+                // Mark this distribution as user-modified
+                userModifiedValues[activeDistributionIndex] = true;
             }
 
             lastX = x;
@@ -750,6 +761,10 @@ export function createInteractiveWidget(containerId, options) {
         if (isDrawing) {
             // Trigger renormalization when drawing ends
             performRenormalization();
+            // Store current values as the new "original" values for this distribution
+            if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length) {
+                originalValues[activeDistributionIndex] = [...distributions[activeDistributionIndex].values];
+            }
             // Update guideline position after renormalization (only if not manually set)
             updateGuidelinePosition();
         }
@@ -913,6 +928,8 @@ export function createInteractiveWidget(containerId, options) {
             Object.keys(visibilityState).forEach(key => delete visibilityState[key]);
             // Clear original values
             Object.keys(originalValues).forEach(key => delete originalValues[key]);
+            // Clear user modified values
+            Object.keys(userModifiedValues).forEach(key => delete userModifiedValues[key]);
             drawWidget();
             if (options.onChange) {
                 options.onChange(distributions);
@@ -924,8 +941,9 @@ export function createInteractiveWidget(containerId, options) {
                 // Reset guideline scale factor and restore original values
                 guidelineScaleFactor = 1.0;
                 guidelineManuallySet = false; // Reset manual positioning when switching distributions
+                // Only restore original values for distributions that haven't been user-modified
                 distributions.forEach((distribution, distIndex) => {
-                    if (originalValues[distIndex]) {
+                    if (originalValues[distIndex] && !userModifiedValues[distIndex] && distIndex !== index) {
                         distribution.values = [...originalValues[distIndex]];
                     }
                 });
@@ -941,8 +959,9 @@ export function createInteractiveWidget(containerId, options) {
                 // Reset guideline scale factor and restore original values
                 guidelineScaleFactor = 1.0;
                 guidelineManuallySet = false; // Reset manual positioning when switching distributions
+                // Only restore original values for distributions that haven't been user-modified
                 distributions.forEach((distribution, distIndex) => {
-                    if (originalValues[distIndex]) {
+                    if (originalValues[distIndex] && !userModifiedValues[distIndex] && distIndex !== index) {
                         distribution.values = [...originalValues[distIndex]];
                     }
                 });
