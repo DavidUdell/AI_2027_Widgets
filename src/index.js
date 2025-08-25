@@ -6,8 +6,5 @@
 // Export interactive widget
 export { createInteractiveWidget } from './interactive-widget.js';
 
-// Export comparisons widget
-export { createComparisonsWidget } from './comparisons-widget.js';
-
 // Export calculator widget
 export { createCalculatorWidget } from './calculator-widget.js';
