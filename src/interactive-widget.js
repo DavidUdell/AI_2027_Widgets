@@ -333,10 +333,10 @@ export function createInteractiveWidget(containerId, options) {
                         ctx.strokeStyle = activeColorScheme.stroke; // Use active distribution color when dragging
                         ctx.lineWidth = 2;
                     } else {
-                        ctx.strokeStyle = '#6c757d'; // Gray when not dragging
+                        ctx.strokeStyle = '#adb5bd'; // Lighter gray when not dragging (same as secondary guideline)
                         ctx.lineWidth = 1;
                     }
-                    ctx.setLineDash([5, 5]); // Dashed line
+                    ctx.setLineDash([3, 3]); // Dashed line
                     ctx.beginPath();
                     ctx.moveTo(padding, currentY);
                     ctx.lineTo(widgetWidth - padding, currentY);
