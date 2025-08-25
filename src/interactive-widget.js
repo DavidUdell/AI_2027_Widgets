@@ -276,8 +276,9 @@ export function createInteractiveWidget(containerId, options) {
                     const currentY = guidelineY;
                     
                     // Draw horizontal guideline with visual feedback for dragging
+                    const activeColorScheme = colorSchemes[activeDist.color];
                     if (isDraggingGuideline) {
-                        ctx.strokeStyle = '#007bff'; // Blue when dragging
+                        ctx.strokeStyle = activeColorScheme.stroke; // Use active distribution color when dragging
                         ctx.lineWidth = 2;
                     } else {
                         ctx.strokeStyle = '#6c757d'; // Gray when not dragging
@@ -305,7 +306,7 @@ export function createInteractiveWidget(containerId, options) {
                     const currentPercentage = currentProbability * normalizedPeak / maxCurrentValue;
                     
                     // Draw the percentage label on the left with interactive styling
-                    ctx.fillStyle = isDraggingGuideline ? '#007bff' : '#495057';
+                    ctx.fillStyle = isDraggingGuideline ? activeColorScheme.stroke : '#495057';
                     ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
                     ctx.textAlign = 'right';
                     ctx.textBaseline = 'middle';
@@ -318,17 +319,25 @@ export function createInteractiveWidget(containerId, options) {
                     const labelX = padding - 10 - labelWidth;
                     const labelY = currentY - labelHeight/2;
                     
-                    // Draw background rectangle
-                    ctx.fillStyle = isDraggingGuideline ? 'rgba(0, 123, 255, 0.1)' : 'rgba(73, 80, 87, 0.1)';
+                    // Draw background rectangle with active distribution color when dragging
+                    if (isDraggingGuideline) {
+                        const hex = activeColorScheme.stroke.replace('#', '');
+                        const r = parseInt(hex.substr(0, 2), 16);
+                        const g = parseInt(hex.substr(2, 2), 16);
+                        const b = parseInt(hex.substr(4, 2), 16);
+                        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.1)`;
+                    } else {
+                        ctx.fillStyle = 'rgba(73, 80, 87, 0.1)';
+                    }
                     ctx.fillRect(labelX, labelY, labelWidth, labelHeight);
                     
                     // Draw border
-                    ctx.strokeStyle = isDraggingGuideline ? '#007bff' : '#495057';
+                    ctx.strokeStyle = isDraggingGuideline ? activeColorScheme.stroke : '#495057';
                     ctx.lineWidth = 1;
                     ctx.strokeRect(labelX, labelY, labelWidth, labelHeight);
                     
                     // Draw text
-                    ctx.fillStyle = isDraggingGuideline ? '#007bff' : '#495057';
+                    ctx.fillStyle = isDraggingGuideline ? activeColorScheme.stroke : '#495057';
                     ctx.fillText(labelText, padding - 10, currentY);
                     
                     // Draw small drag handle indicator
@@ -336,7 +345,7 @@ export function createInteractiveWidget(containerId, options) {
                     const handleX = labelX - handleSize - 4;
                     const handleY = currentY - handleSize/2;
                     
-                    ctx.fillStyle = isDraggingGuideline ? '#007bff' : '#6c757d';
+                    ctx.fillStyle = isDraggingGuideline ? activeColorScheme.stroke : '#6c757d';
                     ctx.fillRect(handleX, handleY, handleSize, handleSize);
                 }
             }
