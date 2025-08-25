@@ -106,12 +106,21 @@ export function createCalculatorWidget(containerId, options) {
         yellow: '#ffc107'
     };
 
+    // Track the currently selected ground truth color to preserve selection
+    let selectedGroundTruthColor = null;
+
     /**
      * Populate dropdown options
      */
     function populateDropdowns() {
         if (!options.distributions || options.distributions.length === 0) {
             return;
+        }
+
+        // Remember the currently selected ground truth color
+        const currentSelectedIndex = truthSelect.value ? parseInt(truthSelect.value) : -1;
+        if (currentSelectedIndex >= 0 && currentSelectedIndex < options.distributions.length) {
+            selectedGroundTruthColor = options.distributions[currentSelectedIndex].color;
         }
 
         // Clear existing options
@@ -126,9 +135,23 @@ export function createCalculatorWidget(containerId, options) {
             truthSelect.appendChild(option);
         });
 
-        // Set default selection to first distribution
+        // Restore the previously selected ground truth or set default to first distribution
         if (options.distributions.length > 0) {
-            truthSelect.value = '0';
+            if (selectedGroundTruthColor) {
+                // Try to find the distribution with the previously selected color
+                const targetIndex = options.distributions.findIndex(dist => dist.color === selectedGroundTruthColor);
+                if (targetIndex !== -1) {
+                    truthSelect.value = targetIndex.toString();
+                } else {
+                    // If the previously selected color is no longer available, default to first
+                    truthSelect.value = '0';
+                    selectedGroundTruthColor = options.distributions[0].color;
+                }
+            } else {
+                // First time initialization
+                truthSelect.value = '0';
+                selectedGroundTruthColor = options.distributions[0].color;
+            }
             
             // Trigger initial results calculation
             updateResults();
@@ -238,7 +261,14 @@ export function createCalculatorWidget(containerId, options) {
     }
 
     // Add event listener
-    truthSelect.addEventListener('change', updateResults);
+    truthSelect.addEventListener('change', () => {
+        // Update the tracked selected color when user manually changes selection
+        const selectedIndex = truthSelect.value ? parseInt(truthSelect.value) : -1;
+        if (selectedIndex >= 0 && selectedIndex < options.distributions.length) {
+            selectedGroundTruthColor = options.distributions[selectedIndex].color;
+        }
+        updateResults();
+    });
 
     // Append to container
     container.appendChild(mainContainer);

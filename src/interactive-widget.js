@@ -52,12 +52,26 @@ export function createInteractiveWidget(containerId, options) {
     // Track visibility state for each distribution
     const visibilityState = {};
 
+    // Store original values for scaling
+    let originalValues = {};
+    let userModifiedValues = {}; // Track which distributions have been modified by the user
+
     // Drawing state
     let isDrawing = false;
     let lastX = 0;
     let lastY = 0;
     
-
+    // Guideline drag state
+    let isDraggingGuideline = false;
+    let guidelineY = 0; // Will be set when active distribution changes
+    let originalGuidelineY = 0; // For drag start position
+    let dragStartY = 0; // Mouse position when drag started
+    let guidelineScaleFactor = 1.0; // Current scale factor for distributions
+    let guidelineManuallySet = false; // Track if user has manually positioned the guideline
+    
+    // Second highest distribution peak guideline state
+    let secondHighestPeakY = 0; // Y position for second highest distribution's peak
+    let secondHighestPeakPercentage = 0; // Percentage value for second highest peak
 
     // Grid and styling constants - these will be recalculated on resize
     let padding = 80;
@@ -180,6 +194,9 @@ export function createInteractiveWidget(containerId, options) {
         ctx.fillStyle = '#f8f9fa';
         ctx.fillRect(0, 0, widgetWidth, options.height);
 
+        // Update second highest peak guideline before drawing
+        updateSecondHighestPeakGuideline();
+
         drawGrid();
         drawAxisLabels();
         drawAllDistributions();
@@ -194,6 +211,96 @@ export function createInteractiveWidget(containerId, options) {
         const normalizationFactor = distributionSum > 0 ? totalMass / (distributionSum * 100) : 0;
         const originalMaxValue = Math.max(...distribution.values);
         return originalMaxValue * normalizationFactor * 100;
+    }
+
+    /**
+     * Update guideline position based on active distribution
+     */
+    function updateGuidelinePosition() {
+        if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length && !guidelineManuallySet) {
+            const activeDist = distributions[activeDistributionIndex];
+            // Use current values to follow the actual peak, not original values
+            const maxValue = Math.max(...activeDist.values);
+            // Convert probability to canvas Y coordinate
+            guidelineY = padding + (1 - maxValue) * plotHeight;
+        }
+    }
+
+    /**
+     * Calculate and update second highest distribution's peak guideline
+     */
+    function updateSecondHighestPeakGuideline() {
+        // Get all visible distributions except the active one
+        const visibleDistributions = distributions
+            .map((dist, index) => ({ dist, index }))
+            .filter(({ index }) => visibilityState[index] && index !== activeDistributionIndex);
+        
+        if (visibleDistributions.length === 0) {
+            secondHighestPeakY = 0;
+            secondHighestPeakPercentage = 0;
+            return;
+        }
+        
+        // Get the active distribution's peak for comparison
+        let activeDistributionPeak = 0;
+        if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length) {
+            const activeDist = distributions[activeDistributionIndex];
+            const activeMaxValue = Math.max(...activeDist.values);
+            activeDistributionPeak = calculateNormalizedPeak(activeDist);
+        }
+        
+        // Calculate peak values for all visible distributions using the same normalization as active distribution
+        const peakValues = visibleDistributions.map(({ dist }) => {
+            const maxValue = Math.max(...dist.values);
+            const normalizedPeak = calculateNormalizedPeak(dist);
+            return { maxValue, normalizedPeak };
+        });
+        
+        // Filter to only include peaks that are lower than or equal to the active distribution's peak
+        const peaksBelowActive = peakValues.filter(peak => peak.normalizedPeak <= activeDistributionPeak);
+        
+        if (peaksBelowActive.length === 0) {
+            // If no peaks are below the active distribution, don't show the guideline
+            secondHighestPeakY = 0;
+            secondHighestPeakPercentage = 0;
+            return;
+        }
+        
+        // Find the highest peak among those below the active distribution
+        peaksBelowActive.sort((a, b) => b.normalizedPeak - a.normalizedPeak);
+        const nextHighest = peaksBelowActive[0];
+        
+        if (nextHighest) {
+            secondHighestPeakY = padding + (1 - nextHighest.maxValue) * plotHeight;
+            secondHighestPeakPercentage = nextHighest.normalizedPeak;
+        } else {
+            secondHighestPeakY = 0;
+            secondHighestPeakPercentage = 0;
+        }
+    }
+
+    /**
+     * Check if a point is near the guideline label for drag detection
+     */
+    function isNearGuidelineLabel(x, y) {
+        if (activeDistributionIndex < 0 || activeDistributionIndex >= distributions.length) {
+            return false;
+        }
+        
+        // Calculate label dimensions (matching the drawing function)
+        const labelText = "9.99%"; // Use the largest label text for measurement
+        ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+        const textMetrics = ctx.measureText(labelText);
+        const labelWidth = textMetrics.width + 8;
+        const labelHeight = 16;
+        
+        // Check if click is in the label area (left side of the plot)
+        const labelX = padding - 5 - labelWidth;
+        
+        return (x >= labelX && 
+                x <= padding - 5 && 
+                y >= guidelineY - labelHeight/2 && 
+                y <= guidelineY + labelHeight/2);
     }
 
     /**
@@ -217,17 +324,22 @@ export function createInteractiveWidget(containerId, options) {
                 const normalizedPeak = calculateNormalizedPeak(activeDist);
                 
                 if (normalizedPeak > 0) {
-                    // Find the maximum value in the distribution
-                    const maxValue = Math.max(...activeDist.values);
-                    const maxY = dataToCanvas(0, maxValue).y;
+                    // Use the current guideline position (which may be dragged)
+                    const currentY = guidelineY;
                     
-                    // Draw horizontal guideline in gray
-                    ctx.strokeStyle = '#6c757d';
-                    ctx.lineWidth = 1;
-                    ctx.setLineDash([5, 5]); // Dashed line
+                    // Draw horizontal guideline with visual feedback for dragging
+                    const activeColorScheme = colorSchemes[activeDist.color];
+                    if (isDraggingGuideline) {
+                        ctx.strokeStyle = activeColorScheme.stroke; // Use active distribution color when dragging
+                        ctx.lineWidth = 2;
+                    } else {
+                        ctx.strokeStyle = '#adb5bd'; // Lighter gray when not dragging (same as secondary guideline)
+                        ctx.lineWidth = 1;
+                    }
+                    ctx.setLineDash([3, 3]); // Dashed line
                     ctx.beginPath();
-                    ctx.moveTo(padding, maxY);
-                    ctx.lineTo(widgetWidth - padding, maxY);
+                    ctx.moveTo(padding, currentY);
+                    ctx.lineTo(widgetWidth - padding, currentY);
                     ctx.stroke();
                     ctx.setLineDash([]); // Reset to solid lines
 
@@ -240,12 +352,44 @@ export function createInteractiveWidget(containerId, options) {
                         }
                     };
 
-                    // Draw the percentage label on the left
-                    ctx.fillStyle = '#495057';
+                    // Calculate the current percentage based on actual distribution values
+                    const maxCurrentValue = Math.max(...activeDist.values);
+                    const currentPercentage = calculateNormalizedPeak(activeDist);
+                    
+                    // Draw the percentage label on the left with interactive styling
+                    ctx.fillStyle = isDraggingGuideline ? activeColorScheme.stroke : '#495057';
                     ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
-                    ctx.textAlign = 'right';
+                    ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(formatPercentage(normalizedPeak), padding - 10, maxY);
+                    
+                    // Add background rectangle for better visual feedback
+                    const labelText = formatPercentage(currentPercentage);
+                    const textMetrics = ctx.measureText(labelText);
+                    const labelWidth = textMetrics.width + 8;
+                    const labelHeight = 16;
+                    const labelX = padding - 5 - labelWidth;
+                    const labelY = currentY - labelHeight/2;
+                    
+                    // Draw background rectangle with active distribution color when dragging
+                    if (isDraggingGuideline) {
+                        const hex = activeColorScheme.stroke.replace('#', '');
+                        const r = parseInt(hex.substr(0, 2), 16);
+                        const g = parseInt(hex.substr(2, 2), 16);
+                        const b = parseInt(hex.substr(4, 2), 16);
+                        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.1)`;
+                    } else {
+                        ctx.fillStyle = 'rgba(73, 80, 87, 0.1)';
+                    }
+                    ctx.fillRect(labelX, labelY, labelWidth, labelHeight);
+                    
+                    // Draw border
+                    ctx.strokeStyle = isDraggingGuideline ? activeColorScheme.stroke : '#495057';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(labelX, labelY, labelWidth, labelHeight);
+                    
+                    // Draw text
+                    ctx.fillStyle = isDraggingGuideline ? activeColorScheme.stroke : '#495057';
+                    ctx.fillText(labelText, labelX + labelWidth/2, currentY);
                 }
             }
         }
@@ -274,8 +418,12 @@ export function createInteractiveWidget(containerId, options) {
                 const medianX = dataToCanvas(medianIndex, 0).x;
                 const colorScheme = colorSchemes[distribution.color];
 
-                // Draw vertical guideline with distribution color
-                ctx.strokeStyle = colorScheme.stroke;
+                // Draw vertical guideline with distribution color (slightly transparent)
+                const hex = colorScheme.stroke.replace('#', '');
+                const r = parseInt(hex.substr(0, 2), 16);
+                const g = parseInt(hex.substr(2, 2), 16);
+                const b = parseInt(hex.substr(4, 2), 16);
+                ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.7)`; // 70% opacity
                 ctx.lineWidth = 1;
                 ctx.setLineDash([5, 5]); // Dashed line
                 ctx.beginPath();
@@ -322,6 +470,7 @@ export function createInteractiveWidget(containerId, options) {
         });
 
         // Draw the ε% label at the bottom left, but hide it when horizontal guideline is at visual floor
+        // or when y-axis has been dragged to the visual floor
         const isAtVisualFloor = activeDistributionIndex >= 0 && 
                                activeDistributionIndex < distributions.length && 
                                distributions[activeDistributionIndex].values.reduce((sum, val) => sum + val, 0) > 0;
@@ -331,7 +480,10 @@ export function createInteractiveWidget(containerId, options) {
             const maxValue = Math.max(...activeDist.values);
             const isGuidelineAtFloor = Math.abs(maxValue - FLOOR_PROBABILITY_EPSILON) < 1e-10;
             
-            if (!isGuidelineAtFloor) {
+            // Check if y-axis has been dragged to visual floor (scale factor is very small)
+            const isYAxisAtVisualFloor = guidelineScaleFactor < 0.1; // Threshold for visual floor
+            
+            if (!isGuidelineAtFloor && !isYAxisAtVisualFloor) {
                 ctx.fillStyle = '#495057';
                 ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
                 ctx.textAlign = 'right';
@@ -345,6 +497,41 @@ export function createInteractiveWidget(containerId, options) {
             ctx.textAlign = 'right';
             ctx.textBaseline = 'middle';
             ctx.fillText('ε%', padding - 10, options.height - padding);
+        }
+
+        // Draw second highest distribution's peak guideline (non-draggable)
+        if (secondHighestPeakY > 0 && secondHighestPeakPercentage > 0) {
+            // Draw horizontal guideline for second highest peak
+            ctx.strokeStyle = '#adb5bd'; // Lighter gray color for non-draggable guideline
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 3]); // Different dash pattern to distinguish from active guideline
+            ctx.beginPath();
+            ctx.moveTo(padding, secondHighestPeakY);
+            ctx.lineTo(widgetWidth - padding, secondHighestPeakY);
+            ctx.stroke();
+            ctx.setLineDash([]); // Reset to solid lines
+
+            // Format the percentage value
+            const formatPercentage = (value) => {
+                if (value < 10) {
+                    return value.toFixed(2) + '%';
+                } else {
+                    return Math.round(value) + '%';
+                }
+            };
+
+            // Draw the percentage label on the right side
+            ctx.fillStyle = '#6c757d';
+            ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            
+            // Draw text without background rectangle (non-draggable)
+            const labelText = formatPercentage(secondHighestPeakPercentage);
+            const labelX = widgetWidth - padding + 5;
+            
+            // Draw text
+            ctx.fillText(labelText, labelX, secondHighestPeakY);
         }
     }
 
@@ -534,20 +721,43 @@ export function createInteractiveWidget(containerId, options) {
     }
 
     /**
-     * Handle mouse/touch events for drawing
+     * Handle mouse/touch events for drawing and guideline dragging
      */
     function handlePointerDown(e) {
-        if (activeDistributionIndex === -1) return;
-
-        isDrawing = true;
         const rect = canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
+
+        // Check if clicking near the guideline label
+        if (isNearGuidelineLabel(x, y)) {
+            isDraggingGuideline = true;
+            guidelineManuallySet = true; // Mark that user has manually positioned the guideline
+            originalGuidelineY = guidelineY;
+            dragStartY = y;
+            canvas.style.cursor = 'ns-resize';
+            drawWidget(); // Redraw to show dragging state
+            return;
+        }
+
+        // Regular drawing logic
+        if (activeDistributionIndex === -1) return;
+
+        isDrawing = true;
         lastX = x;
         lastY = y;
 
+        // Reset manual positioning when user starts drawing (they want guideline to follow peak)
+        guidelineManuallySet = false;
+
         const { periodIndex, probability } = canvasToData(x, y);
         distributions[activeDistributionIndex].values[periodIndex] = probability;
+        
+        // Mark this distribution as user-modified
+        userModifiedValues[activeDistributionIndex] = true;
+        
+        // Update guideline position to follow the new peak (only if not manually set)
+        updateGuidelinePosition();
+        
         drawWidget();
 
         if (options.onChange) {
@@ -556,11 +766,57 @@ export function createInteractiveWidget(containerId, options) {
     }
 
     function handlePointerMove(e) {
-        if (!isDrawing || activeDistributionIndex === -1) return;
-
         const rect = canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
         const y = e.clientY - rect.top;
+
+        // Update cursor based on hover state
+        if (!isDraggingGuideline && !isDrawing) {
+            if (isNearGuidelineLabel(x, y)) {
+                canvas.style.cursor = 'ns-resize';
+            } else {
+                canvas.style.cursor = 'crosshair';
+            }
+        }
+
+        // Handle guideline dragging
+        if (isDraggingGuideline) {
+            // Constrain guideline to plot area with minimum constraint to prevent distribution destruction
+            const minY = padding + plotHeight * 0.01; // Minimum 1% from bottom
+            const newY = Math.max(minY, Math.min(options.height - padding, y));
+            guidelineY = newY;
+            
+                            // Calculate new scale factor based on guideline position
+                if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length) {
+                    const activeDist = distributions[activeDistributionIndex];
+                    const maxValue = Math.max(...activeDist.values);
+                    const currentProbability = 1 - ((newY - padding) / plotHeight);
+                    
+                    // Ensure scale factor doesn't go below a minimum threshold to prevent distribution destruction
+                    const minScaleFactor = 0.01; // Minimum 1% of original scale
+                    guidelineScaleFactor = Math.max(minScaleFactor, currentProbability / maxValue);
+                    
+                    // Apply scaling to all distributions based on their current values
+                    distributions.forEach((distribution, index) => {
+                        if (visibilityState[index]) {
+                            // Use current values for scaling (preserve user's work)
+                            const currentValues = [...distribution.values];
+                            for (let i = 0; i < distribution.values.length; i++) {
+                                distribution.values[i] = currentValues[i] * guidelineScaleFactor;
+                            }
+                        }
+                    });
+                }
+            
+            drawWidget();
+            if (options.onChange) {
+                options.onChange(distributions);
+            }
+            return;
+        }
+
+        // Handle regular drawing
+        if (!isDrawing || activeDistributionIndex === -1) return;
 
         // Interpolate between last point and current point
         const dx = x - lastX;
@@ -576,10 +832,16 @@ export function createInteractiveWidget(containerId, options) {
 
                 const { periodIndex, probability } = canvasToData(interpX, interpY);
                 distributions[activeDistributionIndex].values[periodIndex] = probability;
+                // Mark this distribution as user-modified
+                userModifiedValues[activeDistributionIndex] = true;
             }
 
             lastX = x;
             lastY = y;
+            
+            // Update guideline position to follow the new peak (only if not manually set)
+            updateGuidelinePosition();
+            
             drawWidget();
 
             if (options.onChange) {
@@ -589,9 +851,21 @@ export function createInteractiveWidget(containerId, options) {
     }
 
     function handlePointerUp() {
+        if (isDraggingGuideline) {
+            isDraggingGuideline = false;
+            canvas.style.cursor = 'crosshair';
+            drawWidget(); // Redraw to show normal state
+        }
+        
         if (isDrawing) {
             // Trigger renormalization when drawing ends
             performRenormalization();
+            // Store current values as the new "original" values for this distribution
+            if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length) {
+                originalValues[activeDistributionIndex] = [...distributions[activeDistributionIndex].values];
+            }
+            // Update guideline position after renormalization (only if not manually set)
+            updateGuidelinePosition();
         }
         isDrawing = false;
     }
@@ -664,6 +938,8 @@ export function createInteractiveWidget(containerId, options) {
             mass: 100, // Default total percentage
             values: initialValues
         });
+        // Store original values
+        originalValues[index] = [...initialValues];
     });
 
     // Initialize visibility state
@@ -673,6 +949,7 @@ export function createInteractiveWidget(containerId, options) {
     container.appendChild(canvas);
 
     // Initial draw
+    updateGuidelinePosition();
     drawWidget();
 
 
@@ -693,6 +970,17 @@ export function createInteractiveWidget(containerId, options) {
             activeDistributionIndex = newIndex;
             // Set new distribution as visible by default
             visibilityState[newIndex] = true;
+            // Store original values
+            originalValues[newIndex] = [...initialValues];
+            // Reset guideline scale factor and restore original values
+            guidelineScaleFactor = 1.0;
+            guidelineManuallySet = false; // Reset manual positioning when adding new distribution
+            distributions.forEach((distribution, distIndex) => {
+                if (originalValues[distIndex]) {
+                    distribution.values = [...originalValues[distIndex]];
+                }
+            });
+            updateGuidelinePosition();
             // Trigger renormalization when active distribution changes
             performRenormalization();
         },
@@ -700,6 +988,8 @@ export function createInteractiveWidget(containerId, options) {
             distributions.splice(index, 1);
             // Remove visibility state for this index and reindex the rest
             delete visibilityState[index];
+            // Remove original values for this index and reindex the rest
+            delete originalValues[index];
             // Reindex visibility state for remaining distributions
             const newVisibilityState = {};
             Object.keys(visibilityState).forEach(oldIndex => {
@@ -712,6 +1002,18 @@ export function createInteractiveWidget(containerId, options) {
             });
             Object.assign(visibilityState, newVisibilityState);
             
+            // Reindex original values for remaining distributions
+            const newOriginalValues = {};
+            Object.keys(originalValues).forEach(oldIndex => {
+                const oldIndexNum = parseInt(oldIndex);
+                if (oldIndexNum > index) {
+                    newOriginalValues[oldIndexNum - 1] = originalValues[oldIndexNum];
+                } else {
+                    newOriginalValues[oldIndexNum] = originalValues[oldIndexNum];
+                }
+            });
+            Object.assign(originalValues, newOriginalValues);
+            
             if (activeDistributionIndex >= distributions.length) {
                 activeDistributionIndex = distributions.length - 1;
             }
@@ -723,6 +1025,10 @@ export function createInteractiveWidget(containerId, options) {
             activeDistributionIndex = -1;
             // Clear visibility state
             Object.keys(visibilityState).forEach(key => delete visibilityState[key]);
+            // Clear original values
+            Object.keys(originalValues).forEach(key => delete originalValues[key]);
+            // Clear user modified values
+            Object.keys(userModifiedValues).forEach(key => delete userModifiedValues[key]);
             drawWidget();
             if (options.onChange) {
                 options.onChange(distributions);
@@ -731,6 +1037,16 @@ export function createInteractiveWidget(containerId, options) {
         setActiveDistribution: (index) => {
             if (index >= 0 && index < distributions.length) {
                 activeDistributionIndex = index;
+                // Reset guideline scale factor and restore original values
+                guidelineScaleFactor = 1.0;
+                guidelineManuallySet = false; // Reset manual positioning when switching distributions
+                // Only restore original values for distributions that haven't been user-modified
+                distributions.forEach((distribution, distIndex) => {
+                    if (originalValues[distIndex] && !userModifiedValues[distIndex] && distIndex !== index) {
+                        distribution.values = [...originalValues[distIndex]];
+                    }
+                });
+                updateGuidelinePosition();
                 // Trigger renormalization when active distribution changes
                 performRenormalization();
             }
@@ -739,6 +1055,16 @@ export function createInteractiveWidget(containerId, options) {
             const index = distributions.findIndex(dist => dist.color === color);
             if (index !== -1) {
                 activeDistributionIndex = index;
+                // Reset guideline scale factor and restore original values
+                guidelineScaleFactor = 1.0;
+                guidelineManuallySet = false; // Reset manual positioning when switching distributions
+                // Only restore original values for distributions that haven't been user-modified
+                distributions.forEach((distribution, distIndex) => {
+                    if (originalValues[distIndex] && !userModifiedValues[distIndex] && distIndex !== index) {
+                        distribution.values = [...originalValues[distIndex]];
+                    }
+                });
+                updateGuidelinePosition();
                 // Trigger renormalization when active distribution changes
                 performRenormalization();
             }
@@ -776,6 +1102,22 @@ export function createInteractiveWidget(containerId, options) {
         renormalizeBackgroundDistributions: () => {
             performRenormalization();
         },
+        resetGuideline: () => {
+            guidelineScaleFactor = 1.0;
+            guidelineManuallySet = false; // Reset manual positioning when resetting
+            // Restore original values to all distributions
+            distributions.forEach((distribution, index) => {
+                if (originalValues[index]) {
+                    distribution.values = [...originalValues[index]];
+                }
+            });
+            updateGuidelinePosition();
+            drawWidget();
+            if (options.onChange) {
+                options.onChange(distributions);
+            }
+        },
+        getGuidelineScaleFactor: () => guidelineScaleFactor,
         destroy: () => {
             // Clean up resize observer and event listeners
             resizeObserver.disconnect();
