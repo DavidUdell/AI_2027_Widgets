@@ -352,10 +352,9 @@ export function createInteractiveWidget(containerId, options) {
                         }
                     };
 
-                    // Calculate the current percentage based on guideline position
-                    const currentProbability = 1 - ((currentY - padding) / plotHeight);
+                    // Calculate the current percentage based on actual distribution values
                     const maxCurrentValue = Math.max(...activeDist.values);
-                    const currentPercentage = currentProbability * normalizedPeak / maxCurrentValue;
+                    const currentPercentage = calculateNormalizedPeak(activeDist);
                     
                     // Draw the percentage label on the left with interactive styling
                     ctx.fillStyle = isDraggingGuideline ? activeColorScheme.stroke : '#495057';
