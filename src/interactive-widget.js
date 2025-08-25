@@ -418,8 +418,12 @@ export function createInteractiveWidget(containerId, options) {
                 const medianX = dataToCanvas(medianIndex, 0).x;
                 const colorScheme = colorSchemes[distribution.color];
 
-                // Draw vertical guideline with distribution color
-                ctx.strokeStyle = colorScheme.stroke;
+                // Draw vertical guideline with distribution color (slightly transparent)
+                const hex = colorScheme.stroke.replace('#', '');
+                const r = parseInt(hex.substr(0, 2), 16);
+                const g = parseInt(hex.substr(2, 2), 16);
+                const b = parseInt(hex.substr(4, 2), 16);
+                ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.7)`; // 70% opacity
                 ctx.lineWidth = 1;
                 ctx.setLineDash([5, 5]); // Dashed line
                 ctx.beginPath();
