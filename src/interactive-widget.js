@@ -68,6 +68,10 @@ export function createInteractiveWidget(containerId, options) {
     let dragStartY = 0; // Mouse position when drag started
     let guidelineScaleFactor = 1.0; // Current scale factor for distributions
     let guidelineManuallySet = false; // Track if user has manually positioned the guideline
+    
+    // Second highest distribution peak guideline state
+    let secondHighestPeakY = 0; // Y position for second highest distribution's peak
+    let secondHighestPeakPercentage = 0; // Percentage value for second highest peak
 
     // Grid and styling constants - these will be recalculated on resize
     let padding = 80;
@@ -190,6 +194,9 @@ export function createInteractiveWidget(containerId, options) {
         ctx.fillStyle = '#f8f9fa';
         ctx.fillRect(0, 0, widgetWidth, options.height);
 
+        // Update second highest peak guideline before drawing
+        updateSecondHighestPeakGuideline();
+
         drawGrid();
         drawAxisLabels();
         drawAllDistributions();
@@ -216,6 +223,59 @@ export function createInteractiveWidget(containerId, options) {
             const maxValue = Math.max(...activeDist.values);
             // Convert probability to canvas Y coordinate
             guidelineY = padding + (1 - maxValue) * plotHeight;
+        }
+    }
+
+    /**
+     * Calculate and update second highest distribution's peak guideline
+     */
+    function updateSecondHighestPeakGuideline() {
+        // Get all visible distributions except the active one
+        const visibleDistributions = distributions
+            .map((dist, index) => ({ dist, index }))
+            .filter(({ index }) => visibilityState[index] && index !== activeDistributionIndex);
+        
+        if (visibleDistributions.length === 0) {
+            secondHighestPeakY = 0;
+            secondHighestPeakPercentage = 0;
+            return;
+        }
+        
+        // Get the active distribution's peak for comparison
+        let activeDistributionPeak = 0;
+        if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length) {
+            const activeDist = distributions[activeDistributionIndex];
+            const activeMaxValue = Math.max(...activeDist.values);
+            activeDistributionPeak = calculateNormalizedPeak(activeDist);
+        }
+        
+        // Calculate peak values for all visible distributions using the same normalization as active distribution
+        const peakValues = visibleDistributions.map(({ dist }) => {
+            const maxValue = Math.max(...dist.values);
+            const normalizedPeak = calculateNormalizedPeak(dist);
+            return { maxValue, normalizedPeak };
+        });
+        
+        // Filter to only include peaks that are lower than or equal to the active distribution's peak
+        const peaksBelowActive = peakValues.filter(peak => peak.normalizedPeak <= activeDistributionPeak);
+        
+        if (peaksBelowActive.length === 0) {
+            // If no peaks are below the active distribution, don't show the guideline
+            secondHighestPeakY = 0;
+            secondHighestPeakPercentage = 0;
+            return;
+        }
+        
+        // Find the highest peak among those below the active distribution
+        peaksBelowActive.sort((a, b) => b.normalizedPeak - a.normalizedPeak);
+        const nextHighest = peaksBelowActive[0];
+        
+        if (nextHighest) {
+            secondHighestPeakY = padding + (1 - nextHighest.maxValue) * plotHeight;
+            secondHighestPeakPercentage = nextHighest.normalizedPeak;
+        } else {
+            secondHighestPeakY = 0;
+            secondHighestPeakPercentage = 0;
         }
     }
 
@@ -430,6 +490,41 @@ export function createInteractiveWidget(containerId, options) {
             ctx.textAlign = 'right';
             ctx.textBaseline = 'middle';
             ctx.fillText('ε%', padding - 10, options.height - padding);
+        }
+
+        // Draw second highest distribution's peak guideline (non-draggable)
+        if (secondHighestPeakY > 0 && secondHighestPeakPercentage > 0) {
+            // Draw horizontal guideline for second highest peak
+            ctx.strokeStyle = '#adb5bd'; // Lighter gray color for non-draggable guideline
+            ctx.lineWidth = 1;
+            ctx.setLineDash([3, 3]); // Different dash pattern to distinguish from active guideline
+            ctx.beginPath();
+            ctx.moveTo(padding, secondHighestPeakY);
+            ctx.lineTo(widgetWidth - padding, secondHighestPeakY);
+            ctx.stroke();
+            ctx.setLineDash([]); // Reset to solid lines
+
+            // Format the percentage value
+            const formatPercentage = (value) => {
+                if (value < 10) {
+                    return value.toFixed(2) + '%';
+                } else {
+                    return Math.round(value) + '%';
+                }
+            };
+
+            // Draw the percentage label on the right side
+            ctx.fillStyle = '#6c757d';
+            ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            
+            // Draw text without background rectangle (non-draggable)
+            const labelText = formatPercentage(secondHighestPeakPercentage);
+            const labelX = widgetWidth - padding + 5;
+            
+            // Draw text
+            ctx.fillText(labelText, labelX, secondHighestPeakY);
         }
     }
 
