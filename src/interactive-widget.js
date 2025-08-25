@@ -686,28 +686,32 @@ export function createInteractiveWidget(containerId, options) {
 
         // Handle guideline dragging
         if (isDraggingGuideline) {
-            // Constrain guideline to plot area
-            const newY = Math.max(padding, Math.min(options.height - padding, y));
+            // Constrain guideline to plot area with minimum constraint to prevent distribution destruction
+            const minY = padding + plotHeight * 0.01; // Minimum 1% from bottom
+            const newY = Math.max(minY, Math.min(options.height - padding, y));
             guidelineY = newY;
             
-            // Calculate new scale factor based on guideline position
-            if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length) {
-                const activeDist = distributions[activeDistributionIndex];
-                const maxValue = Math.max(...activeDist.values);
-                const currentProbability = 1 - ((newY - padding) / plotHeight);
-                guidelineScaleFactor = currentProbability / maxValue;
-                
-                // Apply scaling to all distributions based on their current values
-                distributions.forEach((distribution, index) => {
-                    if (visibilityState[index]) {
-                        // Use current values for scaling (preserve user's work)
-                        const currentValues = [...distribution.values];
-                        for (let i = 0; i < distribution.values.length; i++) {
-                            distribution.values[i] = currentValues[i] * guidelineScaleFactor;
+                            // Calculate new scale factor based on guideline position
+                if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length) {
+                    const activeDist = distributions[activeDistributionIndex];
+                    const maxValue = Math.max(...activeDist.values);
+                    const currentProbability = 1 - ((newY - padding) / plotHeight);
+                    
+                    // Ensure scale factor doesn't go below a minimum threshold to prevent distribution destruction
+                    const minScaleFactor = 0.01; // Minimum 1% of original scale
+                    guidelineScaleFactor = Math.max(minScaleFactor, currentProbability / maxValue);
+                    
+                    // Apply scaling to all distributions based on their current values
+                    distributions.forEach((distribution, index) => {
+                        if (visibilityState[index]) {
+                            // Use current values for scaling (preserve user's work)
+                            const currentValues = [...distribution.values];
+                            for (let i = 0; i < distribution.values.length; i++) {
+                                distribution.values[i] = currentValues[i] * guidelineScaleFactor;
+                            }
                         }
-                    }
-                });
-            }
+                    });
+                }
             
             drawWidget();
             if (options.onChange) {
