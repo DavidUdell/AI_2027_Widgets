@@ -228,7 +228,7 @@ export function createInteractiveWidget(containerId, options) {
         }
         
         // Calculate label dimensions (matching the drawing function)
-        const labelText = "100%"; // Use a typical label for measurement
+        const labelText = "9.99%"; // Use the largest label text for measurement
         ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
         const textMetrics = ctx.measureText(labelText);
         const labelWidth = textMetrics.width + 8;
