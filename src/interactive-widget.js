@@ -466,6 +466,7 @@ export function createInteractiveWidget(containerId, options) {
         });
 
         // Draw the ε% label at the bottom left, but hide it when horizontal guideline is at visual floor
+        // or when y-axis has been dragged to the visual floor
         const isAtVisualFloor = activeDistributionIndex >= 0 && 
                                activeDistributionIndex < distributions.length && 
                                distributions[activeDistributionIndex].values.reduce((sum, val) => sum + val, 0) > 0;
@@ -475,7 +476,10 @@ export function createInteractiveWidget(containerId, options) {
             const maxValue = Math.max(...activeDist.values);
             const isGuidelineAtFloor = Math.abs(maxValue - FLOOR_PROBABILITY_EPSILON) < 1e-10;
             
-            if (!isGuidelineAtFloor) {
+            // Check if y-axis has been dragged to visual floor (scale factor is very small)
+            const isYAxisAtVisualFloor = guidelineScaleFactor < 0.1; // Threshold for visual floor
+            
+            if (!isGuidelineAtFloor && !isYAxisAtVisualFloor) {
                 ctx.fillStyle = '#495057';
                 ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
                 ctx.textAlign = 'right';
