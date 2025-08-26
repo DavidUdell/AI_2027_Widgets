@@ -606,7 +606,7 @@ export function createInteractiveWidget(containerId, options) {
             
             if (i === numYears - 1) {
                 // Multi-line label for the rightmost bin
-                const lines = [">2039", "or never"];
+                const lines = [">2039", "or AGI never"];
                 const lineHeight = 14;
                 const baseY = options.height - padding / 2 - 18; // Align with other labels
                 
@@ -639,7 +639,7 @@ export function createInteractiveWidget(containerId, options) {
         ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('Probability AGI Invented In', 0, 0);
+        ctx.fillText('AGI Invented In', 0, 0);
         ctx.restore();
     }
 
