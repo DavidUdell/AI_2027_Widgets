@@ -970,8 +970,10 @@ export function createInteractiveWidget(containerId, options) {
     canvas.addEventListener('pointerup', handlePointerUp);
     canvas.addEventListener('pointerleave', handlePointerUp);
 
-    // Prevent context menu
+    // Prevent context menu and touch scrolling
     canvas.addEventListener('contextmenu', e => e.preventDefault());
+    canvas.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+    canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
 
 
 
