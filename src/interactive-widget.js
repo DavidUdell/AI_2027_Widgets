@@ -639,7 +639,7 @@ export function createInteractiveWidget(containerId, options) {
         ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('Probability AGI First Built In', 0, 0);
+        ctx.fillText('Probability AGI Invented In', 0, 0);
         ctx.restore();
     }
 

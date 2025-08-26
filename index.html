@@ -231,14 +231,9 @@
     <div class="widget-container">
         <h2>AGI Timelines</h2>
         <div class="instructions">
-            <strong>Instructions:</strong> Sketch a probability distribution by
-            selecting it from the dropdown and drawing with the mouse. Toggle
-            the visibility of other distributions in the background with their
-            checkboxes. The vertical dotted lines indicate median distribution
-            quarters. Manually rescale the horizontal dotted percentage line by
-            dragging the percentage. The furthest-right bin represents "AGI is
-            first developed after the year 2039 or never," so you should
-            probably place a larger spike at that rightmost edge.
+            <strong>Instructions:</strong> (Turn to landscape on mobile.)
+            Vertical dotted lines are median quarters. The rightmost bin
+            represents "AGI invented after 2039 <i>or</i> AGI never."
         </div>
 
         <!-- Distribution Controls -->
@@ -248,7 +243,7 @@
                 <!-- Color Selection -->
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <label for="distribution-color" style="font-weight:
-                    bold;">Current:</label>
+                    bold;">Drawing:</label>
                     <select id="distribution-color" style="padding: 4px 8px;
                     border: 1px solid #ccc; border-radius: 4px; font-size:
                     14px;">
@@ -263,7 +258,7 @@
                 
                 <!-- Visibility Toggles -->
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-weight: bold;">Show:</span>
+                    <span style="font-weight: bold;">Background:</span>
                     <div id="visibility-toggles" style="display: flex; gap:
                     16px; flex-wrap: wrap;">
                         <!-- Checkboxes will be added here dynamically -->
