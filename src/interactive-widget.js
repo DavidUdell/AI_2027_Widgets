@@ -613,9 +613,14 @@ export function createInteractiveWidget(containerId, options) {
                 lines.forEach((line, lineIndex) => {
                     ctx.fillText(line, x, baseY + lineIndex * lineHeight);
                 });
-            } else {
-                // Single line for other years
+            } else if (i === 0) {
+                // First year - show full year
                 ctx.fillText(year.toString(), x, options.height - padding / 2 - 18);
+            } else {
+                // Middle years - show abbreviated year with apostrophe
+                const yearDigits = year.toString().slice(-2);
+                const apostrophe = '\u2019';
+                ctx.fillText(`${apostrophe}${yearDigits}`, x, options.height - padding / 2 - 18);
             }
         }
 
@@ -624,7 +629,7 @@ export function createInteractiveWidget(containerId, options) {
         ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
-        ctx.fillText('Quarters Until 2040', widgetWidth / 2, options.height - padding / 2 + 7);
+        ctx.fillText('Quarters', widgetWidth / 2, options.height - padding / 2 + 7);
 
         // Y-axis title
         ctx.save();
@@ -970,8 +975,10 @@ export function createInteractiveWidget(containerId, options) {
     canvas.addEventListener('pointerup', handlePointerUp);
     canvas.addEventListener('pointerleave', handlePointerUp);
 
-    // Prevent context menu
+    // Prevent context menu and touch scrolling
     canvas.addEventListener('contextmenu', e => e.preventDefault());
+    canvas.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+    canvas.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
 
 
 
