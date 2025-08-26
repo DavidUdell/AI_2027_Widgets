@@ -231,14 +231,7 @@
     <div class="widget-container">
         <h2>AGI Timelines</h2>
         <div class="instructions">
-            <strong>Instructions:</strong> Sketch a probability distribution by
-            selecting it from the dropdown and drawing with the mouse. Toggle
-            the visibility of other distributions in the background with their
-            checkboxes. The vertical dotted lines indicate median distribution
-            quarters. Manually rescale the horizontal dotted percentage line by
-            dragging the percentage. The furthest-right bin represents "AGI is
-            first developed after the year 2039 or never," so you should
-            probably place a larger spike at that rightmost edge.
+            <strong>Note:</strong> Turn to landscape on mobile.
         </div>
 
         <!-- Distribution Controls -->
@@ -248,7 +241,7 @@
                 <!-- Color Selection -->
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <label for="distribution-color" style="font-weight:
-                    bold;">Current:</label>
+                    bold;">Drawing:</label>
                     <select id="distribution-color" style="padding: 4px 8px;
                     border: 1px solid #ccc; border-radius: 4px; font-size:
                     14px;">
@@ -263,7 +256,7 @@
                 
                 <!-- Visibility Toggles -->
                 <div style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-weight: bold;">Show:</span>
+                    <span style="font-weight: bold;">Background:</span>
                     <div id="visibility-toggles" style="display: flex; gap:
                     16px; flex-wrap: wrap;">
                         <!-- Checkboxes will be added here dynamically -->
@@ -276,13 +269,8 @@
         <div id="interactive-widget"></div>
         <div style="margin-top: 50px;">
             <div class="instructions">
-                <strong>Instructions:</strong> The KL divergence of each
-                distribution with respect to a ground truth distribution is
-                shown in the table. KL divergence is a measure of how much two
-                distributions on the same event space differ. Lower values
-                indicate better agreement, with 0 indicating identical
-                distributions. The table is ordered from most to least
-                matching.
+                <strong>Note:</strong> <i>Lower</i> values indicate better
+                agreement, with 0.00 being perfect agreement.
             </div>
             <div id="calculator-widget"></div>
         </div>
@@ -373,7 +361,9 @@
                 height: 400,
                 startYear: 2026,
                 endYear: 2040,
-                distributions: widget.getDistributions()
+                distributions: widget.getDistributions(),
+                activeDistributionIndex: widget.getActiveDistributionIndex(),
+                visibilityState: widget.getVisibilityState()
             });
 
             // Interactive widget controls
@@ -424,6 +414,10 @@
                     // Add event listener
                     checkbox.addEventListener('change', () => {
                         widget.setDistributionVisibility(index, checkbox.checked);
+                        // Update calculator widget when visibility changes
+                        if (calculatorWidget) {
+                            calculatorWidget.setVisibilityState(widget.getVisibilityState());
+                        }
                     });
                     
                     visibilityTogglesContainer.appendChild(toggle);
@@ -480,6 +474,11 @@
                 widget.setActiveDistributionByColor(color);
                 updateVisibilityToggles();
                 
+                // Update the calculator widget when active distribution changes
+                if (calculatorWidget) {
+                    calculatorWidget.setActiveDistributionIndex(widget.getActiveDistributionIndex());
+                }
+                
                 // Update the distributions when color changes
                 const distributions = widget.getDistributions();
                 const selectedIndex = distributions.findIndex(dist => dist.color === color);
@@ -490,6 +489,8 @@
             widget.setOnChange((distributions) => {
                 if (calculatorWidget) {
                     calculatorWidget.updateDistributions(distributions);
+                    calculatorWidget.setActiveDistributionIndex(widget.getActiveDistributionIndex());
+                    calculatorWidget.setVisibilityState(widget.getVisibilityState());
                 }
                 // Update the UI controls to reflect the active distribution
                 updateColorSelect();
@@ -500,6 +501,11 @@
             createVisibilityToggles();
             updateColorSelect();
             updateVisibilityToggles();
+            
+            // Initialize calculator widget with current state after Interactive widget is fully set up
+            if (calculatorWidget) {
+                calculatorWidget.setVisibilityState(widget.getVisibilityState());
+            }
             
 
         });

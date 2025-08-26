@@ -242,12 +242,10 @@ export function createInteractiveWidget(containerId, options) {
             const scaleFactor = maxVisibleProbability / maxValue;
             guidelineScaleFactor = scaleFactor;
             
-            // Apply scaling to all visible distributions
+            // Apply scaling to all distributions
             distributions.forEach((dist, index) => {
-                if (visibilityState[index]) {
-                    for (let i = 0; i < dist.values.length; i++) {
-                        dist.values[i] *= scaleFactor;
-                    }
+                for (let i = 0; i < dist.values.length; i++) {
+                    dist.values[i] *= scaleFactor;
                 }
             });
             
@@ -304,8 +302,8 @@ export function createInteractiveWidget(containerId, options) {
             return { maxValue, normalizedPeak };
         });
         
-        // Filter to only include peaks that are lower than or equal to the active distribution's peak
-        const peaksBelowActive = peakValues.filter(peak => peak.normalizedPeak <= activeDistributionPeak);
+        // Filter to only include peaks that are strictly lower than the active distribution's peak
+        const peaksBelowActive = peakValues.filter(peak => peak.normalizedPeak < activeDistributionPeak);
         
         if (peaksBelowActive.length === 0) {
             // If no peaks are below the active distribution, don't show the guideline
@@ -517,6 +515,13 @@ export function createInteractiveWidget(containerId, options) {
             }
         });
 
+        // Draw "Medians" label at the top center
+        ctx.fillStyle = '#495057';
+        ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText('Medians', widgetWidth / 2, padding - 35);
+
         // Draw the ε% label at the bottom left, but hide it when horizontal guideline is at visual floor
         // or when y-axis has been dragged to the visual floor
         const isAtVisualFloor = activeDistributionIndex >= 0 && 
@@ -606,7 +611,7 @@ export function createInteractiveWidget(containerId, options) {
             
             if (i === numYears - 1) {
                 // Multi-line label for the rightmost bin
-                const lines = [">2039", "or never"];
+                const lines = [">2039", "or AGI never"];
                 const lineHeight = 14;
                 const baseY = options.height - padding / 2 - 18; // Align with other labels
                 
@@ -639,7 +644,7 @@ export function createInteractiveWidget(containerId, options) {
         ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('Probability AGI First Built In', 0, 0);
+        ctx.fillText('AGI Invented', 0, 0);
         ctx.restore();
     }
 
@@ -849,12 +854,10 @@ export function createInteractiveWidget(containerId, options) {
                     
                     // Apply scaling to all distributions based on their current values
                     distributions.forEach((distribution, index) => {
-                        if (visibilityState[index]) {
-                            // Use current values for scaling (preserve user's work)
-                            const currentValues = [...distribution.values];
-                            for (let i = 0; i < distribution.values.length; i++) {
-                                distribution.values[i] = currentValues[i] * guidelineScaleFactor;
-                            }
+                        // Use current values for scaling (preserve user's work)
+                        const currentValues = [...distribution.values];
+                        for (let i = 0; i < distribution.values.length; i++) {
+                            distribution.values[i] = currentValues[i] * guidelineScaleFactor;
                         }
                     });
                 }
@@ -943,7 +946,7 @@ export function createInteractiveWidget(containerId, options) {
 
         // Renormalize all background distributions relative to the active distribution
         distributions.forEach((distribution, index) => {
-            if (index !== activeDistributionIndex && visibilityState[index]) {
+            if (index !== activeDistributionIndex) {
                 const distributionTotalMass = distribution.values.reduce((sum, val) => sum + val, 0);
                 
                 if (distributionTotalMass > 0) {
