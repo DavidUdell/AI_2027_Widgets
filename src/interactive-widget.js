@@ -304,8 +304,8 @@ export function createInteractiveWidget(containerId, options) {
             return { maxValue, normalizedPeak };
         });
         
-        // Filter to only include peaks that are lower than or equal to the active distribution's peak
-        const peaksBelowActive = peakValues.filter(peak => peak.normalizedPeak <= activeDistributionPeak);
+        // Filter to only include peaks that are strictly lower than the active distribution's peak
+        const peaksBelowActive = peakValues.filter(peak => peak.normalizedPeak < activeDistributionPeak);
         
         if (peaksBelowActive.length === 0) {
             // If no peaks are below the active distribution, don't show the guideline
