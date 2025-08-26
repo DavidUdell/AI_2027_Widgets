@@ -624,7 +624,7 @@ export function createInteractiveWidget(containerId, options) {
         ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
-        ctx.fillText('Quarters Until 2040', widgetWidth / 2, options.height - padding / 2 + 7);
+        ctx.fillText('Quarters', widgetWidth / 2, options.height - padding / 2 + 7);
 
         // Y-axis title
         ctx.save();
