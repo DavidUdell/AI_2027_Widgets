@@ -86,6 +86,7 @@ export function createInteractiveWidget(containerId, options) {
         const containerRect = container.getBoundingClientRect();
         const newWidth = containerRect.width - 20; // Account for padding
         
+        // Always update if width changed, or if called during distribution switches
         if (newWidth !== widgetWidth) {
             widgetWidth = newWidth;
             canvas.width = widgetWidth;
@@ -97,6 +98,10 @@ export function createInteractiveWidget(containerId, options) {
             periodStep = plotWidth / (numPeriods - 1);
             
             // Redraw with new dimensions
+            drawWidget();
+        } else {
+            // Even if width hasn't changed, ensure proper scaling by redrawing
+            // This is important when switching distributions
             drawWidget();
         }
     }
@@ -211,6 +216,49 @@ export function createInteractiveWidget(containerId, options) {
         const normalizationFactor = distributionSum > 0 ? totalMass / (distributionSum * 100) : 0;
         const originalMaxValue = Math.max(...distribution.values);
         return originalMaxValue * normalizationFactor * 100;
+    }
+
+    /**
+     * Auto-scale distribution to fit within visible area when switching
+     */
+    function autoScaleDistribution(distributionIndex) {
+        if (distributionIndex < 0 || distributionIndex >= distributions.length) {
+            return;
+        }
+        
+        const distribution = distributions[distributionIndex];
+        const maxValue = Math.max(...distribution.values);
+        
+        if (maxValue <= 0) {
+            return; // No scaling needed for empty distribution
+        }
+        
+        // Calculate the maximum visible height (allow distribution to go to ceiling)
+        const maxVisibleHeight = plotHeight;
+        const maxVisibleProbability = maxVisibleHeight / plotHeight;
+        
+        // If the distribution is too tall, scale it down
+        if (maxValue > maxVisibleProbability) {
+            const scaleFactor = maxVisibleProbability / maxValue;
+            guidelineScaleFactor = scaleFactor;
+            
+            // Apply scaling to all visible distributions
+            distributions.forEach((dist, index) => {
+                if (visibilityState[index]) {
+                    for (let i = 0; i < dist.values.length; i++) {
+                        dist.values[i] *= scaleFactor;
+                    }
+                }
+            });
+            
+            // Update guideline position to match the new scale
+            guidelineY = padding + (1 - maxVisibleProbability) * plotHeight;
+            guidelineManuallySet = false; // Allow automatic positioning
+        } else {
+            // If distribution fits, reset to original scale
+            guidelineScaleFactor = 1.0;
+            guidelineManuallySet = false;
+        }
     }
 
     /**
@@ -980,6 +1028,10 @@ export function createInteractiveWidget(containerId, options) {
                     distribution.values = [...originalValues[distIndex]];
                 }
             });
+            // Update dimensions to ensure proper scaling to available widget area
+            updateDimensions();
+            // Auto-scale the active distribution to fit within visible area
+            autoScaleDistribution(newIndex);
             updateGuidelinePosition();
             // Trigger renormalization when active distribution changes
             performRenormalization();
@@ -1017,6 +1069,8 @@ export function createInteractiveWidget(containerId, options) {
             if (activeDistributionIndex >= distributions.length) {
                 activeDistributionIndex = distributions.length - 1;
             }
+            // Update dimensions to ensure proper scaling to available widget area
+            updateDimensions();
             // Trigger renormalization if active distribution changed
             performRenormalization();
         },
@@ -1040,12 +1094,16 @@ export function createInteractiveWidget(containerId, options) {
                 // Reset guideline scale factor and restore original values
                 guidelineScaleFactor = 1.0;
                 guidelineManuallySet = false; // Reset manual positioning when switching distributions
-                // Only restore original values for distributions that haven't been user-modified
+                // Restore original values for all distributions that haven't been user-modified
                 distributions.forEach((distribution, distIndex) => {
-                    if (originalValues[distIndex] && !userModifiedValues[distIndex] && distIndex !== index) {
+                    if (originalValues[distIndex] && !userModifiedValues[distIndex]) {
                         distribution.values = [...originalValues[distIndex]];
                     }
                 });
+                // Update dimensions to ensure proper scaling to available widget area
+                updateDimensions();
+                // Auto-scale the active distribution to fit within visible area
+                autoScaleDistribution(index);
                 updateGuidelinePosition();
                 // Trigger renormalization when active distribution changes
                 performRenormalization();
@@ -1058,12 +1116,16 @@ export function createInteractiveWidget(containerId, options) {
                 // Reset guideline scale factor and restore original values
                 guidelineScaleFactor = 1.0;
                 guidelineManuallySet = false; // Reset manual positioning when switching distributions
-                // Only restore original values for distributions that haven't been user-modified
+                // Restore original values for all distributions that haven't been user-modified
                 distributions.forEach((distribution, distIndex) => {
-                    if (originalValues[distIndex] && !userModifiedValues[distIndex] && distIndex !== index) {
+                    if (originalValues[distIndex] && !userModifiedValues[distIndex]) {
                         distribution.values = [...originalValues[distIndex]];
                     }
                 });
+                // Update dimensions to ensure proper scaling to available widget area
+                updateDimensions();
+                // Auto-scale the active distribution to fit within visible area
+                autoScaleDistribution(index);
                 updateGuidelinePosition();
                 // Trigger renormalization when active distribution changes
                 performRenormalization();
@@ -1111,6 +1173,8 @@ export function createInteractiveWidget(containerId, options) {
                     distribution.values = [...originalValues[index]];
                 }
             });
+            // Update dimensions to ensure proper scaling to available widget area
+            updateDimensions();
             updateGuidelinePosition();
             drawWidget();
             if (options.onChange) {
