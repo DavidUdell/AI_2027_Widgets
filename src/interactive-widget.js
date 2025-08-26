@@ -829,9 +829,8 @@ export function createInteractiveWidget(containerId, options) {
 
         // Handle guideline dragging
         if (isDraggingGuideline) {
-            // Constrain guideline to plot area with minimum constraint to prevent distribution destruction
-            const minY = padding + plotHeight * 0.01; // Minimum 1% from bottom
-            const newY = Math.max(minY, Math.min(options.height - padding, y));
+            // Allow guideline to be dragged to the visual ceiling (no minimum constraint)
+            const newY = Math.max(padding, Math.min(options.height - padding, y));
             guidelineY = newY;
             
                             // Calculate new scale factor based on guideline position
@@ -840,9 +839,8 @@ export function createInteractiveWidget(containerId, options) {
                     const maxValue = Math.max(...activeDist.values);
                     const currentProbability = 1 - ((newY - padding) / plotHeight);
                     
-                    // Ensure scale factor doesn't go below a minimum threshold to prevent distribution destruction
-                    const minScaleFactor = 0.01; // Minimum 1% of original scale
-                    guidelineScaleFactor = Math.max(minScaleFactor, currentProbability / maxValue);
+                    // Allow scale factor to go to 0 (visual ceiling) - no minimum constraint
+                    guidelineScaleFactor = Math.max(0, currentProbability / maxValue);
                     
                     // Apply scaling to all distributions based on their current values
                     distributions.forEach((distribution, index) => {
