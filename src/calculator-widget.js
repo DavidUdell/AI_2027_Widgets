@@ -1,12 +1,12 @@
 /**
  * AI 2027 - Calculator Widget
- * KL Divergence Calculator - shows all distributions' KL divergence against a ground truth
+ * KL Divergence Calculator - shows all distributions' KL divergence against the Drawing distribution
  */
 
 import { calculateKLDivergence } from './KL-divergence.js';
 
 /**
- * Creates a KL Divergence Calculator widget that shows all distributions' scores against a ground truth
+ * Creates a KL Divergence Calculator widget that shows all distributions' scores against the Drawing distribution
  * @param {string} containerId - The ID of the HTML element to insert the widget into
  * @param {Object} options - Widget configuration options
  * @param {number} options.width - Widget width in pixels
@@ -14,6 +14,8 @@ import { calculateKLDivergence } from './KL-divergence.js';
  * @param {number} options.startYear - Starting year for the distribution
  * @param {number} options.endYear - Ending year for the distribution
  * @param {Array<Object>} options.distributions - Array of distribution objects with color, mass, and values
+ * @param {number} options.activeDistributionIndex - Index of the active (Drawing) distribution to use as ground truth
+ * @param {Object} options.visibilityState - Object mapping distribution indices to visibility booleans
  */
 export function createCalculatorWidget(containerId, options) {
     const container = document.getElementById(containerId);
@@ -54,7 +56,7 @@ export function createCalculatorWidget(containerId, options) {
     selectionTitle.style.marginBottom = '15px';
     selectionTitle.style.textAlign = 'center';
     
-    // Create ground truth selection container
+    // Create ground truth display container (no longer a selection)
     const truthContainer = document.createElement('div');
     truthContainer.style.display = 'flex';
     truthContainer.style.justifyContent = 'center';
@@ -68,15 +70,13 @@ export function createCalculatorWidget(containerId, options) {
     truthLabel.style.color = '#2c3e50';
     truthLabel.style.fontSize = '14px';
     
-    const truthSelect = document.createElement('select');
-    truthSelect.style.padding = '4px 8px';
-    truthSelect.style.border = '1px solid #ccc';
-    truthSelect.style.borderRadius = '4px';
-    truthSelect.style.fontSize = '14px';
-    truthSelect.style.fontWeight = 'normal';
+    const truthDisplay = document.createElement('span');
+    truthDisplay.style.fontSize = '14px';
+    truthDisplay.style.fontWeight = 'bold';
+    truthDisplay.style.color = '#2c3e50';
     
     truthContainer.appendChild(truthLabel);
-    truthContainer.appendChild(truthSelect);
+    truthContainer.appendChild(truthDisplay);
     
     selectionControls.appendChild(selectionTitle);
     selectionControls.appendChild(truthContainer);
@@ -106,55 +106,21 @@ export function createCalculatorWidget(containerId, options) {
         yellow: '#ffc107'
     };
 
-    // Track the currently selected ground truth color to preserve selection
-    let selectedGroundTruthColor = null;
-
     /**
-     * Populate dropdown options
+     * Update the ground truth display
      */
-    function populateDropdowns() {
+    function updateGroundTruthDisplay() {
         if (!options.distributions || options.distributions.length === 0) {
+            truthDisplay.textContent = 'None';
             return;
         }
 
-        // Remember the currently selected ground truth color
-        const currentSelectedIndex = truthSelect.value ? parseInt(truthSelect.value) : -1;
-        if (currentSelectedIndex >= 0 && currentSelectedIndex < options.distributions.length) {
-            selectedGroundTruthColor = options.distributions[currentSelectedIndex].color;
-        }
-
-        // Clear existing options
-        truthSelect.innerHTML = '';
-
-        // Add distribution options
-        options.distributions.forEach((distribution, index) => {
-            const option = document.createElement('option');
-            option.value = index.toString();
-            option.textContent = `${distribution.color.charAt(0).toUpperCase() + distribution.color.slice(1)}`;
-            
-            truthSelect.appendChild(option);
-        });
-
-        // Restore the previously selected ground truth or set default to first distribution
-        if (options.distributions.length > 0) {
-            if (selectedGroundTruthColor) {
-                // Try to find the distribution with the previously selected color
-                const targetIndex = options.distributions.findIndex(dist => dist.color === selectedGroundTruthColor);
-                if (targetIndex !== -1) {
-                    truthSelect.value = targetIndex.toString();
-                } else {
-                    // If the previously selected color is no longer available, default to first
-                    truthSelect.value = '0';
-                    selectedGroundTruthColor = options.distributions[0].color;
-                }
-            } else {
-                // First time initialization
-                truthSelect.value = '0';
-                selectedGroundTruthColor = options.distributions[0].color;
-            }
-            
-            // Trigger initial results calculation
-            updateResults();
+        const activeIndex = options.activeDistributionIndex || 0;
+        if (activeIndex >= 0 && activeIndex < options.distributions.length) {
+            const activeDistribution = options.distributions[activeIndex];
+            truthDisplay.textContent = activeDistribution.color.charAt(0).toUpperCase() + activeDistribution.color.slice(1);
+        } else {
+            truthDisplay.textContent = 'None';
         }
     }
 
@@ -185,31 +151,39 @@ export function createCalculatorWidget(containerId, options) {
      * Update KL divergence results for all distributions
      */
     function updateResults() {
-        const truthIndex = truthSelect.value ? parseInt(truthSelect.value) : -1;
+        const activeIndex = options.activeDistributionIndex || 0;
 
         // Clear results section
         resultsSection.innerHTML = '';
 
-        // Check if ground truth is selected
-        if (truthIndex === -1 || !options.distributions || options.distributions.length === 0) {
+        // Check if ground truth is available
+        if (activeIndex < 0 || !options.distributions || options.distributions.length === 0 || 
+            activeIndex >= options.distributions.length) {
             resultsSection.style.display = 'none';
             return;
         }
 
-        // Get selected ground truth
-        const truth = options.distributions[truthIndex];
+        // Get selected ground truth (Drawing distribution)
+        const truth = options.distributions[activeIndex];
 
-        // Calculate KL divergence for all distributions
-        const klScores = options.distributions.map((distribution, index) => {
-            const klDivergence = calculateKLDivergence(
-                distribution.values, truth.values
-            );
-            return {
-                index,
-                distribution,
-                klDivergence
-            };
-        });
+        // Calculate KL divergence for all distributions except the ground truth
+        const klScores = options.distributions
+            .map((distribution, index) => {
+                const klDivergence = calculateKLDivergence(
+                    distribution.values, truth.values
+                );
+                return {
+                    index,
+                    distribution,
+                    klDivergence
+                };
+            })
+            .filter(score => {
+                // Exclude the ground truth distribution
+                if (score.index === activeIndex) return false;
+                // Only include distributions that are visible in the Interactive widget
+                return options.visibilityState && options.visibilityState[score.index] === true;
+            });
 
         // Sort by KL divergence (best scores first)
         klScores.sort((a, b) => a.klDivergence - b.klDivergence);
@@ -246,36 +220,35 @@ export function createCalculatorWidget(containerId, options) {
             resultsContainer.appendChild(scoreRow);
         });
 
-
-
         resultsSection.appendChild(resultsContainer);
     }
-
-    // Add event listener
-    truthSelect.addEventListener('change', () => {
-        // Update the tracked selected color when user manually changes selection
-        const selectedIndex = truthSelect.value ? parseInt(truthSelect.value) : -1;
-        if (selectedIndex >= 0 && selectedIndex < options.distributions.length) {
-            selectedGroundTruthColor = options.distributions[selectedIndex].color;
-        }
-        updateResults();
-    });
 
     // Append to container
     container.appendChild(mainContainer);
 
-    // Initialize dropdowns
-    populateDropdowns();
+    // Initialize display
+    updateGroundTruthDisplay();
+    // Don't show results initially - wait for proper visibility state
+    resultsSection.style.display = 'none';
 
     // Return methods for external control
     return {
         updateDistributions: (newDistributions) => {
             options.distributions = newDistributions;
-            populateDropdowns();
+            updateGroundTruthDisplay();
+            updateResults();
+        },
+        setActiveDistributionIndex: (newActiveIndex) => {
+            options.activeDistributionIndex = newActiveIndex;
+            updateGroundTruthDisplay();
+            updateResults();
+        },
+        setVisibilityState: (newVisibilityState) => {
+            options.visibilityState = newVisibilityState;
             updateResults();
         },
         redraw: () => {
-            populateDropdowns();
+            updateGroundTruthDisplay();
             updateResults();
         }
     };
