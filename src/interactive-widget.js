@@ -849,8 +849,8 @@ export function createInteractiveWidget(containerId, options) {
                     const maxValue = Math.max(...activeDist.values);
                     const currentProbability = 1 - ((newY - padding) / plotHeight);
                     
-                    // Allow scale factor to go to 0 (visual ceiling) - no minimum constraint
-                    guidelineScaleFactor = Math.max(0, currentProbability / maxValue);
+                    // Allow scale factor to go to floor probability epsilon (maintains minimum visibility)
+                    guidelineScaleFactor = Math.max(FLOOR_PROBABILITY_EPSILON, currentProbability / maxValue);
                     
                     // Apply scaling to all distributions based on their current values
                     distributions.forEach((distribution, index) => {
