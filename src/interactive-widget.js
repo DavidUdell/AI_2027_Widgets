@@ -242,12 +242,10 @@ export function createInteractiveWidget(containerId, options) {
             const scaleFactor = maxVisibleProbability / maxValue;
             guidelineScaleFactor = scaleFactor;
             
-            // Apply scaling to all visible distributions
+            // Apply scaling to all distributions
             distributions.forEach((dist, index) => {
-                if (visibilityState[index]) {
-                    for (let i = 0; i < dist.values.length; i++) {
-                        dist.values[i] *= scaleFactor;
-                    }
+                for (let i = 0; i < dist.values.length; i++) {
+                    dist.values[i] *= scaleFactor;
                 }
             });
             
@@ -856,12 +854,10 @@ export function createInteractiveWidget(containerId, options) {
                     
                     // Apply scaling to all distributions based on their current values
                     distributions.forEach((distribution, index) => {
-                        if (visibilityState[index]) {
-                            // Use current values for scaling (preserve user's work)
-                            const currentValues = [...distribution.values];
-                            for (let i = 0; i < distribution.values.length; i++) {
-                                distribution.values[i] = currentValues[i] * guidelineScaleFactor;
-                            }
+                        // Use current values for scaling (preserve user's work)
+                        const currentValues = [...distribution.values];
+                        for (let i = 0; i < distribution.values.length; i++) {
+                            distribution.values[i] = currentValues[i] * guidelineScaleFactor;
                         }
                     });
                 }
@@ -950,7 +946,7 @@ export function createInteractiveWidget(containerId, options) {
 
         // Renormalize all background distributions relative to the active distribution
         distributions.forEach((distribution, index) => {
-            if (index !== activeDistributionIndex && visibilityState[index]) {
+            if (index !== activeDistributionIndex) {
                 const distributionTotalMass = distribution.values.reduce((sum, val) => sum + val, 0);
                 
                 if (distributionTotalMass > 0) {
