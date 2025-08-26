@@ -201,19 +201,24 @@ export function createCalculatorWidget(containerId, options) {
         klScores.forEach((score) => {
             const scoreRow = document.createElement('div');
             scoreRow.style.display = 'flex';
-            scoreRow.style.justifyContent = 'space-between';
+            scoreRow.style.justifyContent = 'center';
             scoreRow.style.alignItems = 'center';
             scoreRow.style.padding = '4px 0';
             scoreRow.style.fontFamily = 'monospace';
             scoreRow.style.fontSize = '13px';
+            scoreRow.style.gap = '40px';
 
             // Distribution name
             const nameDiv = document.createElement('span');
             nameDiv.textContent = score.distribution.color.charAt(0).toUpperCase() + score.distribution.color.slice(1);
+            nameDiv.style.minWidth = '80px';
+            nameDiv.style.textAlign = 'center';
 
             // KL divergence score
             const scoreDiv = document.createElement('span');
             scoreDiv.textContent = formatKLDivergence(score.klDivergence);
+            scoreDiv.style.minWidth = '60px';
+            scoreDiv.style.textAlign = 'center';
 
             scoreRow.appendChild(nameDiv);
             scoreRow.appendChild(scoreDiv);
