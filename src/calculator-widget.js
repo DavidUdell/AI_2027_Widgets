@@ -47,7 +47,7 @@ export function createCalculatorWidget(containerId, options) {
     
     // Add title for the selection box
     const selectionTitle = document.createElement('div');
-    selectionTitle.textContent = 'Calculator';
+    selectionTitle.textContent = 'Kullback\u2013Leibler Divergence';
     selectionTitle.style.fontWeight = 'bold';
     selectionTitle.style.fontSize = '16px';
     selectionTitle.style.color = '#2c3e50';
@@ -63,7 +63,7 @@ export function createCalculatorWidget(containerId, options) {
     truthContainer.style.marginBottom = '15px';
     
     const truthLabel = document.createElement('label');
-    truthLabel.textContent = 'Ground Truth Distribution:';
+    truthLabel.textContent = 'Ground Truth:';
     truthLabel.style.fontWeight = 'bold';
     truthLabel.style.color = '#2c3e50';
     truthLabel.style.fontSize = '14px';
@@ -222,15 +222,6 @@ export function createCalculatorWidget(containerId, options) {
         const resultsContainer = document.createElement('div');
         resultsContainer.style.fontSize = '14px';
         resultsContainer.style.lineHeight = '1.6';
-
-        // Title
-        const titleDiv = document.createElement('div');
-        titleDiv.textContent = `KL Divergence vs. Ground Truth`;
-        titleDiv.style.fontWeight = 'bold';
-        titleDiv.style.marginBottom = '8px';
-        titleDiv.style.textAlign = 'center';
-        titleDiv.style.color = '#2c3e50';
-        resultsContainer.appendChild(titleDiv);
 
         // Create minimalistic display
         klScores.forEach((score) => {
