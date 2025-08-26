@@ -613,9 +613,14 @@ export function createInteractiveWidget(containerId, options) {
                 lines.forEach((line, lineIndex) => {
                     ctx.fillText(line, x, baseY + lineIndex * lineHeight);
                 });
-            } else {
-                // Single line for other years
+            } else if (i === 0) {
+                // First year - show full year
                 ctx.fillText(year.toString(), x, options.height - padding / 2 - 18);
+            } else {
+                // Middle years - show abbreviated year with apostrophe
+                const yearDigits = year.toString().slice(-2);
+                const apostrophe = '\u2019';
+                ctx.fillText(`${apostrophe}${yearDigits}`, x, options.height - padding / 2 - 18);
             }
         }
 
