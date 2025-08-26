@@ -517,6 +517,13 @@ export function createInteractiveWidget(containerId, options) {
             }
         });
 
+        // Draw "Medians" label at the top center
+        ctx.fillStyle = '#495057';
+        ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText('Medians', widgetWidth / 2, padding - 35);
+
         // Draw the ε% label at the bottom left, but hide it when horizontal guideline is at visual floor
         // or when y-axis has been dragged to the visual floor
         const isAtVisualFloor = activeDistributionIndex >= 0 && 
