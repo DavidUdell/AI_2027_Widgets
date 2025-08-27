@@ -288,9 +288,9 @@ export function createInteractiveWidget(containerId, options) {
                     guidelineScaleFactor = 1.0;
                     guidelineManuallySet = false;
                     
-                    // Set all distributions to visible by default
+                    // Set distributions to not visible by default (except active)
                     distributions.forEach((_, index) => {
-                        visibilityState[index] = true;
+                        visibilityState[index] = index === 0; // Only active (index 0) is visible
                     });
                     
                     return true;
@@ -489,8 +489,8 @@ export function createInteractiveWidget(containerId, options) {
      */
     function initializeVisibilityState() {
         distributions.forEach((distribution, index) => {
-            // Default all distributions to visible
-            visibilityState[index] = true;
+            // Default to not visible (except active distribution)
+            visibilityState[index] = index === activeDistributionIndex;
         });
     }
 
