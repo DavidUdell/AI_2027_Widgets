@@ -8,6 +8,7 @@
  * - Background distribution renormalization relative to active distribution on
  *   mouse up
  * - Visibility controls for each distribution
+ * - URL fragment state management for sharing distributions
  */
 
 /**
@@ -19,6 +20,7 @@
  * @param {number} options.startYear - Starting year for the distribution
  * @param {number} options.endYear - Ending year for the distribution
  * @param {Function} [options.onChange] - Callback function called when distributions change
+ * @param {boolean} [options.enableUrlState=true] - Whether to enable URL fragment state management
  */
 
 export function createInteractiveWidget(containerId, options) {
@@ -27,6 +29,9 @@ export function createInteractiveWidget(containerId, options) {
         console.error(`Container with ID '${containerId}' not found`);
         return;
     }
+
+    // Default URL state management to enabled
+    const enableUrlState = options.enableUrlState !== false;
 
     const canvas = document.createElement('canvas');
     // Calculate responsive width if not provided
@@ -78,6 +83,329 @@ export function createInteractiveWidget(containerId, options) {
     let plotWidth = widgetWidth - 2 * padding;
     let plotHeight = options.height - 2 * padding;
     let periodStep = plotWidth / (numPeriods - 1);
+
+    /**
+     * URL State Management Functions
+     */
+
+    /**
+     * Serialize distribution state to a compact URL fragment
+     * Format: #d=color1:values1,color2:values2,...
+     */
+    function serializeStateToUrl() {
+        if (!enableUrlState) return;
+
+        // Only serialize distributions - visual parameters are not stored
+        const distributionParts = distributions.map(dist => {
+            // Encode values as base64-like string (using URL-safe characters)
+            const encodedValues = encodeDistributionValues(dist.values);
+            return `${dist.color}:${encodedValues}`;
+        });
+        
+        const fragment = `d=${distributionParts.join(',')}`;
+        
+        // Update URL without triggering page reload
+        if (window.history && window.history.replaceState) {
+            const newUrl = window.location.pathname + window.location.search + '#' + fragment;
+            window.history.replaceState(null, '', newUrl);
+        }
+    }
+
+    /**
+     * Encode distribution values to a compact string
+     * Uses fixed-width base36 encoding to eliminate separators
+     */
+    function encodeDistributionValues(values) {
+        // Convert probabilities to integers (0-1000 range for precision)
+        // Apply epsilon floor during encoding to preserve small values
+        const encoded = values.map(val => Math.round(Math.max(FLOOR_PROBABILITY_EPSILON, val) * 1000));
+        
+        // Convert to fixed-width base36 (3 characters each, uppercase)
+        return encoded.map(num => num.toString(36).toUpperCase().padStart(3, '0')).join('');
+    }
+
+    /**
+     * Decode distribution values from encoded string
+     * @param {string} encoded - The encoded string to decode
+     * @returns {number[]|null} - Array of probability values or null if invalid
+     */
+    function decodeDistributionValues(encoded) {
+        // Validate input
+        if (!encoded || typeof encoded !== 'string' || encoded.length === 0) {
+            return null;
+        }
+        
+        const chunkSize = 3; // Fixed width for each value
+        
+        // Check if encoded length is valid (must be divisible by chunk size)
+        if (encoded.length % chunkSize !== 0) {
+            return null;
+        }
+        
+        const chunks = [];
+        
+        for (let i = 0; i < encoded.length; i += chunkSize) {
+            chunks.push(encoded.slice(i, i + chunkSize));
+        }
+        
+        try {
+            const values = chunks.map(chunk => {
+                // Validate chunk format (must be valid base36)
+                if (!/^[0-9A-Za-z]{3}$/.test(chunk)) {
+                    throw new Error(`Invalid chunk format: ${chunk}`);
+                }
+                
+                // Parse base36 (case-insensitive, but we use uppercase)
+                const num = parseInt(chunk.toUpperCase(), 36);
+                
+                // Validate parsed number (should be in valid range 0-1000)
+                if (isNaN(num) || num < 0 || num > 1000) {
+                    throw new Error(`Invalid value: ${num} from chunk ${chunk}`);
+                }
+                
+                // Convert back to probability and apply epsilon floor
+                return Math.max(FLOOR_PROBABILITY_EPSILON, num / 1000);
+            });
+            
+            // Validate probability values (should be between 0 and 1)
+            for (let i = 0; i < values.length; i++) {
+                if (values[i] < 0 || values[i] > 1) {
+                    throw new Error(`Invalid probability value: ${values[i]} at index ${i}`);
+                }
+            }
+            
+            return values;
+        } catch (error) {
+            console.warn('Failed to decode distribution values:', error.message);
+            return null;
+        }
+    }
+
+    /**
+     * Parse URL fragment and restore widget state
+     * Falls back to initialization state if any distribution is invalid
+     */
+    function parseUrlState() {
+        if (!enableUrlState) return false;
+
+        const fragment = window.location.hash.substring(1);
+        if (!fragment) return false;
+
+        try {
+            const params = new URLSearchParams(fragment);
+            
+            // Parse distributions
+            const distributionsParam = params.get('d');
+            if (distributionsParam) {
+                const distributionParts = distributionsParam.split(',');
+                const newDistributions = [];
+                let hasInvalidDistribution = false;
+                
+                // Validate each distribution part
+                for (const part of distributionParts) {
+                    const [color, encodedValues] = part.split(':');
+                    
+                    // Validate color and encoded values
+                    if (!color || !encodedValues) {
+                        console.warn('Invalid distribution format:', part);
+                        hasInvalidDistribution = true;
+                        break;
+                    }
+                    
+                    // Validate color (must be one of the allowed colors)
+                    const validColors = ['blue', 'green', 'red', 'purple', 'orange', 'yellow'];
+                    if (!validColors.includes(color)) {
+                        console.warn('Invalid distribution color:', color);
+                        hasInvalidDistribution = true;
+                        break;
+                    }
+                    
+                    // Decode and validate values
+                    const values = decodeDistributionValues(encodedValues);
+                    if (values === null) {
+                        console.warn('Failed to decode distribution values for color:', color);
+                        hasInvalidDistribution = true;
+                        break;
+                    }
+                    
+                    // Ensure we have the right number of values
+                    if (values.length !== numPeriods) {
+                        console.warn(`Invalid number of values for ${color}: expected ${numPeriods}, got ${values.length}`);
+                        hasInvalidDistribution = true;
+                        break;
+                    }
+                    
+                    // Check for duplicate colors
+                    if (newDistributions.some(dist => dist.color === color)) {
+                        console.warn('Duplicate distribution color:', color);
+                        hasInvalidDistribution = true;
+                        break;
+                    }
+                    
+                    newDistributions.push({
+                        color: color,
+                        mass: 100,
+                        values: values
+                    });
+                }
+                
+                // If any distribution was invalid, fall back to initialization state
+                if (hasInvalidDistribution) {
+                    console.warn('Invalid distributions detected, falling back to initialization state');
+                    return false;
+                }
+                
+                // Check for missing colors and fill them with default values
+                const expectedColors = ['blue', 'green', 'red', 'purple', 'orange', 'yellow'];
+                const loadedColors = newDistributions.map(dist => dist.color);
+                const missingColors = expectedColors.filter(color => !loadedColors.includes(color));
+                
+                if (missingColors.length > 0) {
+                    console.warn(`Missing colors: ${missingColors.join(', ')}. Filling with default values.`);
+                    
+                    // Create default distributions for missing colors
+                    missingColors.forEach(color => {
+                        const initialValues = Array(numPeriods).fill(0).map((_, i) => 0.2 + (0.8 * i / (numPeriods - 1)));
+                        newDistributions.push({
+                            color: color,
+                            mass: 100,
+                            values: initialValues
+                        });
+                    });
+                }
+                
+                // Apply the complete set of distributions (valid from URL + defaults for missing)
+                if (newDistributions.length > 0) {
+                    distributions = newDistributions;
+                    
+                    // Restore original values for distributions from URL
+                    distributions.forEach((dist, index) => {
+                        originalValues[index] = [...dist.values];
+                    });
+                    
+                    // Reset visual parameters to defaults
+                    activeDistributionIndex = 0;
+                    guidelineScaleFactor = 1.0;
+                    guidelineManuallySet = false;
+                    
+                    // Set distributions to not visible by default (except active)
+                    distributions.forEach((_, index) => {
+                        visibilityState[index] = index === 0; // Only active (index 0) is visible
+                    });
+                    
+                    return true;
+                }
+            }
+
+            return false;
+        } catch (error) {
+            console.warn('Failed to parse URL state:', error);
+            return false;
+        }
+    }
+
+    /**
+     * Initialize URL state management
+     */
+    function initializeUrlState() {
+        if (!enableUrlState) return;
+
+        // Try to restore state from URL on page load
+        const restored = parseUrlState();
+        
+        if (!restored) {
+            // If no URL state, initialize with default distributions
+            initializeDefaultDistributions();
+        }
+
+        // Ensure guideline position is properly calculated after distributions are loaded
+        if (distributions.length > 0 && activeDistributionIndex >= 0) {
+            // Update guideline position based on the loaded state
+            updateGuidelinePosition();
+        }
+
+        // Listen for URL changes (back/forward buttons, manual URL editing)
+        window.addEventListener('popstate', () => {
+            const restored = parseUrlState();
+            if (restored) {
+                // Update guideline position based on the loaded state
+                updateGuidelinePosition();
+                
+                // Redraw widget with restored state
+                drawWidget();
+                
+                // Notify external components
+                if (options.onChange) {
+                    options.onChange(distributions);
+                }
+            }
+        });
+
+        // Listen for hash changes (for older browsers)
+        window.addEventListener('hashchange', () => {
+            const restored = parseUrlState();
+            if (restored) {
+                // Apply scale factor if it was loaded from URL
+                if (guidelineScaleFactor !== 1.0 && guidelineManuallySet) {
+                    distributions.forEach((distribution, index) => {
+                        if (originalValues[index]) {
+                            for (let i = 0; i < distribution.values.length; i++) {
+                                distribution.values[i] = originalValues[index][i] * guidelineScaleFactor;
+                            }
+                        }
+                    });
+                }
+                
+                // Calculate proper guideline position based on the loaded state
+                if (guidelineManuallySet && guidelineScaleFactor !== 1.0) {
+                    // If guideline was manually set from URL, calculate position from scale factor
+                    const activeDist = distributions[activeDistributionIndex];
+                    const maxOriginalValue = Math.max(...originalValues[activeDistributionIndex]);
+                    const scaledMaxValue = maxOriginalValue * guidelineScaleFactor;
+                    guidelineY = padding + (1 - scaledMaxValue) * plotHeight;
+                } else {
+                    // Update guideline position based on the loaded state
+                    updateGuidelinePosition();
+                }
+                
+                drawWidget();
+                
+                if (options.onChange) {
+                    options.onChange(distributions);
+                }
+            }
+        });
+    }
+
+    /**
+     * Initialize default distributions (used when no URL state exists)
+     */
+    function initializeDefaultDistributions() {
+        const colors = ['blue', 'green', 'red', 'purple', 'orange', 'yellow'];
+        colors.forEach((color, index) => {
+            const initialValues = Array(numPeriods).fill(0).map((_, i) => 0.2 + (0.8 * i / (numPeriods - 1)));
+            distributions.push({
+                color: color,
+                mass: 100, // Default total percentage
+                values: initialValues
+            });
+            // Store original values
+            originalValues[index] = [...initialValues];
+        });
+    }
+
+    /**
+     * Debounced URL update to avoid excessive URL changes during drawing
+     */
+    let urlUpdateTimeout = null;
+    function debouncedUrlUpdate() {
+        if (urlUpdateTimeout) {
+            clearTimeout(urlUpdateTimeout);
+        }
+        urlUpdateTimeout = setTimeout(() => {
+            serializeStateToUrl();
+        }, 500); // Update URL 500ms after last change
+    }
 
     /**
      * Update widget dimensions and recalculate layout constants
@@ -161,8 +489,8 @@ export function createInteractiveWidget(containerId, options) {
      */
     function initializeVisibilityState() {
         distributions.forEach((distribution, index) => {
-            // Default all distributions to visible
-            visibilityState[index] = true;
+            // Default to not visible (except active distribution)
+            visibilityState[index] = index === activeDistributionIndex;
         });
     }
 
@@ -263,12 +591,25 @@ export function createInteractiveWidget(containerId, options) {
      * Update guideline position based on active distribution
      */
     function updateGuidelinePosition() {
-        if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length && !guidelineManuallySet) {
+        if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length) {
             const activeDist = distributions[activeDistributionIndex];
             // Use current values to follow the actual peak, not original values
             const maxValue = Math.max(...activeDist.values);
-            // Convert probability to canvas Y coordinate
-            guidelineY = padding + (1 - maxValue) * plotHeight;
+            
+            if (!guidelineManuallySet) {
+                // Auto-position guideline at the peak
+                guidelineY = padding + (1 - maxValue) * plotHeight;
+            } else {
+                // If manually set (from URL), ensure the guideline position matches the current distribution values
+                // This prevents the guideline from jumping to incorrect positions
+                const currentGuidelineProbability = 1 - ((guidelineY - padding) / plotHeight);
+                const expectedGuidelineProbability = maxValue;
+                
+                // Only update if there's a significant mismatch (prevents jittery behavior)
+                if (Math.abs(currentGuidelineProbability - expectedGuidelineProbability) > 0.01) {
+                    guidelineY = padding + (1 - maxValue) * plotHeight;
+                }
+            }
         }
     }
 
@@ -821,6 +1162,9 @@ export function createInteractiveWidget(containerId, options) {
         if (options.onChange) {
             options.onChange(distributions);
         }
+        
+        // Update URL state immediately for drawing start
+        debouncedUrlUpdate();
     }
 
     function handlePointerMove(e) {
@@ -866,6 +1210,9 @@ export function createInteractiveWidget(containerId, options) {
             if (options.onChange) {
                 options.onChange(distributions);
             }
+            
+            // Update URL state during guideline dragging
+            debouncedUrlUpdate();
             return;
         }
 
@@ -901,6 +1248,9 @@ export function createInteractiveWidget(containerId, options) {
             if (options.onChange) {
                 options.onChange(distributions);
             }
+            
+            // Update URL state during drawing
+            debouncedUrlUpdate();
         }
     }
 
@@ -920,6 +1270,9 @@ export function createInteractiveWidget(containerId, options) {
             }
             // Update guideline position after renormalization (only if not manually set)
             updateGuidelinePosition();
+            
+            // Update URL state after drawing ends
+            debouncedUrlUpdate();
         }
         isDrawing = false;
     }
@@ -968,6 +1321,9 @@ export function createInteractiveWidget(containerId, options) {
         if (options.onChange) {
             options.onChange(distributions);
         }
+        
+        // Update URL state after renormalization
+        debouncedUrlUpdate();
     }
 
 
@@ -985,29 +1341,18 @@ export function createInteractiveWidget(containerId, options) {
 
 
 
-    // Initialize all distributions
-    const colors = ['blue', 'green', 'red', 'purple', 'orange', 'yellow'];
-    colors.forEach((color, index) => {
-        const initialValues = Array(numPeriods).fill(0).map((_, i) => 0.2 + (0.8 * i / (numPeriods - 1)));
-        distributions.push({
-            color: color,
-            mass: 100, // Default total percentage
-            values: initialValues
-        });
-        // Store original values
-        originalValues[index] = [...initialValues];
-    });
-
-    // Initialize visibility state
-    initializeVisibilityState();
-
     // Append canvas to container
     container.appendChild(canvas);
+
+    // Initialize URL state management (this will handle distribution initialization)
+    initializeUrlState();
+
+    // Initialize visibility state after distributions are loaded
+    initializeVisibilityState();
 
     // Initial draw
     updateGuidelinePosition();
     drawWidget();
-
 
 
     // Return methods for external control
@@ -1043,6 +1388,8 @@ export function createInteractiveWidget(containerId, options) {
             updateGuidelinePosition();
             // Trigger renormalization when active distribution changes
             performRenormalization();
+            // Update URL state
+            debouncedUrlUpdate();
         },
         removeDistribution: (index) => {
             distributions.splice(index, 1);
@@ -1081,6 +1428,8 @@ export function createInteractiveWidget(containerId, options) {
             updateDimensions();
             // Trigger renormalization if active distribution changed
             performRenormalization();
+            // Update URL state
+            debouncedUrlUpdate();
         },
         clearAllDistributions: () => {
             distributions = [];
@@ -1095,6 +1444,8 @@ export function createInteractiveWidget(containerId, options) {
             if (options.onChange) {
                 options.onChange(distributions);
             }
+            // Update URL state
+            debouncedUrlUpdate();
         },
         setActiveDistribution: (index) => {
             if (index >= 0 && index < distributions.length) {
@@ -1115,6 +1466,8 @@ export function createInteractiveWidget(containerId, options) {
                 updateGuidelinePosition();
                 // Trigger renormalization when active distribution changes
                 performRenormalization();
+                // Update URL state
+                debouncedUrlUpdate();
             }
         },
         setActiveDistributionByColor: (color) => {
@@ -1137,6 +1490,8 @@ export function createInteractiveWidget(containerId, options) {
                 updateGuidelinePosition();
                 // Trigger renormalization when active distribution changes
                 performRenormalization();
+                // Update URL state
+                debouncedUrlUpdate();
             }
         },
 
@@ -1151,6 +1506,8 @@ export function createInteractiveWidget(containerId, options) {
             if (visibilityState.hasOwnProperty(index)) {
                 visibilityState[index] = visible;
                 drawWidget();
+                // Update URL state when visibility changes
+                debouncedUrlUpdate();
             }
         },
         getDistributionVisibility: (index) => {
@@ -1160,6 +1517,8 @@ export function createInteractiveWidget(containerId, options) {
             if (visibilityState.hasOwnProperty(index)) {
                 visibilityState[index] = !visibilityState[index];
                 drawWidget();
+                // Update URL state when visibility changes
+                debouncedUrlUpdate();
             }
         },
         getVisibilityState: () => {
@@ -1168,6 +1527,8 @@ export function createInteractiveWidget(containerId, options) {
         setVisibilityState: (newVisibilityState) => {
             Object.assign(visibilityState, newVisibilityState);
             drawWidget();
+            // Update URL state when visibility state changes
+            debouncedUrlUpdate();
         },
         renormalizeBackgroundDistributions: () => {
             performRenormalization();
@@ -1183,17 +1544,141 @@ export function createInteractiveWidget(containerId, options) {
             });
             // Update dimensions to ensure proper scaling to available widget area
             updateDimensions();
-            updateGuidelinePosition();
+            // Calculate proper guideline position based on the loaded state
+            if (guidelineManuallySet && guidelineScaleFactor !== 1.0) {
+                // If guideline was manually set from URL, calculate position from scale factor
+                const activeDist = distributions[activeDistributionIndex];
+                const maxOriginalValue = Math.max(...originalValues[activeDistributionIndex]);
+                const scaledMaxValue = maxOriginalValue * guidelineScaleFactor;
+                guidelineY = padding + (1 - scaledMaxValue) * plotHeight;
+            } else {
+                // Update guideline position based on the loaded state
+                updateGuidelinePosition();
+            }
+            
             drawWidget();
             if (options.onChange) {
                 options.onChange(distributions);
             }
+            // Update URL state when guideline is reset
+            debouncedUrlUpdate();
         },
         getGuidelineScaleFactor: () => guidelineScaleFactor,
+        
+        // URL State Management Methods
+        getUrlState: () => {
+            if (!enableUrlState) return null;
+            const parts = [];
+            
+            // Serialize distributions
+            const distributionParts = distributions.map(dist => {
+                const encodedValues = encodeDistributionValues(dist.values);
+                return `${dist.color}:${encodedValues}`;
+            });
+            parts.push(`d=${distributionParts.join(',')}`);
+            
+            // Serialize active distribution index
+            parts.push(`a=${activeDistributionIndex}`);
+            
+            // Serialize visibility state
+            const visibilityBits = distributions.map((_, index) => 
+                visibilityState[index] ? '1' : '0'
+            ).join('');
+            parts.push(`v=${visibilityBits}`);
+            
+            // Serialize scale factor
+            const scaleFactor = Math.round(guidelineScaleFactor * 1000) / 1000;
+            parts.push(`s=${scaleFactor}`);
+            
+            return parts.join('&');
+        },
+        
+        loadFromUrlState: (fragment) => {
+            if (!enableUrlState) return false;
+            
+            // Temporarily set the hash and parse it
+            const originalHash = window.location.hash;
+            window.location.hash = fragment;
+            
+            const restored = parseUrlState();
+            
+            if (restored) {
+                // Apply scale factor if it was loaded from URL
+                if (guidelineScaleFactor !== 1.0 && guidelineManuallySet) {
+                    distributions.forEach((distribution, index) => {
+                        if (originalValues[index]) {
+                            for (let i = 0; i < distribution.values.length; i++) {
+                                distribution.values[i] = originalValues[index][i] * guidelineScaleFactor;
+                            }
+                        }
+                    });
+                }
+                
+                // Calculate proper guideline position based on the loaded state
+                if (guidelineManuallySet && guidelineScaleFactor !== 1.0) {
+                    // If guideline was manually set from URL, calculate position from scale factor
+                    const activeDist = distributions[activeDistributionIndex];
+                    const maxOriginalValue = Math.max(...originalValues[activeDistributionIndex]);
+                    const scaledMaxValue = maxOriginalValue * guidelineScaleFactor;
+                    guidelineY = padding + (1 - scaledMaxValue) * plotHeight;
+                } else {
+                    // Update guideline position based on the loaded state
+                    updateGuidelinePosition();
+                }
+                
+                drawWidget();
+                if (options.onChange) {
+                    options.onChange(distributions);
+                }
+            }
+            
+            // Restore original hash
+            window.location.hash = originalHash;
+            
+            return restored;
+        },
+        
+        reloadFromCurrentUrl: () => {
+            if (!enableUrlState) return false;
+            
+            const currentHash = window.location.hash.substring(1);
+            if (!currentHash) return false;
+            
+            const restored = parseUrlState();
+            
+            if (restored) {
+                // Apply scale factor if it was loaded from URL
+                if (guidelineScaleFactor !== 1.0 && guidelineManuallySet) {
+                    distributions.forEach((distribution, index) => {
+                        if (originalValues[index]) {
+                            for (let i = 0; i < distribution.values.length; i++) {
+                                distribution.values[i] = originalValues[index][i] * guidelineScaleFactor;
+                            }
+                        }
+                    });
+                }
+                
+                updateGuidelinePosition();
+                drawWidget();
+                if (options.onChange) {
+                    options.onChange(distributions);
+                }
+            }
+            
+            return restored;
+        },
+        
+        isUrlStateEnabled: () => enableUrlState,
+        
         destroy: () => {
             // Clean up resize observer and event listeners
             resizeObserver.disconnect();
             window.removeEventListener('resize', resizeHandler);
+            
+            // Clear URL update timeout
+            if (urlUpdateTimeout) {
+                clearTimeout(urlUpdateTimeout);
+            }
         }
     };
 }
