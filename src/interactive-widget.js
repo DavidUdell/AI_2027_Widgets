@@ -117,7 +117,8 @@ export function createInteractiveWidget(containerId, options) {
      */
     function encodeDistributionValues(values) {
         // Convert probabilities to integers (0-1000 range for precision)
-        const encoded = values.map(val => Math.round(val * 1000));
+        // Apply epsilon floor during encoding to preserve small values
+        const encoded = values.map(val => Math.round(Math.max(FLOOR_PROBABILITY_EPSILON, val) * 1000));
         
         // Convert to fixed-width base36 (3 characters each, uppercase)
         return encoded.map(num => num.toString(36).toUpperCase().padStart(3, '0')).join('');
@@ -162,7 +163,8 @@ export function createInteractiveWidget(containerId, options) {
                     throw new Error(`Invalid value: ${num} from chunk ${chunk}`);
                 }
                 
-                return num / 1000; // Convert back to probability
+                // Convert back to probability and apply epsilon floor
+                return Math.max(FLOOR_PROBABILITY_EPSILON, num / 1000);
             });
             
             // Validate probability values (should be between 0 and 1)

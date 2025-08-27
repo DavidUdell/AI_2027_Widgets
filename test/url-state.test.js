@@ -64,8 +64,12 @@ global.document = {
 // For now, let's test the encoding/decoding logic directly
 
 // Global functions for testing (extracted from the widget)
+const FLOOR_PROBABILITY_EPSILON = 0.000001;
+
 function encodeDistributionValues(values) {
-    const encoded = values.map(val => Math.round(val * 1000));
+    // Convert probabilities to integers (0-1000 range for precision)
+    // Apply epsilon floor during encoding to preserve small values
+    const encoded = values.map(val => Math.round(Math.max(FLOOR_PROBABILITY_EPSILON, val) * 1000));
     return encoded.map(num => num.toString(36).toUpperCase().padStart(3, '0')).join('');
 }
 
@@ -103,7 +107,8 @@ function decodeDistributionValues(encoded) {
                 throw new Error(`Invalid value: ${num} from chunk ${chunk}`);
             }
             
-            return num / 1000; // Convert back to probability
+            // Convert back to probability and apply epsilon floor
+            return Math.max(FLOOR_PROBABILITY_EPSILON, num / 1000);
         });
         
         // Validate probability values (should be between 0 and 1)
@@ -142,6 +147,34 @@ function testEncodingDecoding() {
     console.log('Round-trip test passed:', isEqual);
     
     return isEqual;
+}
+
+/**
+ * Test epsilon floor preservation during encoding/decoding
+ */
+function testEpsilonFloorPreservation() {
+    console.log('Testing epsilon floor preservation...');
+    
+    // Test data with very small values that should be preserved as epsilon floor
+    const testValues = [0.0000001, 0.0000005, 0.1, 0.5, 0.0000002, 0.8];
+    
+    // Test encoding
+    const encoded = encodeDistributionValues(testValues);
+    console.log('Encoded with epsilon floor:', encoded);
+    
+    // Test decoding
+    const decoded = decodeDistributionValues(encoded);
+    console.log('Decoded with epsilon floor:', decoded);
+    
+    // Verify that very small values are preserved as epsilon floor
+    const expectedValues = testValues.map(val => Math.max(FLOOR_PROBABILITY_EPSILON, val));
+    const isEpsilonPreserved = expectedValues.every((val, i) => Math.abs(val - decoded[i]) < 1e-10);
+    
+    console.log('Epsilon floor preservation test passed:', isEpsilonPreserved);
+    console.log('Expected values:', expectedValues);
+    console.log('Actual decoded values:', decoded);
+    
+    return isEpsilonPreserved;
 }
 
 /**
@@ -372,6 +405,9 @@ console.log('=== URL State Management Tests ===\n');
 const encodingTest = testEncodingDecoding();
 console.log('\n');
 
+const epsilonFloorTest = testEpsilonFloorPreservation();
+console.log('\n');
+
 const serializationTest = testUrlSerialization();
 console.log('\n');
 
@@ -386,6 +422,7 @@ console.log('\n');
 
 console.log('=== Test Results ===');
 console.log('Encoding/Decoding:', encodingTest ? 'PASS' : 'FAIL');
+console.log('Epsilon Floor Preservation:', epsilonFloorTest ? 'PASS' : 'FAIL');
 console.log('Serialization:', serializationTest ? 'PASS' : 'FAIL');
 console.log('Parsing:', parsingTest ? 'PASS' : 'FAIL');
 console.log('Decode Validation:', validationTest ? 'PASS' : 'FAIL');
@@ -395,6 +432,7 @@ console.log('Invalid URL Validation:', invalidUrlTest ? 'PASS' : 'FAIL');
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         testEncodingDecoding,
+        testEpsilonFloorPreservation,
         testUrlSerialization,
         testUrlParsing,
         testDecodeValidation,
