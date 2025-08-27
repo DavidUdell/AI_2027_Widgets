@@ -46,6 +46,17 @@ const widget = createInteractiveWidget('container-id', {
     endYear: 2040
 });
 ```
+## URL Fragment Format
+
+The URL fragment uses the pattern:
+```
+#d=color1:values1,color2:values2,...
+```
+
+You can include any subset of the 6 colors (blue, green, red, purple, orange,
+yellow). Distribution values are encoded using fixed-width base36: each
+probability value [0.0, 1.0] is converted to an integer [0, 1000], and each
+integer is converted to a (zeros-padded, uppercase) 3-character base36 string,
 
 ## Development
 
