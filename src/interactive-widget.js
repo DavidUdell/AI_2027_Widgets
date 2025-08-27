@@ -253,11 +253,30 @@ export function createInteractiveWidget(containerId, options) {
                     return false;
                 }
                 
-                // Only apply valid distributions
+                // Check for missing colors and fill them with default values
+                const expectedColors = ['blue', 'green', 'red', 'purple', 'orange', 'yellow'];
+                const loadedColors = newDistributions.map(dist => dist.color);
+                const missingColors = expectedColors.filter(color => !loadedColors.includes(color));
+                
+                if (missingColors.length > 0) {
+                    console.warn(`Missing colors: ${missingColors.join(', ')}. Filling with default values.`);
+                    
+                    // Create default distributions for missing colors
+                    missingColors.forEach(color => {
+                        const initialValues = Array(numPeriods).fill(0).map((_, i) => 0.2 + (0.8 * i / (numPeriods - 1)));
+                        newDistributions.push({
+                            color: color,
+                            mass: 100,
+                            values: initialValues
+                        });
+                    });
+                }
+                
+                // Apply the complete set of distributions (valid from URL + defaults for missing)
                 if (newDistributions.length > 0) {
                     distributions = newDistributions;
                     
-                    // Restore original values
+                    // Restore original values for distributions from URL
                     distributions.forEach((dist, index) => {
                         originalValues[index] = [...dist.values];
                     });

@@ -251,8 +251,18 @@ function testInvalidUrlValidation() {
             shouldFail: true
         },
         {
-            name: 'Valid fragment',
+            name: 'Valid fragment (all colors)',
+            fragment: 'd=blue:02S05K08C0B40DW,green:02S05K08C0B40DW,red:02S05K08C0B40DW,purple:02S05K08C0B40DW,orange:02S05K08C0B40DW,yellow:02S05K08C0B40DW',
+            shouldFail: false
+        },
+        {
+            name: 'Incomplete fragment (missing colors)',
             fragment: 'd=blue:02S05K08C0B40DW,red:05K08C0B40DW0GO',
+            shouldFail: false
+        },
+        {
+            name: 'Single color fragment',
+            fragment: 'd=blue:02S05K08C0B40DW',
             shouldFail: false
         }
     ];
@@ -301,6 +311,8 @@ function testInvalidUrlValidation() {
                     
                     newDistributions.push({ color, values });
                 }
+                
+                // Note: Missing colors are now filled with defaults, so we don't fail for missing colors
                 
                 const testPassed = hasInvalidDistribution === testCase.shouldFail;
                 console.log(`${testCase.name}: ${testPassed ? 'PASS' : 'FAIL'}`);
