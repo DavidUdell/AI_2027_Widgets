@@ -125,24 +125,63 @@ export function createInteractiveWidget(containerId, options) {
 
     /**
      * Decode distribution values from encoded string
+     * @param {string} encoded - The encoded string to decode
+     * @returns {number[]|null} - Array of probability values or null if invalid
      */
     function decodeDistributionValues(encoded) {
+        // Validate input
+        if (!encoded || typeof encoded !== 'string' || encoded.length === 0) {
+            return null;
+        }
+        
         const chunkSize = 3; // Fixed width for each value
+        
+        // Check if encoded length is valid (must be divisible by chunk size)
+        if (encoded.length % chunkSize !== 0) {
+            return null;
+        }
+        
         const chunks = [];
         
         for (let i = 0; i < encoded.length; i += chunkSize) {
             chunks.push(encoded.slice(i, i + chunkSize));
         }
         
-        return chunks.map(chunk => {
-            // Parse base36 (case-insensitive, but we use uppercase)
-            const num = parseInt(chunk.toUpperCase(), 36);
-            return num / 1000; // Convert back to probability
-        });
+        try {
+            const values = chunks.map(chunk => {
+                // Validate chunk format (must be valid base36)
+                if (!/^[0-9A-Za-z]{3}$/.test(chunk)) {
+                    throw new Error(`Invalid chunk format: ${chunk}`);
+                }
+                
+                // Parse base36 (case-insensitive, but we use uppercase)
+                const num = parseInt(chunk.toUpperCase(), 36);
+                
+                // Validate parsed number (should be in valid range 0-1000)
+                if (isNaN(num) || num < 0 || num > 1000) {
+                    throw new Error(`Invalid value: ${num} from chunk ${chunk}`);
+                }
+                
+                return num / 1000; // Convert back to probability
+            });
+            
+            // Validate probability values (should be between 0 and 1)
+            for (let i = 0; i < values.length; i++) {
+                if (values[i] < 0 || values[i] > 1) {
+                    throw new Error(`Invalid probability value: ${values[i]} at index ${i}`);
+                }
+            }
+            
+            return values;
+        } catch (error) {
+            console.warn('Failed to decode distribution values:', error.message);
+            return null;
+        }
     }
 
     /**
      * Parse URL fragment and restore widget state
+     * Falls back to initialization state if any distribution is invalid
      */
     function parseUrlState() {
         if (!enableUrlState) return false;
@@ -158,22 +197,63 @@ export function createInteractiveWidget(containerId, options) {
             if (distributionsParam) {
                 const distributionParts = distributionsParam.split(',');
                 const newDistributions = [];
+                let hasInvalidDistribution = false;
                 
-                distributionParts.forEach(part => {
+                // Validate each distribution part
+                for (const part of distributionParts) {
                     const [color, encodedValues] = part.split(':');
-                    if (color && encodedValues) {
-                        const values = decodeDistributionValues(encodedValues);
-                        // Ensure we have the right number of values
-                        if (values.length === numPeriods) {
-                            newDistributions.push({
-                                color: color,
-                                mass: 100,
-                                values: values
-                            });
-                        }
+                    
+                    // Validate color and encoded values
+                    if (!color || !encodedValues) {
+                        console.warn('Invalid distribution format:', part);
+                        hasInvalidDistribution = true;
+                        break;
                     }
-                });
+                    
+                    // Validate color (must be one of the allowed colors)
+                    const validColors = ['blue', 'green', 'red', 'purple', 'orange', 'yellow'];
+                    if (!validColors.includes(color)) {
+                        console.warn('Invalid distribution color:', color);
+                        hasInvalidDistribution = true;
+                        break;
+                    }
+                    
+                    // Decode and validate values
+                    const values = decodeDistributionValues(encodedValues);
+                    if (values === null) {
+                        console.warn('Failed to decode distribution values for color:', color);
+                        hasInvalidDistribution = true;
+                        break;
+                    }
+                    
+                    // Ensure we have the right number of values
+                    if (values.length !== numPeriods) {
+                        console.warn(`Invalid number of values for ${color}: expected ${numPeriods}, got ${values.length}`);
+                        hasInvalidDistribution = true;
+                        break;
+                    }
+                    
+                    // Check for duplicate colors
+                    if (newDistributions.some(dist => dist.color === color)) {
+                        console.warn('Duplicate distribution color:', color);
+                        hasInvalidDistribution = true;
+                        break;
+                    }
+                    
+                    newDistributions.push({
+                        color: color,
+                        mass: 100,
+                        values: values
+                    });
+                }
                 
+                // If any distribution was invalid, fall back to initialization state
+                if (hasInvalidDistribution) {
+                    console.warn('Invalid distributions detected, falling back to initialization state');
+                    return false;
+                }
+                
+                // Only apply valid distributions
                 if (newDistributions.length > 0) {
                     distributions = newDistributions;
                     
@@ -191,10 +271,12 @@ export function createInteractiveWidget(containerId, options) {
                     distributions.forEach((_, index) => {
                         visibilityState[index] = true;
                     });
+                    
+                    return true;
                 }
             }
 
-            return true;
+            return false;
         } catch (error) {
             console.warn('Failed to parse URL state:', error);
             return false;

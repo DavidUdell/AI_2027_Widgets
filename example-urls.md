@@ -75,6 +75,18 @@ Distribution values are encoded using fixed-width base36:
 3. **Share the URL** with others
 4. **Recipients will see** your exact distributions when they open the URL
 
+## Error Handling and Validation
+
+The widget includes robust validation for URL fragments:
+
+- **Invalid distributions** are rejected and the widget falls back to initialization state
+- **Invalid colors** (not in the allowed set: blue, green, red, purple, orange, yellow) are rejected
+- **Invalid encoded values** (wrong length, invalid base36 characters, out-of-range values) are rejected
+- **Duplicate colors** are rejected
+- **Malformed fragments** (missing colors or values) are rejected
+
+When validation fails, the widget automatically loads with default distributions and logs warnings to the console.
+
 ## Browser Navigation
 
 - **Back/Forward buttons** work with URL changes
