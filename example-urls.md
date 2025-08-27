@@ -9,7 +9,7 @@ http://localhost:8000/demo-url-state.html
 
 ## Example 1: Blue Distribution with Peak
 ```
-http://localhost:8000/demo-url-state.html#d=blue:64.c8.12c.190.1f4,red:c8.12c.190.1f4.258
+http://localhost:8000/demo-url-state.html#d=blue:02S0C802S019001F4,red:0C802S019001F40258
 ```
 - Blue distribution with a peak in the middle
 - Red distribution with different values
@@ -17,21 +17,21 @@ http://localhost:8000/demo-url-state.html#d=blue:64.c8.12c.190.1f4,red:c8.12c.19
 
 ## Example 2: Green and Blue Distributions
 ```
-http://localhost:8000/demo-url-state.html#d=green:190.1f4.258.2bc.320.384,blue:64.c8.12c.190.1f4
+http://localhost:8000/demo-url-state.html#d=green:019001F4025802BC03200384,blue:02S0C802S019001F4
 ```
 - Green and blue distributions with different shapes
 - Visual parameters use defaults
 
 ## Example 3: Multiple Distributions
 ```
-http://localhost:8000/demo-url-state.html#d=purple:12c.190.1f4.258.2bc.320,orange:190.1f4.258.2bc.320.384
+http://localhost:8000/demo-url-state.html#d=purple:02S019001F4025802BC0320,orange:019001F4025802BC03200384
 ```
 - Purple and orange distributions with different shapes
 - Visual parameters use defaults
 
 ## Example 4: Complex State
 ```
-http://localhost:8000/demo-url-state.html#d=blue:64.c8.12c.190.1f4,green:190.1f4.258.2bc.320,red:c8.12c.190.1f4.258,purple:12c.190.1f4.258.2bc
+http://localhost:8000/demo-url-state.html#d=blue:02S0C802S019001F4,green:019001F4025802BC0320,red:0C802S019001F40258,purple:02S019001F4025802BC
 ```
 - Four distributions with different shapes
 - Visual parameters (active distribution, visibility, scale) use defaults
@@ -55,6 +55,18 @@ Where:
 - `d` = distributions (color:encodedValues pairs)
 
 Visual parameters (active distribution, visibility, scale) are not stored and use default values when loading from URL.
+
+## Value Encoding
+
+Distribution values are encoded using fixed-width base36:
+- Each probability value (0.0-1.0) is converted to an integer (0-1000)
+- Each integer is converted to a 3-character base36 string (padded with zeros, uppercase)
+- No separators are needed between values due to fixed width
+
+**Example:**
+- Probability `0.1` → Integer `100` → Base36 `"02S"`
+- Probability `0.5` → Integer `500` → Base36 `"0DW"`
+- Values `[0.1, 0.5]` → `"02S0DW"`
 
 ## Creating Your Own URLs
 

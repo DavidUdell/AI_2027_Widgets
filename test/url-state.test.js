@@ -75,14 +75,21 @@ function testEncodingDecoding() {
     // Encode function (extracted from the widget)
     function encodeDistributionValues(values) {
         const encoded = values.map(val => Math.round(val * 1000));
-        return encoded.map(num => num.toString(36)).join('.');
+        return encoded.map(num => num.toString(36).toUpperCase().padStart(3, '0')).join('');
     }
     
     // Decode function (extracted from the widget)
     function decodeDistributionValues(encoded) {
-        const parts = encoded.split('.');
-        return parts.map(part => {
-            const num = parseInt(part, 36);
+        const chunkSize = 3; // Fixed width for each value
+        const chunks = [];
+        
+        for (let i = 0; i < encoded.length; i += chunkSize) {
+            chunks.push(encoded.slice(i, i + chunkSize));
+        }
+        
+        return chunks.map(chunk => {
+            // Parse base36 (case-insensitive, but we use uppercase)
+            const num = parseInt(chunk.toUpperCase(), 36);
             return num / 1000;
         });
     }
@@ -125,7 +132,7 @@ function testUrlSerialization() {
     // Serialize to URL fragment - only distributions
     function encodeDistributionValues(values) {
         const encoded = values.map(val => Math.round(val * 1000));
-        return encoded.map(num => num.toString(36)).join('.');
+        return encoded.map(num => num.toString(36).toUpperCase().padStart(3, '0')).join('');
     }
     
     const distributionParts = mockDistributions.map(dist => {
@@ -150,8 +157,8 @@ function testUrlSerialization() {
 function testUrlParsing() {
     console.log('Testing URL parsing...');
     
-    // Test fragment - only distributions
-    const testFragment = 'd=blue:64.c8.12c.190.1f4,red:c8.12c.190.1f4.258';
+    // Test fragment - only distributions (using new fixed-width encoding)
+    const testFragment = 'd=blue:02S0C802S019001F4,red:0C802S019001F40258';
     
     try {
         const params = new URLSearchParams(testFragment);

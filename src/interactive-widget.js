@@ -113,23 +113,30 @@ export function createInteractiveWidget(containerId, options) {
 
     /**
      * Encode distribution values to a compact string
-     * Uses a custom encoding that's more compact than base64 for probability values
+     * Uses fixed-width base36 encoding to eliminate separators
      */
     function encodeDistributionValues(values) {
         // Convert probabilities to integers (0-1000 range for precision)
         const encoded = values.map(val => Math.round(val * 1000));
         
-        // Convert to base36 for compact representation
-        return encoded.map(num => num.toString(36)).join('.');
+        // Convert to fixed-width base36 (3 characters each, uppercase)
+        return encoded.map(num => num.toString(36).toUpperCase().padStart(3, '0')).join('');
     }
 
     /**
      * Decode distribution values from encoded string
      */
     function decodeDistributionValues(encoded) {
-        const parts = encoded.split('.');
-        return parts.map(part => {
-            const num = parseInt(part, 36);
+        const chunkSize = 3; // Fixed width for each value
+        const chunks = [];
+        
+        for (let i = 0; i < encoded.length; i += chunkSize) {
+            chunks.push(encoded.slice(i, i + chunkSize));
+        }
+        
+        return chunks.map(chunk => {
+            // Parse base36 (case-insensitive, but we use uppercase)
+            const num = parseInt(chunk.toUpperCase(), 36);
             return num / 1000; // Convert back to probability
         });
     }
