@@ -9,39 +9,32 @@ http://localhost:8000/demo-url-state.html
 
 ## Example 1: Blue Distribution with Peak
 ```
-http://localhost:8000/demo-url-state.html#d=blue:64.c8.12c.190.1f4,red=c8.12c.190.1f4.258&a=0&v=10&s=1
+http://localhost:8000/demo-url-state.html#d=blue:64.c8.12c.190.1f4,red:c8.12c.190.1f4.258
 ```
 - Blue distribution with a peak in the middle
-- Red distribution hidden
-- Blue is the active distribution
-- Normal scale
+- Red distribution with different values
+- Visual parameters (active distribution, visibility, scale) use defaults
 
-## Example 2: Green Active, Blue Background
+## Example 2: Green and Blue Distributions
 ```
-http://localhost:8000/demo-url-state.html#d=green:190.1f4.258.2bc.320.384,blue=64.c8.12c.190.1f4&a=1&v=01&s=0.8
+http://localhost:8000/demo-url-state.html#d=green:190.1f4.258.2bc.320.384,blue:64.c8.12c.190.1f4
 ```
-- Green distribution is active
-- Blue distribution visible in background
-- Scaled down to 80%
-- Green has a different shape
+- Green and blue distributions with different shapes
+- Visual parameters use defaults
 
-## Example 3: Multiple Visible Distributions
+## Example 3: Multiple Distributions
 ```
-http://localhost:8000/demo-url-state.html#d=purple:12c.190.1f4.258.2bc.320,orange=190.1f4.258.2bc.320.384&a=0&v=11&s=1.2
+http://localhost:8000/demo-url-state.html#d=purple:12c.190.1f4.258.2bc.320,orange:190.1f4.258.2bc.320.384
 ```
-- Purple and orange distributions both visible
-- Purple is active
-- Scaled up to 120%
-- Both distributions have different shapes
+- Purple and orange distributions with different shapes
+- Visual parameters use defaults
 
 ## Example 4: Complex State
 ```
-http://localhost:8000/demo-url-state.html#d=blue:64.c8.12c.190.1f4,green=190.1f4.258.2bc.320,red=c8.12c.190.1f4.258,purple=12c.190.1f4.258.2bc&a=2&v=1101&s=0.9
+http://localhost:8000/demo-url-state.html#d=blue:64.c8.12c.190.1f4,green:190.1f4.258.2bc.320,red:c8.12c.190.1f4.258,purple:12c.190.1f4.258.2bc
 ```
 - Four distributions with different shapes
-- Red distribution is active (index 2)
-- Blue, green, and purple visible; red hidden
-- Scaled to 90%
+- Visual parameters (active distribution, visibility, scale) use defaults
 
 ## How to Test
 
@@ -55,14 +48,13 @@ http://localhost:8000/demo-url-state.html#d=blue:64.c8.12c.190.1f4,green=190.1f4
 
 The URL fragment follows this pattern:
 ```
-#d=color1:values1,color2:values2,...&a=activeIndex&v=visibilityBits&s=scaleFactor
+#d=color1:values1,color2:values2,...
 ```
 
 Where:
 - `d` = distributions (color:encodedValues pairs)
-- `a` = active distribution index (0-based)
-- `v` = visibility state as binary string (1=visible, 0=hidden)
-- `s` = guideline scale factor
+
+Visual parameters (active distribution, visibility, scale) are not stored and use default values when loading from URL.
 
 ## Creating Your Own URLs
 

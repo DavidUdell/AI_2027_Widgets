@@ -90,35 +90,19 @@ export function createInteractiveWidget(containerId, options) {
 
     /**
      * Serialize distribution state to a compact URL fragment
-     * Format: #d=color1:values1,color2:values2,...&a=activeIndex&v=visibilityBits&s=scaleFactor
+     * Format: #d=color1:values1,color2:values2,...
      */
     function serializeStateToUrl() {
         if (!enableUrlState) return;
 
-        const parts = [];
-
-        // Serialize distributions: color:encodedValues,color:encodedValues,...
+        // Only serialize distributions - visual parameters are not stored
         const distributionParts = distributions.map(dist => {
             // Encode values as base64-like string (using URL-safe characters)
             const encodedValues = encodeDistributionValues(dist.values);
             return `${dist.color}:${encodedValues}`;
         });
-        parts.push(`d=${distributionParts.join(',')}`);
-
-        // Serialize active distribution index
-        parts.push(`a=${activeDistributionIndex}`);
-
-        // Serialize visibility state as binary string
-        const visibilityBits = distributions.map((_, index) => 
-            visibilityState[index] ? '1' : '0'
-        ).join('');
-        parts.push(`v=${visibilityBits}`);
-
-        // Serialize guideline scale factor (rounded to 3 decimal places)
-        const scaleFactor = Math.round(guidelineScaleFactor * 1000) / 1000;
-        parts.push(`s=${scaleFactor}`);
-
-        const fragment = parts.join('&');
+        
+        const fragment = `d=${distributionParts.join(',')}`;
         
         // Update URL without triggering page reload
         if (window.history && window.history.replaceState) {
@@ -190,36 +174,16 @@ export function createInteractiveWidget(containerId, options) {
                     distributions.forEach((dist, index) => {
                         originalValues[index] = [...dist.values];
                     });
-                }
-            }
-
-            // Parse active distribution index
-            const activeParam = params.get('a');
-            if (activeParam !== null) {
-                const activeIndex = parseInt(activeParam);
-                if (activeIndex >= 0 && activeIndex < distributions.length) {
-                    activeDistributionIndex = activeIndex;
-                }
-            }
-
-            // Parse visibility state
-            const visibilityParam = params.get('v');
-            if (visibilityParam) {
-                const bits = visibilityParam.split('');
-                bits.forEach((bit, index) => {
-                    if (index < distributions.length) {
-                        visibilityState[index] = bit === '1';
-                    }
-                });
-            }
-
-            // Parse scale factor
-            const scaleParam = params.get('s');
-            if (scaleParam !== null) {
-                const scale = parseFloat(scaleParam);
-                if (!isNaN(scale) && scale > 0) {
-                    guidelineScaleFactor = scale;
-                    guidelineManuallySet = true; // Mark as manually set since it came from URL
+                    
+                    // Reset visual parameters to defaults
+                    activeDistributionIndex = 0;
+                    guidelineScaleFactor = 1.0;
+                    guidelineManuallySet = false;
+                    
+                    // Set all distributions to visible by default
+                    distributions.forEach((_, index) => {
+                        visibilityState[index] = true;
+                    });
                 }
             }
 
@@ -246,57 +210,16 @@ export function createInteractiveWidget(containerId, options) {
 
         // Ensure guideline position is properly calculated after distributions are loaded
         if (distributions.length > 0 && activeDistributionIndex >= 0) {
-            // Apply scale factor to distributions if it was loaded from URL
-            if (guidelineScaleFactor !== 1.0 && guidelineManuallySet) {
-                distributions.forEach((distribution, index) => {
-                    if (originalValues[index]) {
-                        // Apply the scale factor to the original values
-                        for (let i = 0; i < distribution.values.length; i++) {
-                            distribution.values[i] = originalValues[index][i] * guidelineScaleFactor;
-                        }
-                    }
-                });
-            }
-            
-            // Calculate proper guideline position based on the loaded state
-            if (guidelineManuallySet && guidelineScaleFactor !== 1.0) {
-                // If guideline was manually set from URL, calculate position from scale factor
-                const activeDist = distributions[activeDistributionIndex];
-                const maxOriginalValue = Math.max(...originalValues[activeDistributionIndex]);
-                const scaledMaxValue = maxOriginalValue * guidelineScaleFactor;
-                guidelineY = padding + (1 - scaledMaxValue) * plotHeight;
-            } else {
-                // Update guideline position based on the loaded state
-                updateGuidelinePosition();
-            }
+            // Update guideline position based on the loaded state
+            updateGuidelinePosition();
         }
 
         // Listen for URL changes (back/forward buttons, manual URL editing)
         window.addEventListener('popstate', () => {
             const restored = parseUrlState();
             if (restored) {
-                // Apply scale factor if it was loaded from URL
-                if (guidelineScaleFactor !== 1.0 && guidelineManuallySet) {
-                    distributions.forEach((distribution, index) => {
-                        if (originalValues[index]) {
-                            for (let i = 0; i < distribution.values.length; i++) {
-                                distribution.values[i] = originalValues[index][i] * guidelineScaleFactor;
-                            }
-                        }
-                    });
-                }
-                
-                // Calculate proper guideline position based on the loaded state
-                if (guidelineManuallySet && guidelineScaleFactor !== 1.0) {
-                    // If guideline was manually set from URL, calculate position from scale factor
-                    const activeDist = distributions[activeDistributionIndex];
-                    const maxOriginalValue = Math.max(...originalValues[activeDistributionIndex]);
-                    const scaledMaxValue = maxOriginalValue * guidelineScaleFactor;
-                    guidelineY = padding + (1 - scaledMaxValue) * plotHeight;
-                } else {
-                    // Update guideline position based on the loaded state
-                    updateGuidelinePosition();
-                }
+                // Update guideline position based on the loaded state
+                updateGuidelinePosition();
                 
                 // Redraw widget with restored state
                 drawWidget();

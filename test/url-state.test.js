@@ -122,14 +122,7 @@ function testUrlSerialization() {
         }
     ];
     
-    const mockActiveIndex = 0;
-    const mockVisibilityState = { 0: true, 1: false };
-    const mockScaleFactor = 1.0;
-    
-    // Serialize to URL fragment
-    const parts = [];
-    
-    // Serialize distributions
+    // Serialize to URL fragment - only distributions
     function encodeDistributionValues(values) {
         const encoded = values.map(val => Math.round(val * 1000));
         return encoded.map(num => num.toString(36)).join('.');
@@ -139,31 +132,14 @@ function testUrlSerialization() {
         const encodedValues = encodeDistributionValues(dist.values);
         return `${dist.color}:${encodedValues}`;
     });
-    parts.push(`d=${distributionParts.join(',')}`);
     
-    // Serialize active distribution index
-    parts.push(`a=${mockActiveIndex}`);
-    
-    // Serialize visibility state
-    const visibilityBits = mockDistributions.map((_, index) => 
-        mockVisibilityState[index] ? '1' : '0'
-    ).join('');
-    parts.push(`v=${visibilityBits}`);
-    
-    // Serialize scale factor
-    const scaleFactor = Math.round(mockScaleFactor * 1000) / 1000;
-    parts.push(`s=${scaleFactor}`);
-    
-    const fragment = parts.join('&');
+    const fragment = `d=${distributionParts.join(',')}`;
     console.log('Serialized fragment:', fragment);
     
     // Test parsing
     const params = new URLSearchParams(fragment);
     console.log('Parsed params:');
     console.log('- distributions:', params.get('d'));
-    console.log('- active index:', params.get('a'));
-    console.log('- visibility:', params.get('v'));
-    console.log('- scale factor:', params.get('s'));
     
     return fragment;
 }
@@ -174,8 +150,8 @@ function testUrlSerialization() {
 function testUrlParsing() {
     console.log('Testing URL parsing...');
     
-    // Test fragment
-    const testFragment = 'd=blue:64.c8.12c.190.1f4,red=c8.12c.190.1f4.258&a=0&v=10&s=1';
+    // Test fragment - only distributions
+    const testFragment = 'd=blue:64.c8.12c.190.1f4,red:c8.12c.190.1f4.258';
     
     try {
         const params = new URLSearchParams(testFragment);
@@ -191,11 +167,6 @@ function testUrlParsing() {
                 console.log(`Color: ${color}, Encoded: ${encodedValues}`);
             });
         }
-        
-        // Parse other parameters
-        console.log('Active index:', params.get('a'));
-        console.log('Visibility:', params.get('v'));
-        console.log('Scale factor:', params.get('s'));
         
         return true;
     } catch (error) {
