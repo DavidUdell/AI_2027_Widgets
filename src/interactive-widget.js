@@ -355,7 +355,6 @@ export function createInteractiveWidget(containerId, options) {
                 // Calculate proper guideline position based on the loaded state
                 if (guidelineManuallySet && guidelineScaleFactor !== 1.0) {
                     // If guideline was manually set from URL, calculate position from scale factor
-                    const activeDist = distributions[activeDistributionIndex];
                     const maxOriginalValue = Math.max(...originalValues[activeDistributionIndex]);
                     const scaledMaxValue = maxOriginalValue * guidelineScaleFactor;
                     guidelineY = padding + (1 - scaledMaxValue) * plotHeight;
@@ -663,10 +662,6 @@ export function createInteractiveWidget(containerId, options) {
      * Check if a point is near the guideline label for drag detection
      */
     function isNearGuidelineLabel(x, y) {
-        if (activeDistributionIndex < 0 || activeDistributionIndex >= distributions.length) {
-            return false;
-        }
-        
         // Calculate label dimensions (matching the drawing function)
         const labelText = "9.99%"; // Use the largest label text for measurement
         ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
