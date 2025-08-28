@@ -40,11 +40,7 @@ over quarters:
 ```javascript
 import { createInteractiveWidget } from './src/index.js';
 
-const widget = createInteractiveWidget('container-id', {
-    height: 500,
-    startYear: 2026,
-    endYear: 2040
-});
+const widget = createInteractiveWidget('container-id', {});
 ```
 ## URL Fragment Format
 
