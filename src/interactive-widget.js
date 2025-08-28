@@ -116,8 +116,8 @@ export function createInteractiveWidget(containerId, options) {
         // Apply epsilon floor during encoding to preserve small values
         const encoded = values.map(val => Math.round(Math.max(FLOOR_PROBABILITY_EPSILON, val) * 1000));
         
-        // Convert to fixed-width base36 (3 characters each, uppercase)
-        return encoded.map(num => num.toString(36).toUpperCase().padStart(3, '0')).join('');
+        // Convert to fixed-width base36 (2 characters each, uppercase)
+        return encoded.map(num => num.toString(36).toUpperCase().padStart(2, '0')).join('');
     }
 
     /**
@@ -131,7 +131,7 @@ export function createInteractiveWidget(containerId, options) {
             return null;
         }
         
-        const chunkSize = 3; // Fixed width for each value
+        const chunkSize = 2; // Fixed width for each value
         
         // Check if encoded length is valid (must be divisible by chunk size)
         if (encoded.length % chunkSize !== 0) {
@@ -147,7 +147,7 @@ export function createInteractiveWidget(containerId, options) {
         try {
             const values = chunks.map(chunk => {
                 // Validate chunk format (must be valid base36)
-                if (!/^[0-9A-Za-z]{3}$/.test(chunk)) {
+                if (!/^[0-9A-Za-z]{2}$/.test(chunk)) {
                     throw new Error(`Invalid chunk format: ${chunk}`);
                 }
                 
