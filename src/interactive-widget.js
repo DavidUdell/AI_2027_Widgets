@@ -1107,8 +1107,6 @@ export function createInteractiveWidget(containerId, options) {
         }
 
         // Regular drawing logic
-        if (activeDistributionIndex === -1) return;
-
         isDrawing = true;
         lastX = x;
         lastY = y;
@@ -1185,7 +1183,7 @@ export function createInteractiveWidget(containerId, options) {
         }
 
         // Handle regular drawing
-        if (!isDrawing || activeDistributionIndex === -1) return;
+        if (!isDrawing) return;
 
         // Interpolate between last point and current point
         const dx = x - lastX;
@@ -1254,10 +1252,6 @@ export function createInteractiveWidget(containerId, options) {
      * total mass, allowing for fair comparison while maintaining their relative shapes.
      */
     function performRenormalization() {
-        if (activeDistributionIndex === -1 || activeDistributionIndex >= distributions.length) {
-            return;
-        }
-
         const activeDistribution = distributions[activeDistributionIndex];
         const activeTotalMass = activeDistribution.values.reduce((sum, val) => sum + val, 0);
         
@@ -1327,29 +1321,27 @@ export function createInteractiveWidget(containerId, options) {
     return {
         setActiveDistributionByColor: (color) => {
             const index = distributions.findIndex(dist => dist.color === color);
-            if (index !== -1) {
-                activeDistributionIndex = index;
-                // Reset guideline scale factor and restore original values
-                guidelineScaleFactor = 1.0;
-                guidelineManuallySet = false; // Reset manual positioning when switching distributions
-                // Restore original values for all distributions that haven't been user-modified
-                distributions.forEach((distribution, distIndex) => {
-                    if (originalValues[distIndex] && !userModifiedValues[distIndex]) {
-                        distribution.values = [...originalValues[distIndex]];
-                    }
-                });
-                // Update dimensions to ensure proper scaling to available widget area
-                updateDimensions();
-                // Auto-scale the active distribution to fit within visible area
-                autoScaleDistribution(index);
-                updateGuidelinePosition();
-                // Ensure the new active distribution is visible
-                visibilityState[index] = true;
-                // Trigger renormalization when active distribution changes
-                performRenormalization();
-                // Update URL state
-                debouncedUrlUpdate();
-            }
+            activeDistributionIndex = index;
+            // Reset guideline scale factor and restore original values
+            guidelineScaleFactor = 1.0;
+            guidelineManuallySet = false; // Reset manual positioning when switching distributions
+            // Restore original values for all distributions that haven't been user-modified
+            distributions.forEach((distribution, distIndex) => {
+                if (originalValues[distIndex] && !userModifiedValues[distIndex]) {
+                    distribution.values = [...originalValues[distIndex]];
+                }
+            });
+            // Update dimensions to ensure proper scaling to available widget area
+            updateDimensions();
+            // Auto-scale the active distribution to fit within visible area
+            autoScaleDistribution(index);
+            updateGuidelinePosition();
+            // Ensure the new active distribution is visible
+            visibilityState[index] = true;
+            // Trigger renormalization when active distribution changes
+            performRenormalization();
+            // Update URL state
+            debouncedUrlUpdate();
         },
 
         getDistributions: () => [...distributions],
