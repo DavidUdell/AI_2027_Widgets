@@ -257,25 +257,16 @@
     </p>
 
 
-
-
     <script type="module">
         import { createInteractiveWidget, createCalculatorWidget } from './src/index.js';
 
         // Initialize widget when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
             // Create interactive widget
-            const widget = createInteractiveWidget('interactive-widget', {
-                height: 500,
-                startYear: 2026,
-                endYear: 2040
-            });
-
-
+            const widget = createInteractiveWidget('interactive-widget', {});
 
             // Create calculator widget
             const calculatorWidget = createCalculatorWidget('calculator-widget', {
-                height: 400,
                 distributions: widget.getDistributions(),
                 activeDistributionIndex: widget.getActiveDistributionIndex(),
                 visibilityState: widget.getVisibilityState()

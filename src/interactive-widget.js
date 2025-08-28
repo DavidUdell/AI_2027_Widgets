@@ -15,7 +15,6 @@
  * Creates an interactive canvas widget for drawing multiple probability distributions
  * @param {string} containerId - The ID of the HTML element to insert the widget into
  * @param {Object} options - Widget configuration options
- * @param {number} options.height - Widget height in pixels
  * @param {Function} [options.onChange] - Callback function called when distributions change
  * @param {boolean} [options.enableUrlState=true] - Whether to enable URL fragment state management
  */
@@ -35,7 +34,9 @@ export function createInteractiveWidget(containerId, options) {
     const containerRect = container.getBoundingClientRect();
     const widgetWidth = containerRect.width - 20; // Account for padding
     canvas.width = widgetWidth;
-    canvas.height = options.height;
+    // Hardcoding widget height (pixels)
+    const heightPixels = 500;
+    canvas.height = heightPixels;
     canvas.className = 'widget-canvas';
 
     const ctx = canvas.getContext('2d');
@@ -76,7 +77,7 @@ export function createInteractiveWidget(containerId, options) {
     // Grid and styling constants - these will be recalculated on resize
     let padding = 80;
     let plotWidth = widgetWidth - 2 * padding;
-    let plotHeight = options.height - 2 * padding;
+    let plotHeight = heightPixels - 2 * padding;
     let periodStep = plotWidth / (numPeriods - 1);
 
     /**
@@ -374,7 +375,7 @@ export function createInteractiveWidget(containerId, options) {
             // Recalculate layout constants
             padding = 80;
             plotWidth = widgetWidth - 2 * padding;
-            plotHeight = options.height - 2 * padding;
+            plotHeight = heightPixels - 2 * padding;
             periodStep = plotWidth / (numPeriods - 1);
             
             // Redraw with new dimensions
@@ -477,7 +478,7 @@ export function createInteractiveWidget(containerId, options) {
     function drawWidget() {
         // Clear canvas
         ctx.fillStyle = '#f8f9fa';
-        ctx.fillRect(0, 0, widgetWidth, options.height);
+        ctx.fillRect(0, 0, widgetWidth, heightPixels);
 
         // Update second highest peak guideline before drawing
         updateSecondHighestPeakGuideline();
@@ -759,7 +760,7 @@ export function createInteractiveWidget(containerId, options) {
                 ctx.setLineDash([5, 5]); // Dashed line
                 ctx.beginPath();
                 ctx.moveTo(medianX, padding);
-                ctx.lineTo(medianX, options.height - padding);
+                ctx.lineTo(medianX, heightPixels - padding);
                 ctx.stroke();
                 ctx.setLineDash([]); // Reset to solid lines
 
@@ -826,7 +827,7 @@ export function createInteractiveWidget(containerId, options) {
                 ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
                 ctx.textAlign = 'right';
                 ctx.textBaseline = 'middle';
-                ctx.fillText('ε%', padding - 10, options.height - padding);
+                ctx.fillText('ε%', padding - 10, heightPixels - padding);
             }
         } else {
             // Show epsilon label when no active distribution or no mass
@@ -834,7 +835,7 @@ export function createInteractiveWidget(containerId, options) {
             ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
             ctx.textAlign = 'right';
             ctx.textBaseline = 'middle';
-            ctx.fillText('ε%', padding - 10, options.height - padding);
+            ctx.fillText('ε%', padding - 10, heightPixels - padding);
         }
 
         // Draw second highest distribution's peak guideline (non-draggable)
@@ -898,19 +899,19 @@ export function createInteractiveWidget(containerId, options) {
                 // Multi-line label for the rightmost bin
                 const lines = [">2039", "or AGI never"];
                 const lineHeight = 14;
-                const baseY = options.height - padding / 2 - 18; // Align with other labels
+                const baseY = heightPixels - padding / 2 - 18; // Align with other labels
                 
                 lines.forEach((line, lineIndex) => {
                     ctx.fillText(line, x, baseY + lineIndex * lineHeight);
                 });
             } else if (i === 0) {
                 // First year - show full year
-                ctx.fillText(year.toString(), x, options.height - padding / 2 - 18);
+                ctx.fillText(year.toString(), x, heightPixels - padding / 2 - 18);
             } else {
                 // Middle years - show abbreviated year with apostrophe
                 const yearDigits = year.toString().slice(-2);
                 const apostrophe = '\u2019';
-                ctx.fillText(`${apostrophe}${yearDigits}`, x, options.height - padding / 2 - 18);
+                ctx.fillText(`${apostrophe}${yearDigits}`, x, heightPixels - padding / 2 - 18);
             }
         }
 
@@ -919,11 +920,11 @@ export function createInteractiveWidget(containerId, options) {
         ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
-        ctx.fillText('Quarters', widgetWidth / 2, options.height - padding / 2 + 7);
+        ctx.fillText('Quarters', widgetWidth / 2, heightPixels - padding / 2 + 7);
 
         // Y-axis title
         ctx.save();
-        ctx.translate(padding / 2 - 14, options.height / 2);
+        ctx.translate(padding / 2 - 14, heightPixels / 2);
         ctx.rotate(-Math.PI / 2);
         ctx.fillStyle = '#495057';
         ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, sans-serif';
@@ -968,7 +969,7 @@ export function createInteractiveWidget(containerId, options) {
         ctx.clip();
 
         // Create gradient for the fill with reduced opacity for background distributions
-        const gradient = ctx.createLinearGradient(padding, padding, padding, options.height - padding);
+        const gradient = ctx.createLinearGradient(padding, padding, padding, heightPixels - padding);
         if (isActive) {
             gradient.addColorStop(0, colorScheme.gradientStart);
             gradient.addColorStop(1, colorScheme.gradientEnd);
@@ -985,7 +986,7 @@ export function createInteractiveWidget(containerId, options) {
         ctx.beginPath();
 
         // Start at the bottom-left corner
-        ctx.moveTo(padding, options.height - padding);
+        ctx.moveTo(padding, heightPixels - padding);
 
         // Draw the curve
         for (let i = 0; i < numPeriods; i++) {
@@ -994,7 +995,7 @@ export function createInteractiveWidget(containerId, options) {
         }
 
         // Close the path by going to bottom-right corner and back to start
-        ctx.lineTo(widgetWidth - padding, options.height - padding);
+        ctx.lineTo(widgetWidth - padding, heightPixels - padding);
         ctx.closePath();
         ctx.fill();
 
@@ -1090,7 +1091,7 @@ export function createInteractiveWidget(containerId, options) {
         // Handle guideline dragging
         if (isDraggingGuideline) {
             // Allow guideline to be dragged to the visual ceiling (no minimum constraint)
-            const newY = Math.max(padding, Math.min(options.height - padding, y));
+            const newY = Math.max(padding, Math.min(heightPixels - padding, y));
             guidelineY = newY;
             
                             // Calculate new scale factor based on guideline position

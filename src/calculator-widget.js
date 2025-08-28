@@ -9,10 +9,6 @@ import { calculateKLDivergence } from './KL-divergence.js';
  * Creates a KL Divergence Calculator widget that shows all distributions' scores against the Drawing distribution
  * @param {string} containerId - The ID of the HTML element to insert the widget into
  * @param {Object} options - Widget configuration options
- * @param {number} options.width - Widget width in pixels
- * @param {number} options.height - Widget height in pixels
- * @param {number} options.startYear - Starting year for the distribution
- * @param {number} options.endYear - Ending year for the distribution
  * @param {Array<Object>} options.distributions - Array of distribution objects with color, mass, and values
  * @param {number} options.activeDistributionIndex - Index of the active (Drawing) distribution to use as ground truth
  * @param {Object} options.visibilityState - Object mapping distribution indices to visibility booleans
