@@ -15,10 +15,7 @@
  * Creates an interactive canvas widget for drawing multiple probability distributions
  * @param {string} containerId - The ID of the HTML element to insert the widget into
  * @param {Object} options - Widget configuration options
- * @param {number} options.width - Widget width in pixels
  * @param {number} options.height - Widget height in pixels
- * @param {number} options.startYear - Starting year for the distribution
- * @param {number} options.endYear - Ending year for the distribution
  * @param {Function} [options.onChange] - Callback function called when distributions change
  * @param {boolean} [options.enableUrlState=true] - Whether to enable URL fragment state management
  */
@@ -34,20 +31,20 @@ export function createInteractiveWidget(containerId, options) {
     const enableUrlState = options.enableUrlState !== false;
 
     const canvas = document.createElement('canvas');
-    // Calculate responsive width if not provided
-    let widgetWidth = options.width;
-    if (!widgetWidth) {
-        const containerRect = container.getBoundingClientRect();
-        widgetWidth = containerRect.width - 20; // Account for padding
-    }
-
+    // Calculate responsive width
+    const containerRect = container.getBoundingClientRect();
+    const widgetWidth = containerRect.width - 20; // Account for padding
     canvas.width = widgetWidth;
     canvas.height = options.height;
     canvas.className = 'widget-canvas';
 
     const ctx = canvas.getContext('2d');
 
-    const numYears = options.endYear - options.startYear + 1;
+    // Hardcoding years
+    const startYear = 2026;
+    const endYear = 2040;
+
+    const numYears = endYear - startYear + 1;
     const numPeriods = (numYears - 1) * 4 + 1;
 
     // Store multiple distributions - initialize all colors
@@ -778,7 +775,7 @@ export function createInteractiveWidget(containerId, options) {
                 ctx.setLineDash([]); // Reset to solid lines
 
                 // Get quarter name components
-                const year = options.startYear + Math.floor(medianIndex / 4);
+                const year = startYear + Math.floor(medianIndex / 4);
                 const quarter = (medianIndex % 4) + 1;
                 const yearDigits = year.toString().slice(-2);
 
@@ -906,7 +903,7 @@ export function createInteractiveWidget(containerId, options) {
                 // Other years go at the start of each year (every 4 quarters)
                 x = padding + i * 4 * periodStep;
             }
-            const year = options.startYear + i;
+            const year = startYear + i;
             
             if (i === numYears - 1) {
                 // Multi-line label for the rightmost bin

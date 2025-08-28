@@ -276,8 +276,6 @@
             // Create calculator widget
             const calculatorWidget = createCalculatorWidget('calculator-widget', {
                 height: 400,
-                startYear: 2026,
-                endYear: 2040,
                 distributions: widget.getDistributions(),
                 activeDistributionIndex: widget.getActiveDistributionIndex(),
                 visibilityState: widget.getVisibilityState()
@@ -287,7 +285,7 @@
             const colorSelect = document.getElementById('distribution-color');
             const visibilityTogglesContainer = document.getElementById('visibility-toggles');
 
-            // Color schemes for visibility toggles
+            // Checkbox color labels
             const colorSchemes = {
                 blue: '#007bff',
                 green: '#28a745',
