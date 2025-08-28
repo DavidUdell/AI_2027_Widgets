@@ -242,7 +242,6 @@ export function createInteractiveWidget(containerId, options) {
                     
                     newDistributions.push({
                         color: color,
-                        mass: 100,
                         values: values
                     });
                 }
@@ -266,7 +265,6 @@ export function createInteractiveWidget(containerId, options) {
                         const initialValues = Array(numPeriods).fill(0).map((_, i) => 0.2 + (0.8 * i / (numPeriods - 1)));
                         newDistributions.push({
                             color: color,
-                            mass: 100,
                             values: initialValues
                         });
                     });
@@ -384,7 +382,6 @@ export function createInteractiveWidget(containerId, options) {
             const initialValues = Array(numPeriods).fill(0).map((_, i) => 0.2 + (0.8 * i / (numPeriods - 1)));
             distributions.push({
                 color: color,
-                mass: 100, // Default total percentage
                 values: initialValues
             });
             // Store original values
@@ -537,9 +534,8 @@ export function createInteractiveWidget(containerId, options) {
      * Calculate the normalized peak value for a distribution
      */
     function calculateNormalizedPeak(distribution) {
-        const totalMass = distribution.mass;
         const distributionSum = distribution.values.reduce((sum, prob) => sum + prob, 0);
-        const normalizationFactor = distributionSum > 0 ? totalMass / (distributionSum * 100) : 0;
+        const normalizationFactor = distributionSum > 0 ? 100 / (distributionSum * 100) : 0;
         const originalMaxValue = Math.max(...distribution.values);
         return originalMaxValue * normalizationFactor * 100;
     }
@@ -1105,8 +1101,6 @@ export function createInteractiveWidget(containerId, options) {
         if (isNearGuidelineLabel(x, y)) {
             isDraggingGuideline = true;
             guidelineManuallySet = true; // Mark that user has manually positioned the guideline
-            originalGuidelineY = guidelineY;
-            dragStartY = y;
             canvas.style.cursor = 'ns-resize';
             drawWidget(); // Redraw to show dragging state
             return;
