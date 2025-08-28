@@ -321,19 +321,8 @@ export function createInteractiveWidget(containerId, options) {
         window.addEventListener('hashchange', () => {
             const restored = parseUrlState();
             if (restored) {
-                // Calculate proper guideline position based on the loaded state
-                if (guidelineManuallySet && guidelineScaleFactor !== 1.0) {
-                    // If guideline was manually set from URL, calculate position from scale factor
-                    const maxOriginalValue = Math.max(...originalValues[activeDistributionIndex]);
-                    const scaledMaxValue = maxOriginalValue * guidelineScaleFactor;
-                    guidelineY = padding + (1 - scaledMaxValue) * plotHeight;
-                } else {
-                    // Update guideline position based on the loaded state
-                    updateGuidelinePosition();
-                }
-                
+                updateGuidelinePosition();
                 drawWidget();
-                
                 if (options.onChange) {
                     options.onChange(distributions);
                 }
