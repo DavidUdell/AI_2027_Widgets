@@ -228,10 +228,6 @@ export function createCalculatorWidget(containerId, options) {
         setVisibilityState: (newVisibilityState) => {
             options.visibilityState = newVisibilityState;
             updateResults();
-        },
-        redraw: () => {
-            updateGroundTruthDisplay();
-            updateResults();
         }
     };
 }

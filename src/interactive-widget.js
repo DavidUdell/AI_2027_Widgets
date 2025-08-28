@@ -69,8 +69,6 @@ export function createInteractiveWidget(containerId, options) {
     // Guideline drag state
     let isDraggingGuideline = false;
     let guidelineY = 0; // Will be set when active distribution changes
-    let originalGuidelineY = 0; // For drag start position
-    let dragStartY = 0; // Mouse position when drag started
     let guidelineScaleFactor = 1.0; // Current scale factor for distributions
     let guidelineManuallySet = false; // Track if user has manually positioned the guideline
     
