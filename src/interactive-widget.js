@@ -318,40 +318,12 @@ export function createInteractiveWidget(containerId, options) {
         if (distributions.length > 0 && activeDistributionIndex >= 0) {
             // Update guideline position based on the loaded state
             updateGuidelinePosition();
-        }
-
-        // Listen for URL changes (back/forward buttons, manual URL editing)
-        window.addEventListener('popstate', () => {
-            const restored = parseUrlState();
-            if (restored) {
-                // Update guideline position based on the loaded state
-                updateGuidelinePosition();
-                
-                // Redraw widget with restored state
-                drawWidget();
-                
-                // Notify external components
-                if (options.onChange) {
-                    options.onChange(distributions);
-                }
-            }
-        });
+        };
 
         // Listen for hash changes (for older browsers)
         window.addEventListener('hashchange', () => {
             const restored = parseUrlState();
             if (restored) {
-                // Apply scale factor if it was loaded from URL
-                if (guidelineScaleFactor !== 1.0 && guidelineManuallySet) {
-                    distributions.forEach((distribution, index) => {
-                        if (originalValues[index]) {
-                            for (let i = 0; i < distribution.values.length; i++) {
-                                distribution.values[i] = originalValues[index][i] * guidelineScaleFactor;
-                            }
-                        }
-                    });
-                }
-                
                 // Calculate proper guideline position based on the loaded state
                 if (guidelineManuallySet && guidelineScaleFactor !== 1.0) {
                     // If guideline was manually set from URL, calculate position from scale factor
@@ -534,9 +506,8 @@ export function createInteractiveWidget(containerId, options) {
      */
     function calculateNormalizedPeak(distribution) {
         const distributionSum = distribution.values.reduce((sum, prob) => sum + prob, 0);
-        const normalizationFactor = distributionSum > 0 ? 100 / (distributionSum * 100) : 0;
-        const originalMaxValue = Math.max(...distribution.values);
-        return originalMaxValue * normalizationFactor * 100;
+        const normalizationFactor = distributionSum > 0 ? 100 / (distributionSum) : 0;
+        return Math.max(...distribution.values) * normalizationFactor;
     }
 
     /**
@@ -980,18 +951,6 @@ export function createInteractiveWidget(containerId, options) {
      * Draw all distributions
      */
     function drawAllDistributions() {
-        // If no distributions, show a message
-        if (distributions.length === 0) {
-            const centerX = widgetWidth / 2;
-            const centerY = options.height / 2;
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
-            ctx.font = '16px -apple-system, BlinkMacSystemFont, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('Add a distribution to start drawing', centerX, centerY);
-            return;
-        }
-
         // Draw all non-active distributions in the background first (only if visible)
         distributions.forEach((distribution, index) => {
             if (index !== activeDistributionIndex && visibilityState[index]) {
@@ -1348,8 +1307,6 @@ export function createInteractiveWidget(containerId, options) {
             if (visibilityState.hasOwnProperty(index)) {
                 visibilityState[index] = visible;
                 drawWidget();
-                // Update URL state when visibility changes
-                debouncedUrlUpdate();
             }
         },
         getDistributionVisibility: (index) => {
