@@ -83,7 +83,7 @@ export function createCalculatorWidget(containerId, options) {
 
     // Create results section inside the selection controls box
     const resultsSection = document.createElement('div');
-    resultsSection.style.marginTop = '15px';
+    resultsSection.style.marginTop = '0px';
     resultsSection.style.padding = '0px';
     resultsSection.style.backgroundColor = 'transparent';
     resultsSection.style.borderRadius = '0px';
@@ -190,7 +190,7 @@ export function createCalculatorWidget(containerId, options) {
 
         // Show results section
         resultsSection.style.display = 'block';
-        resultsSection.style.padding = '15px';
+        resultsSection.style.padding = '0px';
         
         // Create results display
         const resultsContainer = document.createElement('div');
