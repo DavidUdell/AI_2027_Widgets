@@ -96,16 +96,6 @@ export function createCalculatorWidget(containerId, options) {
     selectionControls.appendChild(resultsSection);
     mainContainer.appendChild(controlsSection);
 
-    // Color schemes for visual indicators
-    const colorSchemes = {
-        blue: '#007bff',
-        green: '#28a745',
-        red: '#dc3545',
-        purple: '#6f42c1',
-        orange: '#fd7e14',
-        yellow: '#ffc107'
-    };
-
     /**
      * Update the ground truth display
      */
@@ -132,19 +122,6 @@ export function createCalculatorWidget(containerId, options) {
             return '∞';
         }
         return score.toFixed(2);
-    }
-
-    /**
-     * Format factor for display
-     */
-    function formatFactor(factor) {
-        if (!Number.isFinite(factor)) {
-            return 'N/A';
-        }
-        if (factor < 1.01) {
-            return factor.toFixed(3);
-        }
-        return factor.toFixed(2);
     }
 
     /**

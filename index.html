@@ -81,14 +81,6 @@
             margin: 0 auto;
         }
 
-
-
-        .highlight {
-            background: #fff3cd;
-            padding: 2px 4px;
-            border-radius: 3px;
-        }
-
         .instructions {
             background: #fffff8;
             border-left: 4px solid #2a623d;
@@ -97,66 +89,11 @@
             border-radius: 4px;
         }
 
-
-
-        /* Remove spinner arrows from number input */
-        #total-mass::-webkit-outer-spin-button,
-        #total-mass::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-
-        #total-mass[type=number] {
-            appearance: textfield;
-        }
-
         /* Enhanced number input styling */
         .number-input-container {
             display: inline-flex;
             align-items: center;
             position: relative;
-        }
-
-        .number-input {
-            padding: 4px 6px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            width: 30px;
-            text-align: center;
-            font-size: 14px;
-            transition: border-color 0.2s ease;
-        }
-
-        .number-input:focus {
-            outline: none;
-            border-color: #007bff;
-            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-        }
-
-        .number-input.invalid {
-            border-color: #dc3545;
-            background-color: #fff5f5;
-        }
-
-        .input-feedback {
-            position: absolute;
-            top: 100%;
-            left: 40%;
-            transform: translateX(-50%);
-            font-size: 11px;
-            color: #6c757d;
-            white-space: nowrap;
-            margin-top: 0px;
-            text-align: center;
-            width: 100%;
-        }
-
-        .input-feedback.error {
-            color: #dc3545;
-        }
-
-        .input-feedback.success {
-            color: #28a745;
         }
 
         /* Visibility toggle styles */
@@ -190,10 +127,6 @@
             color: #495057;
         }
 
-        /* Button hover effects */
-        #add-distribution:hover {
-            background: #0056b3;
-        }
     </style>
 </head>
 <body>
@@ -463,9 +396,6 @@
                 });
             }
 
-            // Debounce function to avoid excessive updates
-            let debounceTimer;
-
             function updateColorSelect() {
                 const activeIndex = widget.getActiveDistributionIndex();
                 if (activeIndex >= 0) {
@@ -487,10 +417,6 @@
                 if (calculatorWidget) {
                     calculatorWidget.setActiveDistributionIndex(widget.getActiveDistributionIndex());
                 }
-                
-                // Update the distributions when color changes
-                const distributions = widget.getDistributions();
-                const selectedIndex = distributions.findIndex(dist => dist.color === color);
             });
 
             // Set up callback to update calculator widget when distributions
