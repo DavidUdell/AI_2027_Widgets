@@ -731,15 +731,18 @@ export function createInteractiveWidget(containerId, options) {
             // Skip if distribution is hidden
             if (!visibilityState[index]) return;
             
-            const totalMass = distribution.values.reduce((sum, val) => sum + val, 0);
+            // Calculate total mass excluding the final bin (which represents "AGI never")
+            const valuesExcludingFinal = distribution.values.slice(0, -1);
+            const totalMass = valuesExcludingFinal.reduce((sum, val) => sum + val, 0);
             
             if (totalMass > 0) {
                 // Calculate the median (point where cumulative probability reaches 50% of total mass)
+                // Exclude the final bin from median calculation
                 const targetMass = totalMass / 2;
                 let cumulativeMass = 0;
                 let medianIndex = 0;
                 
-                for (let i = 0; i < distribution.values.length; i++) {
+                for (let i = 0; i < distribution.values.length - 1; i++) {
                     cumulativeMass += distribution.values[i];
                     if (cumulativeMass >= targetMass) {
                         medianIndex = i;
