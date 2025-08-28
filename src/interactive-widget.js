@@ -1261,6 +1261,7 @@ export function createInteractiveWidget(containerId, options) {
     return {
         setActiveDistributionByColor: (color) => {
             const index = distributions.findIndex(dist => dist.color === color);
+            if (index < 0) return;
             activeDistributionIndex = index;
             // Reset guideline scale factor and restore original values
             guidelineScaleFactor = 1.0;
