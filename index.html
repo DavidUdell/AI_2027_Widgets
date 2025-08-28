@@ -385,6 +385,7 @@
                 visibilityTogglesContainer.innerHTML = '';
                 const distributions = widget.getDistributions();
                 const activeIndex = widget.getActiveDistributionIndex();
+                const currentVisibilityState = widget.getVisibilityState();
                 
                 distributions.forEach((distribution, index) => {
                     const toggle = document.createElement('div');
@@ -399,16 +400,16 @@
                     
                     // Handle active distribution logic
                     if (index === activeIndex) {
-                        // Active distribution should always be visible and
-                        // disabled
+                        // Active distribution should always be visible and disabled
                         checkbox.checked = true;
                         checkbox.disabled = true;
                         widget.setDistributionVisibility(index, true);
                     } else {
-                        // Background distributions start hidden by default
-                        checkbox.checked = false;
+                        // Use current visibility state from widget, or default to false
+                        const isVisible = currentVisibilityState[index] || false;
+                        checkbox.checked = isVisible;
                         checkbox.disabled = false;
-                        widget.setDistributionVisibility(index, false);
+                        widget.setDistributionVisibility(index, isVisible);
                     }
                     
                     // Add event listener
@@ -425,6 +426,17 @@
             }
 
 
+
+            // Reset visibility toggle initialization state
+            function resetVisibilityToggleState() {
+                const distributions = widget.getDistributions();
+                distributions.forEach((distribution) => {
+                    const checkbox = document.getElementById(`toggle-${distribution.color}`);
+                    if (checkbox) {
+                        checkbox.removeAttribute('data-initialized');
+                    }
+                });
+            }
 
             // Update visibility toggles when active distribution changes
             function updateVisibilityToggles() {
@@ -443,12 +455,9 @@
                         } else {
                             // Background distributions can be toggled
                             checkbox.disabled = false;
-                            // Don't change the checked state if it's already
-                            // been manually set
-                            if (!checkbox.hasAttribute('data-initialized')) {
-                                checkbox.checked = widget.getDistributionVisibility(index);
-                                checkbox.setAttribute('data-initialized', 'true');
-                            }
+                            // Always update the checkbox state to match the widget's visibility state
+                            checkbox.checked = widget.getDistributionVisibility(index);
+                            checkbox.setAttribute('data-initialized', 'true');
                         }
                     }
                 });
@@ -492,6 +501,8 @@
                     calculatorWidget.setActiveDistributionIndex(widget.getActiveDistributionIndex());
                     calculatorWidget.setVisibilityState(widget.getVisibilityState());
                 }
+                // Reset visibility toggle state to ensure proper updates
+                resetVisibilityToggleState();
                 // Update the UI controls to reflect the active distribution
                 updateColorSelect();
                 updateVisibilityToggles();

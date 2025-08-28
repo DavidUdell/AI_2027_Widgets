@@ -1464,6 +1464,8 @@ export function createInteractiveWidget(containerId, options) {
                 // Auto-scale the active distribution to fit within visible area
                 autoScaleDistribution(index);
                 updateGuidelinePosition();
+                // Ensure the new active distribution is visible
+                visibilityState[index] = true;
                 // Trigger renormalization when active distribution changes
                 performRenormalization();
                 // Update URL state
@@ -1488,6 +1490,8 @@ export function createInteractiveWidget(containerId, options) {
                 // Auto-scale the active distribution to fit within visible area
                 autoScaleDistribution(index);
                 updateGuidelinePosition();
+                // Ensure the new active distribution is visible
+                visibilityState[index] = true;
                 // Trigger renormalization when active distribution changes
                 performRenormalization();
                 // Update URL state
