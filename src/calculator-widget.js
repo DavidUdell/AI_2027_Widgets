@@ -9,10 +9,6 @@ import { calculateKLDivergence } from './KL-divergence.js';
  * Creates a KL Divergence Calculator widget that shows all distributions' scores against the Drawing distribution
  * @param {string} containerId - The ID of the HTML element to insert the widget into
  * @param {Object} options - Widget configuration options
- * @param {number} options.width - Widget width in pixels
- * @param {number} options.height - Widget height in pixels
- * @param {number} options.startYear - Starting year for the distribution
- * @param {number} options.endYear - Ending year for the distribution
  * @param {Array<Object>} options.distributions - Array of distribution objects with color, mass, and values
  * @param {number} options.activeDistributionIndex - Index of the active (Drawing) distribution to use as ground truth
  * @param {Object} options.visibilityState - Object mapping distribution indices to visibility booleans
@@ -96,16 +92,6 @@ export function createCalculatorWidget(containerId, options) {
     selectionControls.appendChild(resultsSection);
     mainContainer.appendChild(controlsSection);
 
-    // Color schemes for visual indicators
-    const colorSchemes = {
-        blue: '#007bff',
-        green: '#28a745',
-        red: '#dc3545',
-        purple: '#6f42c1',
-        orange: '#fd7e14',
-        yellow: '#ffc107'
-    };
-
     /**
      * Update the ground truth display
      */
@@ -132,19 +118,6 @@ export function createCalculatorWidget(containerId, options) {
             return '∞';
         }
         return score.toFixed(2);
-    }
-
-    /**
-     * Format factor for display
-     */
-    function formatFactor(factor) {
-        if (!Number.isFinite(factor)) {
-            return 'N/A';
-        }
-        if (factor < 1.01) {
-            return factor.toFixed(3);
-        }
-        return factor.toFixed(2);
     }
 
     /**
@@ -250,10 +223,6 @@ export function createCalculatorWidget(containerId, options) {
         },
         setVisibilityState: (newVisibilityState) => {
             options.visibilityState = newVisibilityState;
-            updateResults();
-        },
-        redraw: () => {
-            updateGroundTruthDisplay();
             updateResults();
         }
     };
