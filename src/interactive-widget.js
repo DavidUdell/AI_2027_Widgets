@@ -985,7 +985,7 @@ export function createInteractiveWidget(containerId, options) {
         ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('AGI Invented', 0, 0);
+        ctx.fillText('AGI Invented In', 0, 0);
         ctx.restore();
     }
 
