@@ -738,13 +738,14 @@ export function createInteractiveWidget(containerId, options) {
             if (totalMass > 0) {
                 // Calculate the median (point where cumulative probability reaches 50% of total mass)
                 // Exclude the final bin from median calculation
+                // Add slight bias towards longer timelines to prevent jiggling
                 const targetMass = totalMass / 2;
                 let cumulativeMass = 0;
                 let medianIndex = 0;
                 
                 for (let i = 0; i < distribution.values.length - 1; i++) {
                     cumulativeMass += distribution.values[i];
-                    if (cumulativeMass >= targetMass) {
+                    if (cumulativeMass > targetMass - targetMass * 1e-10) {
                         medianIndex = i;
                         break;
                     }
