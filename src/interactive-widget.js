@@ -985,7 +985,7 @@ export function createInteractiveWidget(containerId, options) {
         ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('AGI Invented', 0, 0);
+        ctx.fillText('AGI Invented In', 0, 0);
         ctx.restore();
     }
 
@@ -1464,6 +1464,8 @@ export function createInteractiveWidget(containerId, options) {
                 // Auto-scale the active distribution to fit within visible area
                 autoScaleDistribution(index);
                 updateGuidelinePosition();
+                // Ensure the new active distribution is visible
+                visibilityState[index] = true;
                 // Trigger renormalization when active distribution changes
                 performRenormalization();
                 // Update URL state
@@ -1488,6 +1490,8 @@ export function createInteractiveWidget(containerId, options) {
                 // Auto-scale the active distribution to fit within visible area
                 autoScaleDistribution(index);
                 updateGuidelinePosition();
+                // Ensure the new active distribution is visible
+                visibilityState[index] = true;
                 // Trigger renormalization when active distribution changes
                 performRenormalization();
                 // Update URL state
