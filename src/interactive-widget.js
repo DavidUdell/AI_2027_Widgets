@@ -1095,28 +1095,6 @@ export function createInteractiveWidget(containerId, options) {
         ctx.restore();
     }
 
-
-
-    /**
-     * Get combined distribution (sum of all distributions)
-     */
-    function getCombinedDistribution() {
-        const combined = Array(numPeriods).fill(0);
-        distributions.forEach(dist => {
-            for (let i = 0; i < numPeriods; i++) {
-                combined[i] += dist.values[i];
-            }
-        });
-        return combined;
-    }
-
-    /**
-     * Get total mass
-     */
-    function getTotalMass() {
-        return distributions.reduce((sum, dist) => sum + dist.mass, 0);
-    }
-
     /**
      * Handle mouse/touch events for drawing and guideline dragging
      */
@@ -1355,121 +1333,6 @@ export function createInteractiveWidget(containerId, options) {
 
     // Return methods for external control
     return {
-        addDistribution: (color, mass) => {
-            // Create sloping initial distribution from 20% at start to 100% at end
-            const initialValues = Array(numPeriods).fill(0).map((_, i) => 0.2 + (0.8 * i / (numPeriods - 1)));
-            
-            const newDistribution = {
-                color: color,
-                mass: mass,
-                values: initialValues
-            };
-            distributions.push(newDistribution);
-            const newIndex = distributions.length - 1;
-            activeDistributionIndex = newIndex;
-            // Set new distribution as visible by default
-            visibilityState[newIndex] = true;
-            // Store original values
-            originalValues[newIndex] = [...initialValues];
-            // Reset guideline scale factor and restore original values
-            guidelineScaleFactor = 1.0;
-            guidelineManuallySet = false; // Reset manual positioning when adding new distribution
-            distributions.forEach((distribution, distIndex) => {
-                if (originalValues[distIndex]) {
-                    distribution.values = [...originalValues[distIndex]];
-                }
-            });
-            // Update dimensions to ensure proper scaling to available widget area
-            updateDimensions();
-            // Auto-scale the active distribution to fit within visible area
-            autoScaleDistribution(newIndex);
-            updateGuidelinePosition();
-            // Trigger renormalization when active distribution changes
-            performRenormalization();
-            // Update URL state
-            debouncedUrlUpdate();
-        },
-        removeDistribution: (index) => {
-            distributions.splice(index, 1);
-            // Remove visibility state for this index and reindex the rest
-            delete visibilityState[index];
-            // Remove original values for this index and reindex the rest
-            delete originalValues[index];
-            // Reindex visibility state for remaining distributions
-            const newVisibilityState = {};
-            Object.keys(visibilityState).forEach(oldIndex => {
-                const oldIndexNum = parseInt(oldIndex);
-                if (oldIndexNum > index) {
-                    newVisibilityState[oldIndexNum - 1] = visibilityState[oldIndexNum];
-                } else {
-                    newVisibilityState[oldIndexNum] = visibilityState[oldIndexNum];
-                }
-            });
-            Object.assign(visibilityState, newVisibilityState);
-            
-            // Reindex original values for remaining distributions
-            const newOriginalValues = {};
-            Object.keys(originalValues).forEach(oldIndex => {
-                const oldIndexNum = parseInt(oldIndex);
-                if (oldIndexNum > index) {
-                    newOriginalValues[oldIndexNum - 1] = originalValues[oldIndexNum];
-                } else {
-                    newOriginalValues[oldIndexNum] = originalValues[oldIndexNum];
-                }
-            });
-            Object.assign(originalValues, newOriginalValues);
-            
-            if (activeDistributionIndex >= distributions.length) {
-                activeDistributionIndex = distributions.length - 1;
-            }
-            // Update dimensions to ensure proper scaling to available widget area
-            updateDimensions();
-            // Trigger renormalization if active distribution changed
-            performRenormalization();
-            // Update URL state
-            debouncedUrlUpdate();
-        },
-        clearAllDistributions: () => {
-            distributions = [];
-            activeDistributionIndex = -1;
-            // Clear visibility state
-            Object.keys(visibilityState).forEach(key => delete visibilityState[key]);
-            // Clear original values
-            Object.keys(originalValues).forEach(key => delete originalValues[key]);
-            // Clear user modified values
-            Object.keys(userModifiedValues).forEach(key => delete userModifiedValues[key]);
-            drawWidget();
-            if (options.onChange) {
-                options.onChange(distributions);
-            }
-            // Update URL state
-            debouncedUrlUpdate();
-        },
-        setActiveDistribution: (index) => {
-            if (index >= 0 && index < distributions.length) {
-                activeDistributionIndex = index;
-                // Reset guideline scale factor and restore original values
-                guidelineScaleFactor = 1.0;
-                guidelineManuallySet = false; // Reset manual positioning when switching distributions
-                // Restore original values for all distributions that haven't been user-modified
-                distributions.forEach((distribution, distIndex) => {
-                    if (originalValues[distIndex] && !userModifiedValues[distIndex]) {
-                        distribution.values = [...originalValues[distIndex]];
-                    }
-                });
-                // Update dimensions to ensure proper scaling to available widget area
-                updateDimensions();
-                // Auto-scale the active distribution to fit within visible area
-                autoScaleDistribution(index);
-                updateGuidelinePosition();
-                // Ensure the new active distribution is visible
-                visibilityState[index] = true;
-                // Trigger renormalization when active distribution changes
-                performRenormalization();
-                // Update URL state
-                debouncedUrlUpdate();
-            }
-        },
         setActiveDistributionByColor: (color) => {
             const index = distributions.findIndex(dist => dist.color === color);
             if (index !== -1) {
@@ -1499,8 +1362,6 @@ export function createInteractiveWidget(containerId, options) {
 
         getDistributions: () => [...distributions],
         getActiveDistributionIndex: () => activeDistributionIndex,
-        getCombinedDistribution: getCombinedDistribution,
-        getTotalMass: getTotalMass,
         setOnChange: (callback) => {
             options.onChange = callback;
         },
@@ -1514,14 +1375,6 @@ export function createInteractiveWidget(containerId, options) {
         },
         getDistributionVisibility: (index) => {
             return visibilityState[index] || false;
-        },
-        toggleDistributionVisibility: (index) => {
-            if (visibilityState.hasOwnProperty(index)) {
-                visibilityState[index] = !visibilityState[index];
-                drawWidget();
-                // Update URL state when visibility changes
-                debouncedUrlUpdate();
-            }
         },
         getVisibilityState: () => {
             return { ...visibilityState };
@@ -1672,15 +1525,5 @@ export function createInteractiveWidget(containerId, options) {
         
         isUrlStateEnabled: () => enableUrlState,
         
-        destroy: () => {
-            // Clean up resize observer and event listeners
-            resizeObserver.disconnect();
-            window.removeEventListener('resize', resizeHandler);
-            
-            // Clear URL update timeout
-            if (urlUpdateTimeout) {
-                clearTimeout(urlUpdateTimeout);
-            }
-        }
     };
 }
