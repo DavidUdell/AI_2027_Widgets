@@ -630,7 +630,6 @@ export function createInteractiveWidget(containerId, options) {
         let activeDistributionPeak = 0;
         if (activeDistributionIndex >= 0 && activeDistributionIndex < distributions.length) {
             const activeDist = distributions[activeDistributionIndex];
-            const activeMaxValue = Math.max(...activeDist.values);
             activeDistributionPeak = calculateNormalizedPeak(activeDist);
         }
         
@@ -738,7 +737,6 @@ export function createInteractiveWidget(containerId, options) {
                     };
 
                     // Calculate the current percentage based on actual distribution values
-                    const maxCurrentValue = Math.max(...activeDist.values);
                     const currentPercentage = calculateNormalizedPeak(activeDist);
                     
                     // Draw the percentage label on the left with interactive styling
@@ -1378,152 +1376,6 @@ export function createInteractiveWidget(containerId, options) {
         },
         getVisibilityState: () => {
             return { ...visibilityState };
-        },
-        setVisibilityState: (newVisibilityState) => {
-            Object.assign(visibilityState, newVisibilityState);
-            drawWidget();
-            // Update URL state when visibility state changes
-            debouncedUrlUpdate();
-        },
-        renormalizeBackgroundDistributions: () => {
-            performRenormalization();
-        },
-        resetGuideline: () => {
-            guidelineScaleFactor = 1.0;
-            guidelineManuallySet = false; // Reset manual positioning when resetting
-            // Restore original values to all distributions
-            distributions.forEach((distribution, index) => {
-                if (originalValues[index]) {
-                    distribution.values = [...originalValues[index]];
-                }
-            });
-            // Update dimensions to ensure proper scaling to available widget area
-            updateDimensions();
-            // Calculate proper guideline position based on the loaded state
-            if (guidelineManuallySet && guidelineScaleFactor !== 1.0) {
-                // If guideline was manually set from URL, calculate position from scale factor
-                const activeDist = distributions[activeDistributionIndex];
-                const maxOriginalValue = Math.max(...originalValues[activeDistributionIndex]);
-                const scaledMaxValue = maxOriginalValue * guidelineScaleFactor;
-                guidelineY = padding + (1 - scaledMaxValue) * plotHeight;
-            } else {
-                // Update guideline position based on the loaded state
-                updateGuidelinePosition();
-            }
-            
-            drawWidget();
-            if (options.onChange) {
-                options.onChange(distributions);
-            }
-            // Update URL state when guideline is reset
-            debouncedUrlUpdate();
-        },
-        getGuidelineScaleFactor: () => guidelineScaleFactor,
-        
-        // URL State Management Methods
-        getUrlState: () => {
-            if (!enableUrlState) return null;
-            const parts = [];
-            
-            // Serialize distributions
-            const distributionParts = distributions.map(dist => {
-                const encodedValues = encodeDistributionValues(dist.values);
-                return `${dist.color}:${encodedValues}`;
-            });
-            parts.push(`d=${distributionParts.join(',')}`);
-            
-            // Serialize active distribution index
-            parts.push(`a=${activeDistributionIndex}`);
-            
-            // Serialize visibility state
-            const visibilityBits = distributions.map((_, index) => 
-                visibilityState[index] ? '1' : '0'
-            ).join('');
-            parts.push(`v=${visibilityBits}`);
-            
-            // Serialize scale factor
-            const scaleFactor = Math.round(guidelineScaleFactor * 1000) / 1000;
-            parts.push(`s=${scaleFactor}`);
-            
-            return parts.join('&');
-        },
-        
-        loadFromUrlState: (fragment) => {
-            if (!enableUrlState) return false;
-            
-            // Temporarily set the hash and parse it
-            const originalHash = window.location.hash;
-            window.location.hash = fragment;
-            
-            const restored = parseUrlState();
-            
-            if (restored) {
-                // Apply scale factor if it was loaded from URL
-                if (guidelineScaleFactor !== 1.0 && guidelineManuallySet) {
-                    distributions.forEach((distribution, index) => {
-                        if (originalValues[index]) {
-                            for (let i = 0; i < distribution.values.length; i++) {
-                                distribution.values[i] = originalValues[index][i] * guidelineScaleFactor;
-                            }
-                        }
-                    });
-                }
-                
-                // Calculate proper guideline position based on the loaded state
-                if (guidelineManuallySet && guidelineScaleFactor !== 1.0) {
-                    // If guideline was manually set from URL, calculate position from scale factor
-                    const activeDist = distributions[activeDistributionIndex];
-                    const maxOriginalValue = Math.max(...originalValues[activeDistributionIndex]);
-                    const scaledMaxValue = maxOriginalValue * guidelineScaleFactor;
-                    guidelineY = padding + (1 - scaledMaxValue) * plotHeight;
-                } else {
-                    // Update guideline position based on the loaded state
-                    updateGuidelinePosition();
-                }
-                
-                drawWidget();
-                if (options.onChange) {
-                    options.onChange(distributions);
-                }
-            }
-            
-            // Restore original hash
-            window.location.hash = originalHash;
-            
-            return restored;
-        },
-        
-        reloadFromCurrentUrl: () => {
-            if (!enableUrlState) return false;
-            
-            const currentHash = window.location.hash.substring(1);
-            if (!currentHash) return false;
-            
-            const restored = parseUrlState();
-            
-            if (restored) {
-                // Apply scale factor if it was loaded from URL
-                if (guidelineScaleFactor !== 1.0 && guidelineManuallySet) {
-                    distributions.forEach((distribution, index) => {
-                        if (originalValues[index]) {
-                            for (let i = 0; i < distribution.values.length; i++) {
-                                distribution.values[i] = originalValues[index][i] * guidelineScaleFactor;
-                            }
-                        }
-                    });
-                }
-                
-                updateGuidelinePosition();
-                drawWidget();
-                if (options.onChange) {
-                    options.onChange(distributions);
-                }
-            }
-            
-            return restored;
-        },
-        
-        isUrlStateEnabled: () => enableUrlState,
-        
+        }        
     };
 }
