@@ -379,7 +379,7 @@ export function createInteractiveWidget(containerId, options) {
             
             // Recalculate layout constants
             padding = 80;
-            plotWidth = widgetWidth - 2 * (padding * getPortraitOrientation());
+            plotWidth = widgetWidth - 2 * padding;
             plotHeight = heightPixels - 2 * padding;
             periodStep = plotWidth / (numPeriods - 1);
             
