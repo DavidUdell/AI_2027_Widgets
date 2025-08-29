@@ -81,7 +81,7 @@ export function createInteractiveWidget(containerId, options) {
 
     // Grid and styling constants - these will be recalculated on resize
     let padding = 80;
-    let plotWidth = widgetWidth - 2 * padding;
+    let plotWidth = widgetWidth - 2 * (padding * getPortraitOrientation());
     let plotHeight = heightPixels - 2 * padding;
     let periodStep = plotWidth / (numPeriods - 1);
 
@@ -370,7 +370,7 @@ export function createInteractiveWidget(containerId, options) {
      */
     function updateDimensions() {
         const containerRect = container.getBoundingClientRect();
-        const newWidth = containerRect.width - 20; // Account for padding
+        const newWidth = containerRect.width;
         
         // Always update if width changed, or if called during distribution switches
         if (newWidth !== widgetWidth) {
@@ -379,7 +379,7 @@ export function createInteractiveWidget(containerId, options) {
             
             // Recalculate layout constants
             padding = 80;
-            plotWidth = widgetWidth - 2 * padding;
+            plotWidth = widgetWidth - 2 * (padding * getPortraitOrientation());
             plotHeight = heightPixels - 2 * padding;
             periodStep = plotWidth / (numPeriods - 1);
             
