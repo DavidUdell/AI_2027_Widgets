@@ -46,6 +46,18 @@ export function createInteractiveWidget(containerId, options) {
 
     const ctx = canvas.getContext('2d');
 
+    function applyDPI() {
+        const dpi = Math.max(1, window.devicePixelRatio || 1);
+        canvas.style.width = `${widgetWidth}px`;
+        canvas.style.height = `${heightPixels}px`;
+        canvas.width = Math.round(widgetWidth * dpi);
+        canvas.height = Math.round(heightPixels * dpi);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.scale(dpi, dpi);
+    }
+    applyDPI();
+    drawWidget();
+
     // Hardcoding years
     const startYear = 2026;
     const endYear = 2040;
@@ -369,25 +381,25 @@ export function createInteractiveWidget(containerId, options) {
      * Update widget dimensions and recalculate layout constants
      */
     function updateDimensions() {
-        const containerRect = container.getBoundingClientRect();
-        const newWidth = containerRect.width;
-        
+        const newWidth = container.getBoundingClientRect().width;
         // Always update if width changed, or if called during distribution switches
         if (newWidth !== widgetWidth) {
             widgetWidth = newWidth;
             canvas.width = widgetWidth;
-            
+
             // Recalculate layout constants
             padding = 80;
             plotWidth = widgetWidth - 2 * padding;
             plotHeight = heightPixels - 2 * padding;
             periodStep = plotWidth / (numPeriods - 1);
-            
+
             // Redraw with new dimensions
+            applyDPI();
             drawWidget();
         } else {
             // Even if width hasn't changed, ensure proper scaling by redrawing
             // This is important when switching distributions
+            applyDPI();
             drawWidget();
         }
     }
