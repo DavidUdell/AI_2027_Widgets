@@ -26,13 +26,18 @@ export function createInteractiveWidget(containerId, options) {
         return;
     }
 
+    function getPortraitOrientation() {
+        const isPortrait = window.innerWidth < 500;
+        return isPortrait ? 0.75 : 1.0;
+    }
+
     // Default URL state management to enabled
     const enableUrlState = options.enableUrlState !== false;
 
     const canvas = document.createElement('canvas');
     // Calculate responsive width
     const containerRect = container.getBoundingClientRect();
-    let widgetWidth = containerRect.width - 20; // Account for padding
+    let widgetWidth = containerRect.width;
     canvas.width = widgetWidth;
     // Hardcoding widget height (pixels)
     const heightPixels = 500;
@@ -75,7 +80,7 @@ export function createInteractiveWidget(containerId, options) {
     let secondHighestPeakPercentage = 0; // Percentage value for second highest peak
 
     // Grid and styling constants - these will be recalculated on resize
-    let padding = 80;
+    let padding = 70;
     let plotWidth = widgetWidth - 2 * padding;
     let plotHeight = heightPixels - 2 * padding;
     let periodStep = plotWidth / (numPeriods - 1);
@@ -365,7 +370,7 @@ export function createInteractiveWidget(containerId, options) {
      */
     function updateDimensions() {
         const containerRect = container.getBoundingClientRect();
-        const newWidth = containerRect.width - 20; // Account for padding
+        const newWidth = containerRect.width;
         
         // Always update if width changed, or if called during distribution switches
         if (newWidth !== widgetWidth) {
@@ -373,7 +378,7 @@ export function createInteractiveWidget(containerId, options) {
             canvas.width = widgetWidth;
             
             // Recalculate layout constants
-            padding = 80;
+            padding = 70;
             plotWidth = widgetWidth - 2 * padding;
             plotHeight = heightPixels - 2 * padding;
             periodStep = plotWidth / (numPeriods - 1);
@@ -771,7 +776,7 @@ export function createInteractiveWidget(containerId, options) {
 
                 // Draw median quarter name on top with distribution color
                 ctx.fillStyle = colorScheme.stroke;
-                ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+                ctx.font = `${Math.round(12 * getPortraitOrientation())}px -apple-system, BlinkMacSystemFont, sans-serif`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'bottom';
                 
@@ -879,12 +884,20 @@ export function createInteractiveWidget(containerId, options) {
      */
     function drawAxisLabels() {
         ctx.fillStyle = '#495057';
-        ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+        ctx.font = `${Math.round(12 * getPortraitOrientation())}px -apple-system, BlinkMacSystemFont, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
+        // Check if we're in portrait mode
+        const isPortrait = getPortraitOrientation() < 1.0;
+
         // X-axis labels (years)
         for (let i = 0; i < numYears; i++) {
+            // In portrait mode, skip every other intermediate year (but always show first and last)
+            if (isPortrait && i > 0 && i < numYears - 1 && i % 2 === 1) {
+                continue;
+            }
+
             let x;
             if (i === numYears - 1) {
                 // Final year label goes at the very end
@@ -924,7 +937,7 @@ export function createInteractiveWidget(containerId, options) {
 
         // Y-axis title
         ctx.save();
-        ctx.translate(padding / 2 - 14, heightPixels / 2);
+        ctx.translate(padding / 2 - 22, heightPixels / 2);
         ctx.rotate(-Math.PI / 2);
         ctx.fillStyle = '#495057';
         ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, sans-serif';

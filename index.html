@@ -10,7 +10,7 @@
             line-height: 1.6;
             max-width: 1000px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 5px;
             color: #333;
         }
 
@@ -31,7 +31,7 @@
             display: block;
             text-align: center;
             margin: 20px auto;
-            padding: 30px;
+            padding: 5px;
             width: 100%;
             min-height: 600px;
             border: 1px solid #e0e0e0;
@@ -147,9 +147,6 @@
 
     <div class="widget-container">
         <h2>AGI Timelines</h2>
-        <div class="instructions">
-            <strong>Note:</strong> Turn to landscape on mobile.
-        </div>
 
         <!-- Distribution Controls -->
         <div style="margin-bottom: 20px; text-align: center;">
@@ -174,8 +171,7 @@
                 <!-- Visibility Toggles -->
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <span style="font-weight: bold;">Background:</span>
-                    <div id="visibility-toggles" style="display: flex; gap:
-                    16px; flex-wrap: wrap;">
+                    <div id="visibility-toggles" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 300px;">
                         <!-- Checkboxes will be added here dynamically -->
                     </div>
                 </div>
