@@ -776,7 +776,7 @@ export function createInteractiveWidget(containerId, options) {
 
                 // Draw median quarter name on top with distribution color
                 ctx.fillStyle = colorScheme.stroke;
-                ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+                ctx.font = `${Math.round(12 * getPortraitOrientation())}px -apple-system, BlinkMacSystemFont, sans-serif`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'bottom';
                 
