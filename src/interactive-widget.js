@@ -937,7 +937,7 @@ export function createInteractiveWidget(containerId, options) {
 
         // Y-axis title
         ctx.save();
-        ctx.translate(20, heightPixels / 2);
+        ctx.translate(padding / 2 - 22, heightPixels / 2);
         ctx.rotate(-Math.PI / 2);
         ctx.fillStyle = '#495057';
         ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, sans-serif';
