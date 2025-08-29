@@ -27,7 +27,7 @@ export function createInteractiveWidget(containerId, options) {
     }
 
     function getPortraitOrientation() {
-        const isPortrait = window.innerWidth <= 768;
+        const isPortrait = window.innerWidth <= 500;
         return isPortrait ? 0.75 : 1.0;
     }
 
