@@ -32,7 +32,7 @@ export function createInteractiveWidget(containerId, options) {
     const canvas = document.createElement('canvas');
     // Calculate responsive width
     const containerRect = container.getBoundingClientRect();
-    const widgetWidth = containerRect.width - 20; // Account for padding
+    let widgetWidth = containerRect.width - 20; // Account for padding
     canvas.width = widgetWidth;
     // Hardcoding widget height (pixels)
     const heightPixels = 500;
