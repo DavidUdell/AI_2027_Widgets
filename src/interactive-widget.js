@@ -26,13 +26,18 @@ export function createInteractiveWidget(containerId, options) {
         return;
     }
 
+    function getPortraitOrientation() {
+        const isPortrait = window.innerWidth <= 768;
+        return isPortrait ? 0.75 : 1.0;
+    }
+
     // Default URL state management to enabled
     const enableUrlState = options.enableUrlState !== false;
 
     const canvas = document.createElement('canvas');
     // Calculate responsive width
     const containerRect = container.getBoundingClientRect();
-    let widgetWidth = containerRect.width - 20; // Account for padding
+    let widgetWidth = containerRect.width;
     canvas.width = widgetWidth;
     // Hardcoding widget height (pixels)
     const heightPixels = 500;
@@ -879,7 +884,7 @@ export function createInteractiveWidget(containerId, options) {
      */
     function drawAxisLabels() {
         ctx.fillStyle = '#495057';
-        ctx.font = '12px -apple-system, BlinkMacSystemFont, sans-serif';
+        ctx.font = `${Math.round(12 * getPortraitOrientation())}px -apple-system, BlinkMacSystemFont, sans-serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
