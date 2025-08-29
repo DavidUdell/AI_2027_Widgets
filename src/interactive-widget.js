@@ -28,7 +28,7 @@ export function createInteractiveWidget(containerId, options) {
 
     function getPortraitOrientation() {
         const isPortrait = window.innerWidth <= 768;
-        return isPortrait ? 0.5 : 1.0;
+        return isPortrait ? 0.4 : 1.0;
     }
 
     // Default URL state management to enabled
