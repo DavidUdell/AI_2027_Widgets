@@ -80,7 +80,7 @@ export function createInteractiveWidget(containerId, options) {
     let secondHighestPeakPercentage = 0; // Percentage value for second highest peak
 
     // Grid and styling constants - these will be recalculated on resize
-    let padding = 70;
+    let padding = 65;
     let plotWidth = widgetWidth - 2 * padding;
     let plotHeight = heightPixels - 2 * padding;
     let periodStep = plotWidth / (numPeriods - 1);
@@ -378,7 +378,7 @@ export function createInteractiveWidget(containerId, options) {
             canvas.width = widgetWidth;
             
             // Recalculate layout constants
-            padding = 70;
+            padding = 65;
             plotWidth = widgetWidth - 2 * padding;
             plotHeight = heightPixels - 2 * padding;
             periodStep = plotWidth / (numPeriods - 1);
