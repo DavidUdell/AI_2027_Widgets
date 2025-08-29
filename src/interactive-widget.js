@@ -81,7 +81,7 @@ export function createInteractiveWidget(containerId, options) {
 
     // Grid and styling constants - these will be recalculated on resize
     let padding = 80;
-    let plotWidth = widgetWidth - 2 * (padding * getPortraitOrientation());
+    let plotWidth = widgetWidth - 2 * padding;
     let plotHeight = heightPixels - 2 * padding;
     let periodStep = plotWidth / (numPeriods - 1);
 
