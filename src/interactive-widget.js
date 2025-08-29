@@ -888,8 +888,16 @@ export function createInteractiveWidget(containerId, options) {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
+        // Check if we're in portrait mode
+        const isPortrait = getPortraitOrientation() < 1.0;
+
         // X-axis labels (years)
         for (let i = 0; i < numYears; i++) {
+            // In portrait mode, skip every other intermediate year (but always show first and last)
+            if (isPortrait && i > 0 && i < numYears - 1 && i % 2 === 1) {
+                continue;
+            }
+
             let x;
             if (i === numYears - 1) {
                 // Final year label goes at the very end
