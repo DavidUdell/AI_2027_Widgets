@@ -80,7 +80,7 @@ export function createInteractiveWidget(containerId, options) {
     let secondHighestPeakPercentage = 0; // Percentage value for second highest peak
 
     // Grid and styling constants - these will be recalculated on resize
-    let padding = 80;
+    let padding = 70;
     let plotWidth = widgetWidth - 2 * padding;
     let plotHeight = heightPixels - 2 * padding;
     let periodStep = plotWidth / (numPeriods - 1);
@@ -378,7 +378,7 @@ export function createInteractiveWidget(containerId, options) {
             canvas.width = widgetWidth;
             
             // Recalculate layout constants
-            padding = 80;
+            padding = 70;
             plotWidth = widgetWidth - 2 * padding;
             plotHeight = heightPixels - 2 * padding;
             periodStep = plotWidth / (numPeriods - 1);
@@ -929,7 +929,7 @@ export function createInteractiveWidget(containerId, options) {
 
         // Y-axis title
         ctx.save();
-        ctx.translate(padding / 2 - 14, heightPixels / 2);
+        ctx.translate(20, heightPixels / 2);
         ctx.rotate(-Math.PI / 2);
         ctx.fillStyle = '#495057';
         ctx.font = 'bold 16px -apple-system, BlinkMacSystemFont, sans-serif';
