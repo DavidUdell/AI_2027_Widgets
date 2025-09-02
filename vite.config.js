@@ -10,7 +10,7 @@ export default defineConfig({
       formats: ['es', 'iife'],
       fileName: (format) => `ai-2027-widgets.${format}.js`,
     },
-    sourcemap: true,
+    sourcemap: false,
     rollupOptions: {
       output: {
         inlineDynamicImports: true,
