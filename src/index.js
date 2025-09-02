@@ -164,3 +164,5 @@ export function boot(root = document) {
     }
 
 }
+
+export { createInteractiveWidget, createCalculatorWidget };
