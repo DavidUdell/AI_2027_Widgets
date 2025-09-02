@@ -13,7 +13,6 @@
   "license": "UNLICENSED",
   "author": "David Udell",
   "type": "module",
-  "main": "dist/ai-2027-widgets.es.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -32,7 +31,8 @@
     "vite": "^7.0.6",
     "vitest": "^3.2.4"
   },
+  "main": "dist/ai-2027-widgets.es.js",
   "module": "dist/ai-2027-widgets.es.js",
-  "unpkg": "dist/ai-2027-widgets.umd.js",
-  "browser": "dist/ai-2027-widgets.umd.js"
+  "browser": "dist/ai-2027-widgets.iife.js",
+  "unpkg": "dist/ai-2027-widgets.iife.js"
 }
