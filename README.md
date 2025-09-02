@@ -37,7 +37,7 @@ The widgets try to store state in the URL fragment, in the pattern:
 This can include any subset of the 6 distribution colors (blue, green, red,
 purple, orange, yellow). Distribution values are encoded using fixed-width
 base36: the quarter probability values [0.0, 1.0] together become a
-zeros-padded, uppercase, 3-character base36 string.
+zeros-padded, uppercase, 2-character base36 string.
 
 ## License
 
