@@ -252,9 +252,10 @@
         vel quis leo. Suspendisse varius molestie tristique.
     </p>
 
+    <script src="./dist/ai-2027-widgets.iife.js"></script>
 
-    <script type="module">
-        import { createInteractiveWidget, createCalculatorWidget } from './dist/ai-2027-widgets.es.js';
+    <script>
+        const { createInteractiveWidget, createCalculatorWidget } = window.AI2027Widgets;
 
         // Initialize widget when DOM is loaded
         document.addEventListener('DOMContentLoaded', () => {
