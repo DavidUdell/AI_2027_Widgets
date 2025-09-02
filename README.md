@@ -1,64 +1,44 @@
 # AI 2027 Widgets
 
-Interactive probability distribution widgets for embedding in text content.
-Draw arbitrary probability distributions over quarters with an intuitive canvas
-interface, specifically designed for AGI timeline predictions.
+Interactive probability distribution widgets for embedding in HTML. Draw
+arbitrary probability distributions over quarters and see how they stack up
+against one another.
 
 ## Features
 
-- **Interactive drawing** - Click and drag to draw your probability
-  distribution
-- **Quarter-based visualization** - Show probability trends over quarters until
-  2040
-- **Real-time updates** - See changes as you draw
-- **Bayesian scoring** - Compare predictions using proper log score metrics
+- **Drawing** - Click and drag to draw probability distributions
+- **Scoring** - Compare predictions using KL divergence
 
-## Quick Start
+## Create Widgets
 
-1. **Install dependencies:** `npm install`
-
-2. **Run the demo locally:** `npm run dev`
-
-3. **Run test suite:** `npm test`
-
-## Widget Usage
-
-### How It Works
-
-The widget provides an interactive canvas where users can:
-
-- **Click and drag** to draw probability curves
-- **See real-time updates** as they draw
-- **View probability scale** on the Y-axis (0-100%)
-- **See quarters** on the X-axis (Q1 2026 through Q1 2040)
-
-### Create Interactive Widget
-
-Create an interactive widget where users can draw probability distributions
-over quarters:
+Build with `npm run build`, then put the contents of
+`./dist/ai-2027-widgets.iife.js` in the page's leading `<script>` tag. Then
+initialize in another `<script>` tag:
 
 ```javascript
-import { createInteractiveWidget } from './src/index.js';
+const { createInteractiveWidget, createCalculatorWidget } = window.AI2027Widgets;
 
-const widget = createInteractiveWidget('container-id', {});
+const interactiveWidget = createInteractiveWidget('container-id-1', {});
+const calculatorWidget = createCalculatorWidget('container-id-2', {
+    distributions: widget.getDistributions(),
+    activeDistributionIndex: widget.getActiveDistributionIndex(),
+    visibilityState: widget.getVisibilityState()
+});
 ```
-## URL Fragment Format
+See `index.html` for an instance of fully featured initialization.
 
-The URL fragment uses the pattern:
+## URL Fragments Logic
+
+The widgets try to store state in the URL fragment, in the pattern:
 ```
 #d=color1:values1,color2:values2,...
 ```
 
-You can include any subset of the 6 colors (blue, green, red, purple, orange,
-yellow). Distribution values are encoded using fixed-width base36: each
-probability value [0.0, 1.0] is converted to an integer [0, 1000], and each
-integer is converted to a (zeros-padded, uppercase) 3-character base36 string,
-
-## Development
-
-- **Build demo:** `npm run build`
-- **Preview built demo:** `npm run preview`
+This can include any subset of the 6 distribution colors (blue, green, red,
+purple, orange, yellow). Distribution values are encoded using fixed-width
+base36: the quarter probability values [0.0, 1.0] together become a
+zeros-padded, uppercase, 3-character base36 string.
 
 ## License
 
-UNLICENSED - Private project
+UNLICENSED
